@@ -1,0 +1,40 @@
+         subroutine balance_pme
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c
+c
+c       subroutine to solve baroclinic pressure gradient
+c
+c
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+            use size_mod
+            use param_mod
+!#include "size.h"
+!#include "polar.h"
+!#include "param.h"
+
+        pme_corr(:,:) = 0.0
+
+        ievap = 0
+        iprecip = 0
+        revap = 0.0
+        do i=1,imt
+        do j=1,jmt
+         revap = revap + rmld_misc(i,3,j)
+         if (rmld_misc(i,3,j) .gt. 0.0) ievap = ievap + 1
+         if (rmld_misc(i,3,j) .lt. 0.0) iprecip = iprecip + 1
+        enddo
+        enddo
+
+        do i=1,imt
+        do j=1,jmt
+         if (revap .gt. 0.0) then
+         if (rmld_misc(i,3,j) .gt. 0.0) pme_corr(i,j) =  1.0*revap/ievap
+         endif
+         if (revap .lt. 0.0) then
+         if (rmld_misc(i,3,j) .lt. 0.0) pme_corr(i,j) =  1.0*revap/iprecip
+         endif
+        enddo
+        enddo
+
+        return
+        end

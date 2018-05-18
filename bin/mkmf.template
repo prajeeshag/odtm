@@ -1,0 +1,64 @@
+FC = ifort
+CC = icc
+LD = ifort
+
+NETCDF = /gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.2.1
+
+#-------------------- specify netcdf library path ---------------------
+NETCDFINC =  -I/gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.2.1/include
+NETCDFLIB =  -L/gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.2.1/lib
+
+#------------------- tracer options -----------------------------------
+TRACER_OPTION    = -Dtrace #-Dage_tracer #-Dseasonal_tracer
+
+#=------------------ restart option -----------------------------------
+RESTART_OPTION1  = #-Drestart_odtm #-Drestrt
+#------------------- inverse_model option -----------------------------
+
+#------------------- particle trajectory ------------------------------
+
+#------------------- forcing option -----------------------------------
+FORCING_OPTION   = -Dmonthly_wind
+
+SPATIAL_FILTER = -Dapply_spatial_filter 
+#-------------------- boundary condition ------------------------------
+
+
+#-------------------- advection-diffusion -----------------------------
+NONLINEAR  = -Dnonlinear_advec -Darea_weighted #-Dapply_spatial_filter_mld
+DIFFUSION = -Dconstant_laplacian
+
+#-------------------- snaps options ---------------------------------
+SNAP_VELOCITY_YES = -Dsnap_velocity
+SNAP_SSH_YES = -Dsnap_ssh
+SNAP_TAU_YES = -Dsnap_tau
+SNAP_TRACER_YES = -Dsnap_tracer
+SNAP_MLD_YES = -Dsnap_mld -Dsnap_mld_extended
+SNAP_ENTRAIN_YES = -Dsnap_we
+SNAP_DENSITY_YES = -Dsnap_density
+SNAP_VORTICITY_YES = -Dsnap_vorticity
+SNAP_OUTPUTMANAGER_YES = -Doutput_average
+
+
+#-------------------- miscallanious -----------------------------------
+
+ENTRAIN = -Dentrain
+
+# ------------------- total options -----------------------------------
+OPTIONS_1 = $(TRACER_OPTION) $(RESTART_OPTION1) $(RESTART_OPTION2) $(FORCING_OPTION) $(FORCING_OPTION1) $(BOUNDARY_OPTION) $(DIFFUSION) $(INVERSE_MODEL) $(ATMOSPHERE_OPTION)
+
+OPTIONS_2 = $(ENTRAIN) $(NONLINEAR) $(BOUNDARY_OPEN) $(PARTICLE_OPTION) $(LAYER_DENSITY) $(FLOWPRESCRIB) $(THERMO_DYNAMICS) $(SPATIAL_FILTER)
+
+OPTIONS_SNAP = $(SNAP_VELOCITY_YES) $(SNAP_SSH_YES) $(SNAP_TAU_YES) $(SNAP_TRACER_YES) $(SNAP_ENTRAIN_YES) $(SNAP_DENSITY_YES) $(SNAP_VORTICITY_YES) $(SNAP_PARTICLE_YES) $(SNAP_INVERSE_YES) $(SNAP_MLD_YES) $(SNAP_OUTPUTMANAGER_YES)
+
+OPTIONS_TOTAL = $(OPTIONS_1) $(OPTIONS_2) $(OPTIONS_SNAP)
+
+INCL = -I$(NETCDF)/include
+
+CPPFLAGS= $(OPTIONS_TOTAL) $(INCL)
+
+FFLAGS= $(OPTIONS_TOTAL) -g -traceback -extend-source 132 -O3 -align all $(INCL)
+
+LDFLAGS= -L$(NETCDF)/lib -lnetcdff -lnetcdf
+
+FC = ifort -mkl -align commons -save-temps $(DEBUG)
