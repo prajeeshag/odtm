@@ -35,10 +35,12 @@
 !c
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-        integer :: iday_month
-        real :: age_time, day_night, rlct
+        integer :: iday_month, ii
+        real :: age_time, day_night, rlct, depth_mld
         type(time_type) :: time, time_step
         integer :: id_lon, id_lat, id_sst, used, domain_layout(2), halo=1
+        integer :: id_depth_mld, id_temp
+        real :: tmp(imt,jmt,51)
         type(domain2d) :: domain
 
         call mpp_init()
@@ -61,9 +63,13 @@
         time = set_date(1995, 1, 1, 0, 0, 0)
 
         id_lon = diag_axis_init('lon', gdx(1:imt), 'degrees_east', cart_name='X', long_name='longitude', domain2=domain)
-        id_lat = diag_axis_init('lat', gdy(1:jmt), 'degrees_north', cart_name='Y', long_name='latitude', domain2=domain)
+        id_lat = diag_axis_init('lat', gdy(1:jmt), 'degrees_north', cart_name='Y', long_name='latitude', domain2=domain) 
+        id_depth_mld = diag_axis_init('depth_mld', (/(real(ii)*0.5,ii=1,51)/), 'meters', cart_name='Z', long_name='depth')
+
         id_sst = register_diag_field('odtm', 'sst', (/id_lon,id_lat/), init_time=Time, long_name='Sea Surface Temperature', 
      &       units='K',interp_method='conserve_order1')
+        id_temp = register_diag_field('odtm', 'temp_mld', (/id_lon,id_lat,id_depth_mld/), init_time=Time,
+     &       long_name='Temperature', units='degree celsius',interp_method='conserve_order1')
 !c
 !c Initial time-index values
 !!c
@@ -319,7 +325,12 @@ c        pvort(:,:,:) = 0.0
         call output_manager (number_of_snap)
 #endif
             used = send_data(id_sst, real(temp(1:imt,1,1:jmt,1))*rkmh(1:imt,1:jmt), time)
-            !used = send_data(id_sst, real(temp(1:imt,1,1:jmt,1)), time)
+            if (id_temp>0) then
+                do ii = 1, 51
+                    tmp(:,:,ii) = temp(:,ii,:,1) * rkmh(1:imt,1:jmt)
+                enddo
+                used = send_data(id_temp, tmp,time)
+            endif
 
 
 	if ( mod (loop,loop_total/number_of_snap) .eq. 0) then
@@ -377,6 +388,7 @@ c	write(*,*)'Writing output for loop -> ', loop
     
 	write (*,*)
 	write (*,*)'Integration finished'
+    
         time = time + time_step
         call diag_manager_end(time)
          call fms_end()
