@@ -6,11 +6,12 @@ c       subroutine to solve baroclinic pressure gradient
 c
 c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-            use size_mod
-            use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+            use size_mod, only : pme_corr, i, imt, j, jmt
+            use param_mod, only : rmld_misc
+        implicit none
+
+        integer :: ievap, iprecip
+        real :: revap
 
         pme_corr(:,:) = 0.0
 
@@ -37,4 +38,4 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         enddo
 
         return
-        end
+        end subroutine balance_pme

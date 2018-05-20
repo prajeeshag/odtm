@@ -10,10 +10,8 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-	
+        implicit none
+        real :: rwesum
 	rwesum = 0.0
 	we(:,:,:) = 0.0
 	wd(:,:,:) = 0.0

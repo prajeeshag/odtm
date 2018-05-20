@@ -6,11 +6,14 @@ c  attempt to impliment polar coordinate
 c
 c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod
-        use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+        use size_mod, only : imt, jmt, i, j, k, gdx, gdy, fcor, dxr, dyr, dxu
+        use size_mod, only : dyu, dxv, dyv, dxh, dyh, dah
+        use param_mod, only : dtts, deg2rad, theta, phi, omega, Re, pi 
+
+        implicit none
+
+        integer :: ip, im, jp, jm
+
 	do i=1,imt
 	 phi(i) = gdx(i)*deg2rad  !converting latitude to radian
 	enddo
@@ -133,5 +136,4 @@ c
 	 dah(1,jmt) = dah(1,jmt-1)
 
 	return
-	stop
-	end
+	end subroutine polar_coord

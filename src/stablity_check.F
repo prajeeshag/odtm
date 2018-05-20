@@ -6,14 +6,14 @@ c       subroutine to ensure the stability of layer is maintained
 c       
 c       Writen on: 20-Feb-2017
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-            use size_mod
-            use param_mod
-!#include "size.h"
-!#include "polar.h"
-        real rho_local(km)
-!#include "param.h"
-
-        
+            use size_mod, only : i, j, k, taun, km, tr01_max, rkmh, tr02_max
+            use size_mod, only : tr02_min, t, zdz, h, tr01_min
+            !use param_mod
+            use presgrad_mod, only : density_nonlinear
+        implicit none
+        integer, intent(in) :: loop_ind
+        real :: rho_local(km), rtemp, rsalt, rDep
+        integer :: kk, icheck, iter
 
         do kk=1,km-1
 

@@ -1,4 +1,12 @@
-	subroutine pressure_integral (loop_ind)
+        module presgrad_mod
+        use advec_mod, only : sum_2pt
+        implicit none
+        private
+
+        public :: pressure_integral, density_nonlinear
+        contains
+
+        subroutine pressure_integral (loop_ind)
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
 c
@@ -6,12 +14,14 @@ c	subroutine to calculated presure gradient for each layer
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-            use size_mod
-            use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+            use size_mod, only: i, j, k, km, taun, pres_gradu, pres_gradv, h, eta
+            use size_mod, only: rkmh, dxu, dyv, rkmu, rkmv  
+            use param_mod, only: dtts, g
+        implicit none
+            integer, intent(in) :: loop_ind 
+            integer :: ip, im, jp, jm, kk, ii, jj
+            real :: rsum1, rsum2, rsum, rsumeta, rsumeta_init, rho_km, rho_kk
+            real :: rtemp1, rho_k, rwall
 
 	pres_gradu(k) = 0.0
 	pres_gradv(k) = 0.0
@@ -173,53 +183,50 @@ c         endif
 c	write(*,*) pres_gradu(k), pres_gradv(k)
 	
 	return
-	end
+	end subroutine pressure_integral 
 
 
 	function rho_2pt (i1,j1,k1)
-        use size_mod
-        use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+
+        use size_mod, only : taun, t, zdz, rkmh
+        use param_mod, only : denss 
+        implicit none
+        
+        double precision :: rho_2pt
+        integer, intent(in) :: i1, j1, k1
+        real :: VolExpan, SalContr, rkappa_vol, rTemp, rSalt, rDep
 
 	rho_2pt = 0.0
 	VolExpan = -0.15
         SalContr =  0.78
         rkappa_vol = 0.0045
-c	do kloop = k1, km-1
-c	rho_2pt = rho_2pt + VolExpan * 
-c     &              (t(i1,kloop,j1,1,taun) - t(i1,km,j1,1,taun))  
-c     &                    + SalContr *  
-c     &              (t(i1,kloop,j1,2,taun) - t(i1,km,j1,2,taun))  
-c     &                    + rkappa_vol *  dz(k)
-c	enddo
         rTemp = t(i1,k1,j1,1,taun)
         rSalt = t(i1,k1,j1,2,taun)
         rDep = zdz(k1)
 	rho_2pt = density_nonlinear (rTemp, rSalt, rDep) !rho(km) + rho_2pt
-c        if (rkmh(i1,j1) .eq. 0.0) rho_2pt = rho(k1)
-c	rho_2pt = max(1000.0, rho_2pt)
 
-c        if (rho_2pt .lt. rho_min(k1)) rho_2pt = rho_min(k1)
-c        if (rho_2pt .gt. rho_max(k1)) rho_2pt = rho_max(k1)
-        
         denss(i1,k1,j1) = rho_2pt * rkmh(i1,j1)
         
-	end
+	end function rho_2pt
 
 
         function density_nonlinear (rTemp, rSalt, rDepth)
-        real rTemp, rSalt, density_nonlinear, rDepth, rKtsp
 
+        implicit none
+
+        real, intent(in) :: rTemp, rSalt, rDepth
+        real :: density_nonlinear, rKtsp
+
+        real :: rT1, rT2, rT3, rT4, rT5, rS1, rS2, rS1b2, rP1, rP2
+        real :: rTempt, rSaltt, rho_0, rT, rS
 
          rT1 = rTemp**1
-         rT2 = rTempt**2
+         rT2 = rTempt**2 !rTempt is not assigned !!??? Prajeesh  
          rT3 = rTempt**3
          rT4 = rTempt**4
          rT5 = rTempt**5
          rS1 = rSalt**1
-         rS2 = rSaltt**2
+         rS2 = rSaltt**2 !rSaltt is not assigned !!?? Prajeesh
          rS1b2 = rSalt**1.5
          rP1 = rDepth*0.1  ! in bars approximately
          rP2 = rP1**2  
@@ -261,4 +268,5 @@ c        if (rho_2pt .gt. rho_max(k1)) rho_2pt = rho_max(k1)
 
         density_nonlinear = rho_0*(1.0-rP1/rKtsp)**(-1) 
         
-        end
+        end function density_nonlinear
+        end module presgrad_mod

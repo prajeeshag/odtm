@@ -7,10 +7,11 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod
         use param_mod
-!#include "size.h"
-!#include "polar.h"
-	real vel_lim(km), t_lim(k), t_llim(km)
-!#include "param.h"
+        implicit none
+	    real vel_lim(km), t_lim(k), t_llim(km)
+        integer :: nt, idim5, idim4, idim3, idim2, idim1, ii, jj, kk, iii
+        integer :: imte, imts, jjj, jmte, jmts, linear_switch
+        real :: t_switch
 	
         do k=1,km
 	vel_lim(k) = 1.0

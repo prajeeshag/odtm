@@ -1,42 +1,54 @@
-       subroutine couple_rgmld 
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c
-c
-c
-c       linear interpolation for wind forcing
-c
-c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-            use size_mod
-            use param_mod
-!#include "size.h"
-!#include "polar.h"
-        double precision tempout_taum, tempout_taup
-        double precision saltout_taum, saltout_taup
-        double precision uvelout_taum, uvelout_taup
-        double precision vvelout_taum, vvelout_taup
+        module couple_mod
+        implicit none
 
-        double precision tempout_taumC, tempout_taupC
-        double precision saltout_taumC, saltout_taupC
-        double precision uvelout_taumC, uvelout_taupC
-        double precision vvelout_taumC, vvelout_taupC
+        private
 
-        double precision tempout_taumL, tempout_taupL
-        double precision saltout_taumL, saltout_taupL
-        double precision uvelout_taumL, uvelout_taupL
-        double precision vvelout_taumL, vvelout_taupL
+        public :: couple_rgmld
 
-        double precision tempout_taumB, tempout_taupB
-        double precision saltout_taumB, saltout_taupB
-        double precision uvelout_taumB, uvelout_taupB
-        double precision vvelout_taumB, vvelout_taupB
+        contains
 
-        double precision alpha_rgm, beta_mldm
-        double precision alpha_rgt, beta_mldt
-        integer hstart, hend, ii, jj, kk, tau_index
-        real diffuse_temp, diffuse_salt
-!#include "param.h"
+        subroutine couple_rgmld 
 
+        ! linear interpolation for wind forcing
+
+        use size_mod, only : taum, taun, taup, taus, tracedubdxmld, tracedvbdymld
+        use size_mod, only : loop, imt, jmt, km, i, j, k, rkmh, t, u, rkmu, v
+        use size_mod, only : rkmv, h, nn, tmask, smask, umask, vmask, temp
+        use size_mod, only : salt, uvel, vvel, rdx, dxu, rdy, dyu, dyv
+        use size_mod, only : temp_read, salt_read, month 
+        use param_mod, only : day2sec, dphi, theta, dthe, dt, sec2day
+
+        implicit none
+
+        double precision :: tempout_taum, tempout_taup
+        double precision :: saltout_taum, saltout_taup
+        double precision :: uvelout_taum, uvelout_taup
+        double precision :: vvelout_taum, vvelout_taup
+
+        double precision :: tempout_taumC, tempout_taupC
+        double precision :: saltout_taumC, saltout_taupC
+        double precision :: uvelout_taumC, uvelout_taupC
+        double precision :: vvelout_taumC, vvelout_taupC
+
+        double precision :: tempout_taumL, tempout_taupL
+        double precision :: saltout_taumL, saltout_taupL
+        double precision :: uvelout_taumL, uvelout_taupL
+        double precision :: vvelout_taumL, vvelout_taupL
+
+        double precision :: tempout_taumB, tempout_taupB
+        double precision :: saltout_taumB, saltout_taupB
+        double precision :: uvelout_taumB, uvelout_taupB
+        double precision :: vvelout_taumB, vvelout_taupB
+
+        double precision :: alpha_rgm, beta_mldm
+        double precision :: alpha_rgt, beta_mldt
+
+        real :: diffuse_temp, diffuse_salt, rtheta_vu, rtheta_vd
+        real :: relax_on_off, gama, diffuse_MY, diffuse_tr, zero_out_tradv
+        real :: relax_south, widS, relax_East, widE, kmax, rdrag
+        real :: rtemp1, rtemp2, rtemp3, rtemp4
+        integer :: hstart, hend, ii, jj, kk, tau_index
+        integer :: im, jm, irepeat, nt, ip, jp
 
         tracedubdxmld(:,:) = 0.0
         tracedvbdymld(:,:) = 0.0
@@ -214,16 +226,17 @@ c         rmld_misc(i,kk,j) = tracedubdxmld(kk,3)
 
 
         return
-        end
+        end subroutine couple_rgmld 
 
 
          function sum_2ptr_mld (index, i1,j1, i2,j2,kk,nt)
-                use size_mod
-                use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+                use size_mod, only: temp, salt, uvel, vvel, tmask, umask, smask, vmask
+        implicit none
 
+        double precision :: sum_2ptr_mld
+        integer, intent (in) :: index, i1,j1, i2,j2,kk,nt
+
+        real :: rtemp1, rtemp2
 
         if (index .eq. 1) then
 
@@ -263,16 +276,14 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
         sum_2ptr_mld = max(1.0,sum_2ptr_mld)
         endif
 
-        end
+        end function sum_2ptr_mld
 
 
 	function sum_2pt_mld (index, i1,j1, i2,j2, kk)
-           use size_mod
-           use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+           use size_mod, only: u, uvel, v, vvel, taun, rkmu, rkmv
+        implicit none
+        double precision :: sum_2pt_mld
+        integer, intent(in) :: index, i1,j1, i2,j2, kk
 	
 	if (index .eq. 1) then
 	sum_2pt_mld = (u(i1,kk,j1,taun) + u(i2,kk,j2,taun))*1.0 + 
@@ -294,17 +305,18 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
 	sum_2pt_mld = max(1.0,sum_2pt_mld)
 	endif
 
-	end
+	end function sum_2pt_mld
 
         subroutine tsuv_diffuse (ii,jj,kk, diffuse_temp, diffuse_salt)
-            use size_mod
-            use param_mod
-!#include "size.h"
-!#include "polar.h"
-        real diffuse_temp, diffuse_salt
-!#include "param.h"
+            use size_mod, only : temp, dxu, rkmh, rdy, dyv, salt
+            use param_mod, only : dthe
+        implicit none
 
+        integer :: ii, jj, kk
+        real :: diffuse_temp, diffuse_salt, diiffuse_temp, diiffuse_salt
 
+        integer :: iip, iim, jjp, jjm
+        real :: rtemp1, rtemp2, rtemp3, rtemp4, rtemp5, rtemp6
 
         iip = ii+1
         iim = ii-1
@@ -326,9 +338,8 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
 
 
         diffuse_temp = rtemp3 + rtemp6
-        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diiffuse_temp = 0.0
+        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diiffuse_temp = 0.0 !Prajeesh 
 
-        
 
         rtemp1 = rkmh(iip,jj)*
      &    (salt(iip,kk,jj,2) - salt(ii,kk,jj,2) )/dxu(iip,jj)
@@ -344,10 +355,9 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
         rtemp6 = (rtemp4 - rtemp5)/((dyv(ii,jjp)+dyv(ii,jj))*0.5)  !
 
         diffuse_salt = rtemp3 + rtemp6
-        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diiffuse_salt = 0.0
+        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diiffuse_salt = 0.0 !Prajeesh 
 
-
-
-        
         return
-        end
+        end subroutine tsuv_diffuse
+
+        end module couple_mod

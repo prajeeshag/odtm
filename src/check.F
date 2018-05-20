@@ -9,10 +9,10 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod
         use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+        implicit none
+        
+        real :: amin, rsumk, rtemp1, rtemp2, rmode_speed, rtemp3
+        integer :: kk
 #if !defined restrt && !defined monthly_climatology && !defined daily_wind
 	write (*,*)
 	write (*,*)' Error: one of the following option must be ',

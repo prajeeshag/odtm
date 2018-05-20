@@ -4,6 +4,7 @@
 ! qnet - to return net flux
             use size_mod
             use param_mod
+        implicit none
 
         real  hm, airt_in, sst, uwndin, vwndin, c
         real  rho_a, cd, cp, Lv, c1
@@ -13,10 +14,8 @@
         real  qs, ql, qm, qb, qnet_out
         real TT, TTt, ew,Pa
         double precision sigma
+        real :: cldin, coe, del_t, dq, qsat, sb, tau
                
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
         rho_a= 1.175
         cd=2.8*10**(-3)
         cp=1004.

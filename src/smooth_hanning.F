@@ -7,10 +7,11 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-	
+        implicit none
+        
+        integer :: idim1, idim2, idim3, idim4, idim5, imts, jmts, kmts, imte
+        integer :: jmte, kmte, ii, im, ip, jj, jm, jp, kk, kmone, kp, nt
+        real :: rdiv1, rdiv2, ru, rv, rh, rt
 c=======================================================================
         ip = imte
         im = imts

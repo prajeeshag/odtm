@@ -7,12 +7,16 @@ c	linear interpolation for wind forcing
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod
-        use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+        use size_mod, only : imt, jmt, i, j, wind_switch, sphm_read, sphm, uwnd
+        use size_mod, only : uwnd_read, vwnd, vwnd_read, airt_read, airt, ssw_read
+        use size_mod, only :  ssw, cld_read, cld, pme_read, pme, chl_read, chl
+        use size_mod, only : month, rvr_read, rvr
+        use param_mod, only : day2sec, dt, dpm
 
+        implicit none
+        
+        integer :: loop_year
+        real :: rinterp_index, x1, x2, fracx
 
 	 loop_year = day2sec*365.0/dt
 	 do i=1,imt

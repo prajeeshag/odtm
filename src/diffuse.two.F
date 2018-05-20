@@ -1,3 +1,11 @@
+        module diffuse_two_mod
+        implicit none
+        private
+
+        public :: laplacian
+
+        contains
+    
 #ifdef constant_laplacian
 	subroutine laplacian
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -9,8 +17,11 @@ c
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod
-        use param_mod
+        use size_mod, only: imt, jmt, i, j, k, gdx, gdy, rdx, rdy, u, v, h, taum
+        use param_mod, only: Re, theta, diffuse, dphi, dthe, diffuse_uu, 
+     &       diffuse_vv
+
+        implicit none
 !#include "size.h"
 !#include "polar.h"
 	double precision r2cos2theta, r2
@@ -18,6 +29,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	double precision rtemp7, rtemp8, rtemp9, rtemp10, rtemp11
 	double precision rtemp12, rtemp13, rtemp14, rtemp15, rtemp16
 	double precision rtemp17, rtemp18, rtemp20, rtemp21, rtemp22
+        integer :: ip, im, jp, jm, ip2, im2, jp2, jm2
+        real :: Ahx, Ahy, rH1, rH2, rH3, rH4
 !#include "param.h"
 
 	 r2cos2theta = Re*Re*cos(theta(j))*cos(theta(j))
@@ -149,15 +162,21 @@ c ==================  diffuse_vv ==========================================
 #endif	
 	
 	return
-	stop
-	end
+	end subroutine laplacian
 #endif
 
 
 
 	function sum_4ptd (index, i1,j1, i2,j2, i3,j3, i4,j4)
-        use size_mod
-        use param_mod
+
+        use size_mod, only : u, v, h, rkmu, rkmv, rkmh, k, taum
+        !use param_mod
+
+        implicit none
+
+        double precision :: sum_4ptd
+        integer, intent(in) :: index, i1, j1, i2, j2, i3, j3, i4, j4
+
 !#include "size.h"
 !#include "polar.h"
 !#include "param.h"
@@ -194,12 +213,17 @@ c ==================  diffuse_vv ==========================================
         endif
 
 
-        end
+        end function sum_4ptd
 
 
         function sum_2ptd (index, i1,j1, i2,j2)
-            use size_mod
-            use param_mod
+            use size_mod, only: u, v, h, taum, k, rkmu, rkmv, rkmh
+            !use param_mod
+        implicit none
+        
+        double precision :: sum_2ptd
+        integer, intent(in) :: index, i1, j1, i2, j2
+
 !#include "size.h"
 !#include "polar.h"
 !#include "param.h"
@@ -233,4 +257,7 @@ c ==================  diffuse_vv ==========================================
         endif
 
 
-        end
+        end function sum_2ptd
+
+        end module diffuse_two_mod
+

@@ -10,10 +10,8 @@
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+        implicit none
+        integer :: isteps, iread_index
 	open (11,file='tau.swm',form='unformatted',access='sequential')
 !c	open (11,file='/gpfs3/home/valsala/FLUXES/TROPFLUX/tau.swm',
 !c     &           form='unformatted',access='sequential')

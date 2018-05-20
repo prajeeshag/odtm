@@ -13,9 +13,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #ifdef output_average
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+        implicit none
+        integer :: no_of_snap
 
         do i=1,imt
         do j=1,jmt
@@ -107,9 +106,7 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+        implicit none
 
 #ifdef output_average
         u_output(:,:,:) = 0.0

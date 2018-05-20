@@ -1,4 +1,14 @@
-	subroutine tracer
+	
+        module tracer_mod
+        use advec_mod, only : sum_2pt
+        implicit none
+        private
+        
+        public :: tracer
+    
+        contains
+
+        subroutine tracer
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
 c
@@ -8,10 +18,15 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod
         use param_mod
-!#include "size.h"
-!#include "polar.h"
+        implicit none
         real relax_tr(nn), tempin(201), saltin(201)
-!#include "param.h"
+        
+        integer :: nt, ip, im, jp, jm
+        real :: tracedvbdy, tracedubdx, rtemp1, rtemp2, rtemp3, rtemp4, rtemp5, rtemp6
+        real :: rtheta_vu, rtheta_vd, tempout, saltout, hstart, hend, zero_out_tradv
+        real :: relax_on_off, alpha_rgm, alpha_rgt, beta_mldm, beta_mldt, gama, rdrag
+        real :: relax_South, widS, relax_East, widE
+        integer :: irepeat, kmax, kk
 
         do nt = 1,nn
 	taum1 = 1
@@ -128,17 +143,16 @@ c        pvort(i,k,j) = zero_out_tradv
 	enddo
         
 	return
-	end
+	end subroutine tracer
 
 
 
          function sum_2ptr (index, i1,j1, i2,j2,nt)
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+        implicit none
+        double precision :: sum_2ptr
+        integer, intent(in) :: index, i1,j1, i2,j2,nt
 
         if (index .eq. 1) then
         sum_2ptr = (t(i1,k,j1,nt,taun) + t(i2,k,j2,nt,taun))
@@ -149,5 +163,7 @@ c        pvort(i,k,j) = zero_out_tradv
         sum_2ptr = max(1.0,sum_2ptr)
         endif
 
-        end
+        end function sum_2ptr 
+
+        end module tracer_mod
 

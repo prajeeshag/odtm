@@ -10,10 +10,9 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod
         use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+        implicit none
+        
+        integer :: isteps, iread_index
 	open (11,file='hum.swm',form='unformatted',access='sequential')
 	open (12,file='airt.swm',form='unformatted',access='sequential')
 	open (13,file='uwnd.swm',form='unformatted',access='sequential')

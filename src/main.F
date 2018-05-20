@@ -1,6 +1,11 @@
 	program main
         use size_mod
         use param_mod
+        use momentum_mod, only : momentum
+        use tracer_mod, only : tracer
+        use couple_mod, only : couple_rgmld
+        use presgrad_mod, only : pressure_integral
+        implicit none
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !c
 !c       main program for the 1&1/2 layer redu!ced gravity model
@@ -11,12 +16,8 @@
 !c
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-!#include "size.h"
-!#include "polar.h" ! polar coordinates for model
-!#include "param.h"
-
-
-        print *, 'myname is :', myname
+        integer :: iday_month
+        real :: age_time, day_night, rlct
 
          call initial_declaration
 

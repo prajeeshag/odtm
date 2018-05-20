@@ -10,14 +10,16 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
+        implicit none
         double precision tempout, saltout
         double precision uvelout, vvelout
         double precision rsum1, rsum2, rsum3, rsum4
         integer hstart, hend, ii, jj, kk, tau_index
-!#include "param.h"
-
+        
+        real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt
+        integer :: icount, irepeat, kmax, kkk
+        real :: rdiv, rdrag, relax_East, relax_South, relax_on_off, rsum, widE, widS
+        real :: zero_out_tradv
 
         hstart = 0
         do irepeat = 1,kk-1
@@ -90,11 +92,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         subroutine interp_extrap_we_profile (ii, jj, kmax)
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
+        implicit none
         integer hstart, hend, ii, jj, kk, kmax
-        real gama
-!#include "param.h"
+        real :: gama, alpha_rgm, alpha_rgt, beta_mldm, beta_mldt
+        integer :: icount, irepeat, kkk
+        real :: rdiv, rdrag, relax_East, relax_South, relax_on_off, rsum, widE, widS
+        real :: zero_out_tradv
 
         gama = 1.0
 

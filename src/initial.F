@@ -8,11 +8,10 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod
         use param_mod
-!#include "size.h"
-!#include "polar.h"
+        implicit none
         real tempin(201), saltin(201)
-!#include "param.h"
-
+        integer :: ii, jj, kk, kmax, l, ll, nt
+        real :: saltout, tempout
 	open (9, file='topo.swm')
 	read (9,*)((rkmt(ii,jj),ii=1,imt),jj=1,jmt)
 	close(9)

@@ -1,17 +1,36 @@
-	subroutine momentum (loop_ind)
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c
-c
-c	subroutine to solve momentum equations
-c
-c
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod
-        use param_mod
-!#include "size.h"
-!#include "polar.h"
+
+        module momentum_mod
+        use advec_mod, only : advec        
+        implicit none
+
+        private
+
+        public :: momentum
+
+        contains
+
+        subroutine momentum (loop_ind)
+        !	subroutine to solve momentum equations
+
+        use size_mod, only : i, j, k, loop, taux_force, temp, h, rho, tauy_force
+        use size_mod, only : cld, uwnd, vwnd, airt, sphm, taun, dz, u, v, taum, taup
+        use size_mod, only : rkmv, rEnergy, rkmu
+        use size_mod, only : fcoruh, pres_gradu, fcorvh, pres_gradv
+        use param_mod, only : dtts, g, advec_uu, advec_vu
+        use param_mod, only : advec_uv, advec_vv, diffuse_vv
+        use param_mod, only : polar_u, diffuse_uu, polar_v
+        use diffuse_two_mod, only: laplacian
+
+        implicit none
         real tx,ty, Lv
-!#include "param.h"
+        integer, intent(in) :: loop_ind
+        integer :: ip, im, jp, jm
+        real :: diffuse_additional, rtemp1, cldin, uwndin, vwndin, speed, airt_in
+        real :: sphm_in, sst_in, qnet_in, qs, ql, qb, h_ekman
+        real :: rtemp_relax_u1, rtemp_relax_v1, relaxterm_u1, relaxterm_v1
+        real :: relaxterm_u2, relaxterm_u3, relaxterm_v2, relaxterm_v3
+        real :: rH1, rtemp2, rKE, rpert, rPE
+        double precision :: taux_1, tauy_1
 	
 	ip = i + 1
 	im = i - 1
@@ -270,13 +289,16 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
 
 	
 	return
-	end
+	end subroutine momentum
 
 
 
 	function sum_2ptp(index, i1,j1, i2,j2)
-        use size_mod
-        use param_mod
+        use size_mod, only : k, u, v, h, taup, rkmu, rkmv, rkmh
+        implicit none
+        
+        double precision :: sum_2ptp 
+        integer, intent(in) :: index, i1, j1, i2, j2
 !#include "size.h"
 !#include "polar.h"
 !#include "param.h"
@@ -308,11 +330,16 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
         sum_2ptp = (rkmh(i1,j1) + rkmh(i2,j2))
         sum_2ptp = max(1.0,sum_2ptp)
         endif
-        end
+        end function sum_2ptp
 
 	function sum_2ptm(index, i1,j1, i2,j2)
-        use size_mod
-        use param_mod
+
+        use size_mod, only: taum, k, u, v, h, rkmv, rkmu, rkmh
+        implicit none
+
+        double precision :: sum_2ptm
+        integer, intent(in) :: index, i1, j1, i2, j2
+
 !#include "size.h"
 !#include "polar.h"
 !#include "param.h"
@@ -345,18 +372,21 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
         sum_2ptm = max(1.0,sum_2ptm)
         endif
 
-        end
+        end function sum_2ptm 
 
         subroutine drag_across_layers (ind_drag)
-            use size_mod
-            use param_mod
+            use size_mod, only : i, j, k, taup, rkmu, rkmv, loop, u, v, km
+            use param_mod, only : dtts, diffuse_MY, diffuse_tr, day2sec
+        implicit none
 !#include "size.h"
 !#include "polar.h"
 !#include "param.h"
-        
+            integer, intent(in) :: ind_drag
+            real :: relax_on_off, alpha_rgm, alpha_rgt, beta_mldm
+            real :: beta_mldt, gama, zero_out_tradv, rdrag, relax_South
+            real :: widS, relax_East, widE
 
 #include "cparam.h"
-
 
         if ( k .gt. 1 .and. k .lt. km-1 .and. ind_drag .eq. 1) then
         u(i,k,j,taup) = u(i,k,j,taup)   
@@ -371,4 +401,6 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
         endif
 
         return
-        end
+        end subroutine drag_across_layers
+
+        end module momentum_mod 

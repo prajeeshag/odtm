@@ -7,25 +7,13 @@ c
 c
 c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-            use size_mod 
-            use param_mod
-!#include "size.h"
-	character*3 month_name
-	dimension month_name(12)
-!#include "param.h"
-	data month_name(1) /'JAN'/
-	data month_name(2) /'FEB'/
-	data month_name(3) /'MAR'/
-	data month_name(4) /'APR'/
-	data month_name(5) /'MAY'/
-	data month_name(6) /'JUN'/
-	data month_name(7) /'JUL'/
-	data month_name(8) /'AUG'/
-	data month_name(9) /'SEP'/
-	data month_name(10) /'OCT'/
-	data month_name(11) /'NOV'/
-	data month_name(12) /'DEC'/
+            use size_mod, only : nn
+            use param_mod, only : dpm, stamp_day_daily, stamp_time_daily, Tr
+        implicit none
+   
+	character(len=3) :: month_name(12) = (/'JAN','FEB','MAR','APR','MAY','JUN', 'JUL','AUG','SEP','OCT','NOV','DEC'/)
 
+        integer :: iy, mm, im, itemp, nnn, nt
 	iy = 0
 	do mm = 1,12
 	im = 0
@@ -55,5 +43,4 @@ c
 	 write(Tr(nt),'(a,i2.2)') 'Tr',nt
 	enddo
 	return
-	stop
-	end
+	end subroutine stamp 

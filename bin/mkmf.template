@@ -61,4 +61,4 @@ FFLAGS= $(OPTIONS_TOTAL) -g -traceback -extend-source 132 -O3 -align all $(INCL)
 
 LDFLAGS= -L$(NETCDF)/lib -lnetcdff -lnetcdf
 
-FC = ifort -mkl -align commons -save-temps $(DEBUG)
+FC = ifort -mkl -align commons -save-temps $(DEBUG) # -warn declarations

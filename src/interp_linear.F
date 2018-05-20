@@ -9,10 +9,10 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod
         use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+        implicit none
+        
+        integer :: loop_year
+        real :: rinterp_index, x1, x2, y1, y2
 
 	 loop_year = day2sec*365.0/dt
 	 do i=1,imt

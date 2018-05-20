@@ -6,24 +6,15 @@ c	a subroutine to write restart file for the consicutive runs.
 c	format is binary.
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-            use size_mod
-            use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+            use size_mod, only : imt, jmt, km, i, j, k, u, v, h, t, temp, salt
+            use size_mod, only : uvel, vvel, taun, taum, kmaxMYM, nn 
+            !use param_mod
+        implicit none
+            integer :: nt
 
 	open (11, file='restart.swm',form='unformatted',
      &   access='sequential')
 
-c	write (11) imt, jmt, dxd, dyd, dt, diffuse, diffuse_th,
-c     &  diffuse_ah, tracer_switch
-c	write (11) loop
-c	write (11) month
-c	write (11) lpm
-c	write (11) lpd
-c	write (11) month_wind
-c	write (11) iday_wind
-c	write (11) month_start_snap
 	
 	do i=1,imt
 	write (11) ((u(i,k,j,taun),j=1,jmt),k=1,km) !ok
@@ -57,5 +48,4 @@ c	write (11) month_start_snap
 	close (11)
 
 	return
-	stop
-	end
+	end subroutine 

@@ -11,13 +11,15 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         use size_mod
         use param_mod
+        implicit none
 	include 'netcdf.inc'
     
-!#include "size.h"
-!#include "polar.h"
-	real reta(imt,km,jmt,1)
-!#include "param.h"
-	
+	    real reta(imt,km,jmt,1)
+        integer :: icount, idepthid, idepthidmld, ii, invid, ir, itimeid, itimeid1
+        integer :: jr, kk, latid, latid1, lonid, lonid1, loop_index
+        integer :: nt
+        integer :: pid, rcode 
+
 	taun1 = 2
 	
 	do nt=1,nn

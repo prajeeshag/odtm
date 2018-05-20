@@ -9,10 +9,10 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod
         use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-	
+        use advec_mod, only : sum_4pt, sum_2pt
+        implicit none
+        integer :: ip, im, jp, jm
+        real :: fcoru, rtemp1, rtemp2, fcorv 
 	ip = i + 1
 	im = i - 1
 	jp = j + 1

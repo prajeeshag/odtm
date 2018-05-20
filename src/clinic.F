@@ -8,11 +8,13 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod
         use param_mod
-!#include "size.h"
-!#include "polar.h"
+        use advec_mod, only : sum_2pt
+        implicit none
        real tx,ty, Lv
-!#include "param.h"
-
+        integer :: ip, im, jp, jm,ii, jj
+        real :: rtemp1, rtemp2, rtheta_vu, rtheta_vd, rtemp3, rtemp4, rmask_right
+        real :: rmask_left, rmask_top,rmask_bot, rthetapone, rthetamone, rtemp5
+        real :: rtemp6, x0, y0, A0, rexp, rsig, rsig1, dtts_back 
 	taum1 = 1
 	taun1 = 2
 	taup1 = 3

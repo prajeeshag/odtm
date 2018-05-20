@@ -8,15 +8,14 @@ c       linear interpolation for wind forcing
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-            use size_mod    
-            use param_mod
-!#include "size.h"
-!#include "polar.h"
-        real tempin(kmax), saltin(kmax), tempout, saltout
-        real uvelin(kmax), vvelin(kmax), uvelout, vvelout
-        real rsum1, rsum2
-        integer hstart, hend, ii, jj, kk, tau_index
-!#include "param.h"
+            use size_mod, only : h, taun, t, u, v
+        implicit none
+
+        real :: tempin(kmax), saltin(kmax), tempout, saltout
+        real :: uvelin(kmax), vvelin(kmax), uvelout, vvelout
+        real :: rsum1, rsum2
+        integer :: hstart, hend, ii, jj, kk, tau_index, kmax
+        integer :: irepeat, rsum3, rsum4, icount, kkk
 
         hstart = 0
         do irepeat = 1,kk-1
@@ -69,4 +68,4 @@ c        if (kkk .gt. kmax) goto 101
 
  102    continue
         return
-        end
+        end subroutine interp_extrap_initial

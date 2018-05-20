@@ -1,18 +1,25 @@
-	subroutine advec
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c
-c
-c
-c	implimenting fully non-linear advection
-c
-c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-       use size_mod
-       use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+        module advec_mod
+        implicit none
+        private
+        
+        public :: advec, sum_2pt, sum_4pt
 
+        contains 
+
+        subroutine advec
+        ! implimenting fully non-linear advection
+
+        use size_mod, only : i, j, k, taun, u, v, h, rkmu, rkmv, rdx, rdy, dxu, dxv
+        use size_mod, only : dyu, dyv
+        use param_mod, only : dtts, dphi, dthe, advec_uu, advec_vu, advec_vv
+        use param_mod, only : advec_uv, polar_u, polar_v, theta, Re
+
+        implicit none
+
+        real :: rtemp1, rtemp2, rtemp3, rtemp4, rtemp5, rtemp6, rtemp7, rtemp8
+        real :: rUp, rDw, rtheta_temp
+        integer :: ip, im, jp, jm, jj, ii
+   
 	rtemp1=0.0
 	rtemp2=0.0
 	rtemp3=0.0
@@ -136,16 +143,16 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	
 	return
 	stop
-	end
+	end subroutine advec
 
 
 	function sum_4pt (index, i1,j1, i2,j2, i3,j3, i4,j4)
-        use size_mod
-        use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+        use size_mod, only : u, v, h, taun, k, rkmu, rkmv, rkmh
+        !use param_mod
+        implicit none
+        
+        double precision :: sum_4pt
+        integer, intent(in) :: index, i1,j1, i2,j2, i3,j3, i4,j4
 	
 	if (index .eq. 1) then
 	sum_4pt = (u(i1,k,j1,taun) + u(i2,k,j2,taun) + 
@@ -177,15 +184,15 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	sum_4pt = max(1.0,sum_4pt)
 	endif
 
-	end
+	end function sum_4pt
 
 
 	function sum_2pt (index, i1,j1, i2,j2)
-        use size_mod
-        use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
+        use size_mod, only: k, taun, u, v, h, rkmu, rkmv, rkmh
+        implicit none
+        
+        double precision :: sum_2pt
+        integer, intent(in) :: index, i1,j1, i2,j2
 
 	
 	if (index .eq. 1) then
@@ -215,4 +222,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	sum_2pt = max(1.0,sum_2pt)
 	endif
 
-	end
+	end function sum_2pt
+
+        end module advec_mod

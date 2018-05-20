@@ -11,10 +11,8 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+        implicit none
+        real :: rsum
 !c      depth of the active layer
         
         dz(1) = 50.0     ! layer-1

@@ -10,10 +10,8 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod
         use param_mod
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
+        implicit none
+        real :: rtimer, rtimer1, timer_switch, total_time
 	call system_clock(itimer3,itimerrate,itimermax)
 	rtimer = real(itimer3-itimer2)/real(itimerrate)
 	total_time = rtimer*number_of_snap

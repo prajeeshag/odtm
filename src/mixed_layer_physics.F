@@ -8,8 +8,7 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod
             use param_mod
-!#include "size.h"
-!#include "polar.h"
+        implicit none
         double precision tempin(51), saltin(51)
         real rmldout
         double precision uvelin(51), vvelin(51), we_profin(0:52)
@@ -21,8 +20,13 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real tx, ty, Lv, pme_eps
         integer tau_index
       
-!#include "param.h"
-
+        integer :: kmax, kkk, ii, jj, kk, icval
+        real :: albedo, sfx, rAlpha2, rL1, rchla, rPAR, rinfraRed, rvisible
+        real :: rvisible_extinct, cldin, uwndin, vwndin, speed, airt_in, sphm_in
+        real :: sst_in, qs, ql, qb, rAlpha1, rL2, qnet_in, pme_in, rLATin
+        real :: rLATMax, rvr_runoff, relax_South, relax_East, relax_on_off
+        real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt, gama, zero_out_tradv
+        real :: rdrag, widS, widE
         !! Here is the start of Mixed Layer Model
 
 
