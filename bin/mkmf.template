@@ -1,6 +1,6 @@
-FC = ifort
-CC = icc
-LD = ifort
+#FC = ifort
+#CC = icc
+#LD = ifort
 
 NETCDF = /gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.2.1
 
@@ -57,8 +57,13 @@ INCL = -I$(NETCDF)/include
 
 CPPFLAGS= $(OPTIONS_TOTAL) $(INCL)
 
-FFLAGS= $(OPTIONS_TOTAL) -g -traceback -extend-source 132 -O3 -align all $(INCL)
+FFLAGS= $(OPTIONS_TOTAL) -g -traceback -extend-source 132 -O3 -align all $(INCL) -fltconsistency -stack_temps -safe_cray_ptr -ftz -i_dynamic -assume byterecl -override_limits -DOVERLOAD_R4 -Duse_libMPI -Duse_netCDF  #-i4 -r8
+
+CFLAGS = -D__IFC
 
 LDFLAGS= -L$(NETCDF)/lib -lnetcdff -lnetcdf
 
-FC = ifort -mkl -align commons -save-temps $(DEBUG) # -warn declarations
+FC = mpiifort -mkl -align commons -save-temps
+CC   = mpiicc
+LD   = mpiifort
+
