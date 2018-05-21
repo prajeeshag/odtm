@@ -20,7 +20,7 @@ program main
     use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
 
     use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_ind, loop_total
-    use param_mod, only : nmid, number_of_snap, reflat, rnmid, sum_adv, rdepth
+    use param_mod, only : nmid, number_of_snap, reflat, rnmid, sum_adv
     use param_mod, only : denss, rmld_misc
     
     use momentum_mod, only : momentum
@@ -57,7 +57,7 @@ program main
 
     type(domain2d) :: domain
 
-    real :: tmp2(imt,jmt), tmp3(imt,jmt,km), tmp3m(imt,jmt,kmaxMYM)
+    real :: tmp2(imt,jmt), tmp3(imt,jmt,km), tmp3m(imt,jmt,kmaxMYM), rdepth(km)
 
     logical :: lmask(imt,jmt), lmask3(imt,jmt,km), lmask3m(imt,jmt,kmaxMYM)
 
@@ -89,8 +89,6 @@ program main
     iday_wind = 1
     iday_start = iday_month !c-1
     
-     
-    call stamp
     iday_start_snap = iday_start !- 7.0
     
     call read_wind (month_wind)! why reading twice ? later on at line no 105

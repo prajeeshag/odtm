@@ -10,7 +10,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : rdx, rkmh, rdy, taum1, taun1, taup1, u, v, wd
         use size_mod, only : we, we_mld, dyv, k, taum, taun, taup
         use param_mod, only : day2sec, diffuse_h, diffuse_th, dphi, dt, dthe
-        use param_mod, only : dtts, nan_check, pi, re, theta, tropdubdx, tropdvbdy
+        use param_mod, only : dtts, pi, re, theta, tropdubdx, tropdvbdy
 
         use advec_mod, only : sum_2pt
         implicit none
@@ -19,6 +19,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real :: rtemp1, rtemp2, rtheta_vu, rtheta_vd, rtemp3, rtemp4, rmask_right
         real :: rmask_left, rmask_top,rmask_bot, rthetapone, rthetamone, rtemp5
         real :: rtemp6, x0, y0, A0, rexp, rsig, rsig1, dtts_back 
+        logical :: NaN_check
 	taum1 = 1
 	taun1 = 2
 	taup1 = 3
@@ -153,6 +154,7 @@ c        pvort(ii,k,jj) = 1.0
         endif
 
         NaN_check  = isnan(h(i,k,j,taup))
+        
         if (NaN_check .eqv. .true.) h(i,k,j,taup) = dz(k)*rkmh(i,j)
 	return
 	end
