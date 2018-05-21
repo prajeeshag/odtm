@@ -18,7 +18,7 @@
         use size_mod, only : fcoruh, pres_gradu, fcorvh, pres_gradv
         use param_mod, only : advec_uu, advec_uv, advec_vu, advec_vv, day2sec
         use param_mod, only : diffuse_my, diffuse_tr, diffuse_uu, diffuse_vv, dtts
-        use param_mod, only : g, polar_u, polar_v
+        use param_mod, only : g, polar_u, polar_v, dt
 
         use diffuse_two_mod, only: laplacian
 
@@ -136,7 +136,7 @@ c 183    continue
 #ifdef restrt
 	if ( loop .eq. 1) dtts = dtts
 #else
-	if ( loop .eq. 1) dtts = dtts/2.0
+	if ( loop .eq. 1) dtts = dt
 #endif
 	
 c	 if (rkmh(i,j) .ne. 0.0) then

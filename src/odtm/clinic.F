@@ -63,7 +63,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #ifdef restrt
         if ( loop .eq. 1) dtts = dtts
 #else
-        if ( loop .eq. 1) dtts = dtts/2.0
+        if ( loop .eq. 1) dtts = dt
 #endif
 
 	rmask_right = 1.0

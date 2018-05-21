@@ -20,7 +20,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : rdy, rkmh, salt_read, t, taum, taum1, taun, taun1
         use size_mod, only : taup1, temp_read, dyv, taup
         use param_mod, only : day2sec, diffuse_h, diffuse_my, diffuse_tr, dphi
-        use param_mod, only : dthe, dtts, nn, theta
+        use param_mod, only : dthe, dtts, nn, theta, dt
 
         implicit none
         real relax_tr(nn), tempin(201), saltin(201)
@@ -74,7 +74,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #ifdef restrt
         if ( loop .eq. 1) dtts = dtts
 #else
-        if ( loop .eq. 1) dtts = dtts/2.0
+        if ( loop .eq. 1) dtts = dt
 #endif
 
 	rtemp1 = rkmh(ip,j)*
