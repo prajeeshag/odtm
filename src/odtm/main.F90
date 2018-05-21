@@ -13,12 +13,15 @@ program main
     use size_mod, only : itimermax, itimerrate, j, k, loop, loop_start, lpd
     use size_mod, only : lpm, month, month_start, month_start_snap, month_wind
     use size_mod, only : taum, taun, taup, taus, time_switch, tracer_switch 
-    use size_mod, only : h, iday_wind, rkmh, rkmu, rkmv, shcoeff, temp, u
+    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, shcoeff
     use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz
-    use size_mod, only : t
+    use size_mod, only : t, eta, u, v, temp, h, we, pvort, salt, dxu, dyv
+    use size_mod, only : uvel, vvel, smcoeff, SHCoeff, diag_ext1, diag_ext2
+    use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
 
     use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_ind, loop_total
     use param_mod, only : nmid, number_of_snap, reflat, rnmid, sum_adv, rdepth
+    use param_mod, only : denss, rmld_misc
     
     use momentum_mod, only : momentum
     use tracer_mod, only : tracer
@@ -49,10 +52,15 @@ program main
     integer :: id_lon, id_lat, id_sst, id_depth_mld, id_depth, id_sss
     integer :: id_h, id_eta, id_u, id_v, id_tx, id_ty, id_temp, id_salt
     integer :: id_we, id_dens, id_pvort, id_mask, id_dxu, id_dyv
-    integer :: id_temp_mld, id_salt_mld, id_uvel, id_vvel, id_diag, id_sh, id_sm
+    integer :: id_temp_mld, id_salt_mld, id_u_mld, id_v_mld, id_diag, id_sh, id_sm
     integer :: id_mld, id_tke, id_rif, id_mlen, id_st_h, id_st_m
 
     type(domain2d) :: domain
+
+    real :: tmp2(imt,jmt), tmp3(imt,jmt,km), tmp3m(imt,jmt,kmaxMYM)
+
+    logical :: lmask(imt,jmt), lmask3(imt,jmt,km), lmask3m(imt,jmt,kmaxMYM)
+
 
     call init_odtm()
 
@@ -72,9 +80,6 @@ program main
     month_start = 1
     loop_start = 1
     number_of_snap = 6 !12*3*30
-#ifdef output_average
-    call set_averages_to_zero
-#endif
     month = month_start
     month_start_snap = month_start
     lpm = dpm(month)*day2sec/dt
@@ -295,12 +300,7 @@ program main
         write(*,*) temp(imt/2, 1, jmt/2 + 20, 1), h(imt/2, 1, jmt/2 + 20, taun), &
                     loop, SHCoeff(imt/2, 1, jmt/2 + 20)
 
-#ifdef output_average
-        call output_manager (number_of_snap)
-#endif
-        
         call send_data_diag(time)
-
 
         if ( mod (loop,loop_total/number_of_snap) .eq. 0) then
             call restart
@@ -330,7 +330,6 @@ program main
                         u(i, k, j,taun) .gt. 10.0 ) then
 
                         loop_ind = loop_ind + 1
-                        call write_output (loop_ind)
                         stop 'stop=>blow-up'
                     endif
                 enddo
@@ -341,10 +340,6 @@ program main
         if ( mod (loop,loop_total/number_of_snap) .eq. 0) then
             loop_ind = loop_ind + 1
             call timer
-            call write_output (loop_ind)
-#ifdef output_average
-            call set_averages_to_zero
-#endif
         endif
     enddo
     
@@ -360,7 +355,7 @@ program main
 
     subroutine init_odtm()
 
-         integer :: ii
+         integer :: ii, used
  
         call mpp_init()
         call fms_init()
@@ -379,7 +374,21 @@ program main
         call polar_coord
     
         time_step = set_time(seconds=int(dt))
+
         time = set_date(1995, 1, 1, 0, 0, 0)
+
+
+        lmask=.false.; lmask3 = .false.; lmask3m = .false.
+
+        lmask(2:imt-1,2:jmt-1)=rkmh(2:imt-1,2:jmt-1)>0
+
+        do ii = 1,km
+            lmask3(2:imt-1, 2:jmt-1, ii) = rkmh(2:imt-1,2:jmt-1)>0
+        enddo
+
+        do ii = 1,kmaxMYM
+            lmask3m(2:imt-1, 2:jmt-1, ii) = rkmh(2:imt-1,2:jmt-1)>0
+        enddo
 
         id_lon = diag_axis_init('lon', gdx(1:imt), 'degrees_east', cart_name='X', &
             long_name='longitude', domain2=domain)
@@ -454,10 +463,10 @@ program main
         id_salt_mld = register_diag_field('odtm', 'salt_mld', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
                  long_name='Salinity', units='psu',missing_value=FILL_VALUE)
 
-        id_uvel = register_diag_field('odtm', 'uvel', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
+        id_u_mld = register_diag_field('odtm', 'u_mld', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
                  long_name='U-velocity', units='ms-1',missing_value=FILL_VALUE)
 
-        id_vvel = register_diag_field('odtm', 'vvel', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
+        id_v_mld = register_diag_field('odtm', 'v_mld', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
                  long_name='V-velocity', units='ms-1',missing_value=FILL_VALUE)
 
         id_diag = register_diag_field('odtm', 'diag', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
@@ -487,6 +496,12 @@ program main
         id_st_m = register_diag_field('odtm', 'st_m', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
                  long_name='?', units='?',missing_value=FILL_VALUE)
 
+        tmp2 = 0.
+        where(lmask) tmp2 = 1.
+
+        used = send_data(id_mask, tmp2, time)
+        used = send_data(id_dxu, dxu, time, mask=lmask)
+        used = send_data(id_dyv, dxu, time, mask=lmask)
 
     end subroutine init_odtm
 
@@ -496,47 +511,158 @@ program main
         type(time_type) :: time
         integer :: used
 
-        real :: tmp2(imt,jmt), tmp3(imt,jmt,1)
-
        
-        if (id_sst > 0) then 
-            tmp2 = FILL_VALUE
-            where (rkmh>0.) tmp2 = t(1:imt,1,1:jmt,1,taun)
-            used = send_data(id_sst, tmp2, time)
-        endif
+        used = send_data(id_sst,real(t(1:imt,1,1:jmt,1,taun)), time, mask=lmask)
 
-        if (id_sss > 0) then 
-            tmp2 = FILL_VALUE
-            where (rkmh>0.) tmp2 = t(1:imt,1,1:jmt,2,taun)
-            used = send_data(id_sss, tmp2, time)
-        endif
+        used = send_data(id_sss,real(t(1:imt,1,1:jmt,2,taun)), time, mask=lmask)
 
         if (id_temp>0) then
             do ii = 1, km
-                tmp3 = FILL_VALUE
-                where (rkmh>0.) tmp3(:,:,1) = t(:,ii,:,1,taun)
-                used = send_data(id_temp,tmp3,time,ks_in=ii,ke_in=ii)
+                tmp3(:,:,ii) = t(:,ii,:,1,taun)
             enddo
+            used = send_data(id_temp,tmp3,time, mask=lmask3)
         endif
 
         if (id_salt>0) then
             do ii = 1, km
-                tmp3 = FILL_VALUE
-                where (rkmh>0.) tmp3(:,:,1) = t(:,ii,:,2,taun)
-                used = send_data(id_salt,tmp3,time,ks_in=ii,ke_in=ii)
+                tmp3(:,:,ii) = t(:,ii,:,2,taun)
             enddo
+            used = send_data(id_salt,tmp3,time, mask=lmask3)
         endif
 
         if (id_h>0) then
             do ii = 1, km
-                tmp3 = FILL_VALUE
-                where (rkmh>0.) tmp3(:,:,1) = h(:,ii,:,taun)
-                used = send_data(id_h,tmp3,time,ks_in=ii,ke_in=ii)
+                tmp3(:,:,ii) = h(:,ii,:,taun)
             enddo
+            used = send_data(id_h,tmp3,time, mask=lmask3)
         endif
 
+        if (id_eta>0) then
+            do ii = 1, km
+                tmp3(:,:,ii) = eta(:,ii,:,taun)
+            enddo
+            used = send_data(id_eta,tmp3,time, mask=lmask3)
+        endif
+
+        if (id_u>0) then
+            do ii = 1, km
+                tmp3(:,:,ii) = u(:,ii,:,taun)
+            enddo
+            used = send_data(id_u,tmp3,time, mask=lmask3)
+        endif
+
+        if (id_v>0) then
+            do ii = 1, km
+                tmp3(:,:,ii) = v(:,ii,:,taun)
+            enddo
+            used = send_data(id_v,tmp3,time, mask=lmask3)
+        endif
+
+        if (id_we>0) then
+            do ii = 1, km
+                tmp3(:,:,ii) = we(:,ii,:)
+            enddo
+            used = send_data(id_we,tmp3,time, mask=lmask3)
+        endif
+
+        if (id_dens>0) then
+            do ii = 1, km
+                tmp3(:,:,ii) = denss(:,ii,:)
+            enddo
+            used = send_data(id_dens,tmp3,time, mask=lmask3)
+        endif
+
+        if (id_pvort>0) then
+            do ii = 1, km
+                tmp3(:,:,ii) = pvort(:,ii,:)
+            enddo
+            used = send_data(id_pvort,tmp3,time, mask=lmask3)
+        endif
+        
+        if (id_temp_mld>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = temp(:,ii,:,1)
+            enddo
+            used = send_data(id_temp_mld,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_salt_mld>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = salt(:,ii,:,1)
+            enddo
+            used = send_data(id_salt_mld,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_u_mld>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = uvel(:,ii,:,taun)
+            enddo
+            used = send_data(id_u_mld,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_v_mld>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = vvel(:,ii,:,taun)
+            enddo
+            used = send_data(id_v_mld,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_diag>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = rmld_misc(:,ii,:)
+            enddo
+            used = send_data(id_diag,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_sh>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = shcoeff(:,ii,:)
+            enddo
+            used = send_data(id_sh,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_sm>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = smcoeff(:,ii,:)
+            enddo
+            used = send_data(id_sm,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_tke>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = diag_ext1(:,ii,:)
+            enddo
+            used = send_data(id_tke,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_rif>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = diag_ext2(:,ii,:)
+            enddo
+            used = send_data(id_rif,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_mlen>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = diag_ext3(:,ii,:)
+            enddo
+            used = send_data(id_mlen,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_st_h>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = diag_ext4(:,ii,:)
+            enddo
+            used = send_data(id_st_h,tmp3m,time, mask=lmask3m)
+        endif
+
+        if (id_st_m>0) then
+            do ii = 1, kmaxMYM
+                tmp3m(:,:,ii) = diag_ext5(:,ii,:)
+            enddo
+            used = send_data(id_st_m,tmp3m,time, mask=lmask3m)
+        endif
 
     end subroutine send_data_diag
-
     
 end program main
