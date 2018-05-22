@@ -55,7 +55,7 @@ OPTIONS_TOTAL = $(OPTIONS_1) $(OPTIONS_2) $(OPTIONS_SNAP)
 
 INCL = -I$(NETCDF)/include
 
-CPPFLAGS= $(OPTIONS_TOTAL) $(INCL)
+CPPFLAGS= $(OPTIONS_TOTAL) $(INCL) -Duse_libMPI -Duse_netCDF
 
 FFLAGS= $(OPTIONS_TOTAL) -g -traceback -extend-source 132 -O3 -align all $(INCL) -fltconsistency -stack_temps -safe_cray_ptr -ftz -i_dynamic -assume byterecl -override_limits -DOVERLOAD_R4 -Duse_libMPI -Duse_netCDF  #-i4 -r8
 

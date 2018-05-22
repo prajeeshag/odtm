@@ -14,7 +14,21 @@ mkmftemplate="$thisdir/bin/mkmf.template"
 
 FMS_UTILS=$thisdir/src/fms_shared
 
-FMS_UTILITIES="$FMS_UTILS/include $FMS_UTILS/platform $FMS_UTILS/constants $FMS_UTILS/fms $FMS_UTILS/time_manager $FMS_UTILS/mpp $FMS_UTILS/diag_manager  $FMS_UTILS/memutils $FMS_UTILS/constants $FMS_UTILS/mpp/include"
+FMS_UTILITIES="$FMS_UTILS/include \
+			   $FMS_UTILS/platform \
+               $FMS_UTILS/constants \
+			   $FMS_UTILS/fms \
+			   $FMS_UTILS/time_manager \
+				$FMS_UTILS/mpp \
+				$FMS_UTILS/diag_manager  \
+				$FMS_UTILS/memutils \
+				$FMS_UTILS/constants \
+				$FMS_UTILS/mpp/include \
+				$FMS_UTILS/data_override \
+				$FMS_UTILS/horiz_interp \
+				$FMS_UTILS/time_interp \
+				$FMS_UTILS/axis_utils \
+				$FMS_UTILS/mosaic"
 
 paths="$thisdir/src/odtm"
 

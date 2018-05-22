@@ -37,6 +37,7 @@ program main
     use diag_manager_mod, only : diag_manager_init, register_diag_field, register_static_field
     use diag_manager_mod, only : diag_axis_init, send_data, diag_manager_end
     use diag_data_mod, only : FILL_VALUE
+    use data_override_mod, only : data_override_init, data_override
     use time_manager_mod, only : set_calendar_type, NO_CALENDAR, JULIAN, NOLEAP
     use time_manager_mod, only : time_type, set_time, set_date, operator(+), assignment(=)
     use time_manager_mod, only : print_time, set_ticks_per_second
@@ -47,9 +48,9 @@ program main
     real :: age_time, day_night, rlct, depth_mld
     type(time_type) :: time, time_step
 
-    integer :: domain_layout(2), halo=1
+    integer :: domain_layout(2), halo=1, used
 
-    integer :: id_lon, id_lat, id_sst, id_depth_mld, id_depth, id_sss
+    integer :: id_lon, id_lat, id_sst, id_depth_mld, id_depth, id_sss, id_airt
     integer :: id_h, id_eta, id_u, id_v, id_tx, id_ty, id_temp, id_salt
     integer :: id_we, id_dens, id_pvort, id_mask, id_dxu, id_dyv
     integer :: id_temp_mld, id_salt_mld, id_u_mld, id_v_mld, id_diag, id_sh, id_sm
@@ -60,9 +61,11 @@ program main
     real :: tmp2(imt,jmt), tmp3(imt,jmt,km), tmp3m(imt,jmt,kmaxMYM), rdepth(km)
 
     logical :: lmask(imt,jmt), lmask3(imt,jmt,km), lmask3m(imt,jmt,kmaxMYM)
+    logical :: override
 
 
     call init_odtm()
+
 
     !c
     !c Initial time-index values
@@ -116,6 +119,9 @@ program main
     do loop = loop_start, (loop_total+loop_start)
 
         time = time + time_step
+    
+        call data_override('OCN','airt',tmp2,time,override)
+        used = send_data(id_airt, tmp2, time)
 
         age_time = age_time + 1
         !c  if (loop .eq. loop_start) call maph
@@ -360,10 +366,11 @@ program main
         call set_calendar_type(NOLEAP)
         call diag_manager_init()
 
-
         call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
 
         call mpp_define_domains((/1,imt,1,jmt/), domain_layout, domain, xhalo=halo, yhalo=halo )
+
+        call data_override_init(Ocean_domain_in=domain)
         
         call initial_declaration
 
@@ -405,6 +412,9 @@ program main
 
         id_depth = diag_axis_init('depth', rdepth, 'meters', &
             cart_name='Z', long_name='depth')
+
+        id_airt = register_diag_field('odtm', 'airt', (/id_lon,id_lat/), init_time=Time, &
+                 long_name='Air Temperature', units='deg-C',missing_value=FILL_VALUE)
 
         id_sst = register_diag_field('odtm', 'sst', (/id_lon,id_lat/), init_time=Time, &
                  long_name='Sea Surface Temperature', units='deg-C',missing_value=FILL_VALUE)
@@ -511,6 +521,8 @@ program main
 
        
         used = send_data(id_sst,real(t(1:imt,1,1:jmt,1,taun)), time, mask=lmask)
+
+        used = send_data(id_sst,tmp2, time)
 
         used = send_data(id_sss,real(t(1:imt,1,1:jmt,2,taun)), time, mask=lmask)
 
