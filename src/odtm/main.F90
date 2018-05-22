@@ -18,6 +18,8 @@ program main
     use size_mod, only : t, eta, u, v, temp, h, we, pvort, salt, dxu, dyv
     use size_mod, only : uvel, vvel, smcoeff, SHCoeff, diag_ext1, diag_ext2
     use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
+    use size_mod, only : sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr
+    use size_mod, only : taux_force, taux_snap, tauy_force, tauy_snap
 
     use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_ind, loop_total
     use param_mod, only : nmid, number_of_snap, reflat, rnmid, sum_adv
@@ -54,7 +56,8 @@ program main
     integer :: id_h, id_eta, id_u, id_v, id_tx, id_ty, id_temp, id_salt
     integer :: id_we, id_dens, id_pvort, id_mask, id_dxu, id_dyv
     integer :: id_temp_mld, id_salt_mld, id_u_mld, id_v_mld, id_diag, id_sh, id_sm
-    integer :: id_mld, id_tke, id_rif, id_mlen, id_st_h, id_st_m
+    integer :: id_mld, id_tke, id_rif, id_mlen, id_st_h, id_st_m, id_pme
+    integer :: id_sphm, id_uwnd, id_vwnd, id_ssw, id_cld, id_chl, id_rvr
 
     type(domain2d) :: domain
 
@@ -66,18 +69,13 @@ program main
 
     call init_odtm()
 
-
-    !c
     !c Initial time-index values
-    !!c
     taum = 1
     taun = 2
     taup = 3
     taus = 4
-    !c
+
     !c       do the integration
-    !c
-     
     loop_ind=0
     days = 1 !365*30
     month_start = 1
@@ -91,16 +89,7 @@ program main
     iday_month = month_start
     iday_wind = 1
     iday_start = iday_month !c-1
-    
     iday_start_snap = iday_start !- 7.0
-    
-    call read_wind (month_wind)! why reading twice ? later on at line no 105
-    call read_forcing (month_wind)!may be - default wind, if no option
-
-#ifdef monthly_wind
-    call read_wind (month_wind)
-    call read_forcing (month_wind)
-#endif
     
     call check
     
@@ -109,6 +98,7 @@ program main
 #else
     tracer_switch = 0
 #endif
+
     loop_total = int(days*day2sec/dt)
     
     !cccccccccccc timer.F cccccccc
@@ -118,16 +108,13 @@ program main
     
     do loop = loop_start, (loop_total+loop_start)
 
-        time = time + time_step
-    
-        call data_override('OCN','airt',tmp2,time,override)
-        used = send_data(id_airt, tmp2, time)
-
         age_time = age_time + 1
         !c  if (loop .eq. loop_start) call maph
     
         loop_day = loop*dt/day2sec
+
 #ifdef monthly_wind
+
         if ( loop .gt. lpm) then 
             month = month + 1
             month_wind = month_wind + 1
@@ -139,11 +126,6 @@ program main
             endif
 #endif
             if ( month .eq. 13) month = 1
-            call read_wind (month_wind)
-            call read_forcing (month_wind)
-#ifdef  thermodynamic_forcing
-            call read_density (month_wind)
-#endif
         endif
 #endif
     
@@ -152,9 +134,8 @@ program main
             day = day + 1
             iday_wind = iday_wind + 1
             lpd = lpd + day2sec/dt
-            call read_wind (iday_wind)
-            call read_forcing (iday_wind)
         endif
+
         month_wind = iday_wind
 
 #ifdef prescribe_S_boundary
@@ -164,10 +145,50 @@ program main
     
         sum_adv=0.0
     
-        call interp_linear ! linear interpolation of wind forcing to model grid
-           
-        call interp_forcing
-    
+        call data_override('OCN','sphm',sphm,time,override)
+        if (.not.override) call mpp_error(WARNING, 'sphm not overriden')
+        used = send_data(id_sphm, sphm, time)
+
+        call data_override('OCN','uwnd',uwnd,time,override)
+        if (.not.override) call mpp_error(WARNING, 'uwnd not overriden')
+        used = send_data(id_uwnd, uwnd, time)
+
+        call data_override('OCN','vwnd',vwnd,time,override)
+        if (.not.override) call mpp_error(WARNING, 'vwnd not overriden')
+        used = send_data(id_vwnd, vwnd, time)
+
+        call data_override('OCN','airt',airt,time,override)
+        if (.not.override) call mpp_error(WARNING, 'airt not overriden')
+        used = send_data(id_airt, airt, time)
+
+        call data_override('OCN','ssw',ssw,time,override)
+        if (.not.override) call mpp_error(WARNING, 'ssw not overriden')
+        used = send_data(id_ssw, ssw, time)
+
+        call data_override('OCN','cld',cld,time,override)
+        if (.not.override) call mpp_error(WARNING, 'cld not overriden')
+        used = send_data(id_cld, cld, time)
+
+        call data_override('OCN','pme',pme,time,override)
+        if (.not.override) call mpp_error(WARNING, 'pme not overriden')
+        used = send_data(id_pme, pme, time)
+
+        call data_override('OCN','chl',chl,time,override)
+        if (.not.override) call mpp_error(WARNING, 'chl not overriden')
+        used = send_data(id_chl, chl, time)
+
+        call data_override('OCN','rvr',rvr,time,override)
+        if (.not.override) call mpp_error(WARNING, 'rvr not overriden')
+        used = send_data(id_rvr, rvr, time)
+
+        call data_override('OCN','taux_force',taux_force,time,override)
+
+        call data_override('OCN','tauy_force',tauy_force,time,override)
+
+        call data_override('OCN','taux_snap',taux_snap,time,override)
+
+        call data_override('OCN','tauy_snap',tauy_snap,time,override)
+
 #if defined smagorinsky_laplacian
         call smagorinsky_coeff
     
@@ -310,6 +331,9 @@ program main
             call restart
         endif
 
+        time = time + time_step
+    
+
         !cccccccccccccccccccccccccccccccccccccccccccc
         !c rotate the timestep once to achieve      c
         !c leap-frog time difference.               c
@@ -350,7 +374,6 @@ program main
     write (*,*)
     write (*,*)'Integration finished'
     
-    time = time + time_step
     call diag_manager_end(time)
     call fms_end()
     
@@ -415,6 +438,30 @@ program main
 
         id_airt = register_diag_field('odtm', 'airt', (/id_lon,id_lat/), init_time=Time, &
                  long_name='Air Temperature', units='deg-C',missing_value=FILL_VALUE)
+
+        id_sphm = register_diag_field('odtm', 'sphm', (/id_lon,id_lat/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_uwnd = register_diag_field('odtm', 'uwnd', (/id_lon,id_lat/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_vwnd = register_diag_field('odtm', 'vwnd', (/id_lon,id_lat/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_ssw = register_diag_field('odtm', 'ssw', (/id_lon,id_lat/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_cld = register_diag_field('odtm', 'cld', (/id_lon,id_lat/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_pme = register_diag_field('odtm', 'pme', (/id_lon,id_lat/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_rvr = register_diag_field('odtm', 'rvr', (/id_lon,id_lat/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_chl = register_diag_field('odtm', 'chl', (/id_lon,id_lat/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
 
         id_sst = register_diag_field('odtm', 'sst', (/id_lon,id_lat/), init_time=Time, &
                  long_name='Sea Surface Temperature', units='deg-C',missing_value=FILL_VALUE)
@@ -509,7 +556,7 @@ program main
 
         used = send_data(id_mask, tmp2, time)
         used = send_data(id_dxu, dxu, time, mask=lmask)
-        used = send_data(id_dyv, dxu, time, mask=lmask)
+        used = send_data(id_dyv, dyv, time, mask=lmask)
 
     end subroutine init_odtm
 
