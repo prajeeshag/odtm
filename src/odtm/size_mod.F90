@@ -8,17 +8,18 @@ module size_mod
   integer, parameter :: imt=180, jmt=120, nLayer=12, km=nLayer, lm=13
   integer, parameter :: NPP=225, nn=2, kmaxMYM=51
 
-  double precision :: u(imt,km,jmt,4), v(imt,km,jmt,4)
-  double precision :: t(imt,km,jmt,nn,4)
-  double precision :: we(imt,km,jmt), wd(imt,km,jmt)
-  double precision :: we_mld(imt,0:km,jmt)
+  real, pointer, dimension(:,:,:,:) :: u => null(), v => null()
+  real, pointer, dimension(:,:,:,:,:) :: t => null()
+  real :: we(imt,km,jmt), wd(imt,km,jmt)
+  real :: we_mld(imt,0:km,jmt)
 
-  double precision :: we_prof(0:52), we_baro
-  double precision :: uN(imt,km,2), vN(imt,km,2), hhN(imt,km,2), etaN(imt,km,2)
-  double precision :: uS(imt,km,2),vS(imt,km,2),hhS(imt,km,2), etaS(imt,km,2)
-  double precision :: uE(2,km,jmt), vE(2,km,jmt), hhE(2,km,jmt), etaE(2,km,jmt)
-  double precision :: temp(imt,51,jmt,2), salt(imt,51,jmt,2)
-  double precision :: uvel(imt,51,jmt,2), vvel(imt,51,jmt,2)
+  real :: we_prof(0:52), we_baro
+  real :: uN(imt,km,2), vN(imt,km,2), hhN(imt,km,2), etaN(imt,km,2)
+  real :: uS(imt,km,2),vS(imt,km,2),hhS(imt,km,2), etaS(imt,km,2)
+  real :: uE(2,km,jmt), vE(2,km,jmt), hhE(2,km,jmt), etaE(2,km,jmt)
+  real, pointer, dimension(:,:,:,:) :: temp => null(), salt => null()
+  real, pointer, dimension(:,:,:,:) :: uvel => null(), vvel => null()
+  real, pointer, dimension(:,:,:,:) :: h => null()
 
   real :: temp_read(imt,201,jmt,lm)
   real :: salt_read(imt,201,jmt,lm)
@@ -40,7 +41,7 @@ module size_mod
   real :: rkmu(imt,jmt), rkmv(imt,jmt)
   real :: rrkmt(imt,jmt), tmask(imt,jmt)
   real :: smask(imt,jmt), umask(imt,jmt)
-  real :: h(imt,km,jmt,4), vmask(imt,jmt)
+  real :: vmask(imt,jmt)
   real :: eta(imt,km,jmt,4)
   real :: pvort(imt,km,jmt)
   real :: pres_gradu(km), pres_gradv(km)

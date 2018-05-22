@@ -4,7 +4,7 @@ module param_mod
 
     implicit none
 
-    double precision :: diffuse_uu, diffuse_vv, diffuse_h
+    real :: diffuse_uu, diffuse_vv, diffuse_h
 
     real :: advec_uu, advec_vu, advec_uv, advec_vv
     integer :: loop_day, loop_total

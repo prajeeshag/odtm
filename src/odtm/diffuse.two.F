@@ -21,11 +21,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use param_mod, only : diffuse, diffuse_uu, diffuse_vv, dphi, dthe
         use param_mod, only : re, theta
         implicit none
-	double precision r2cos2theta, r2
-	double precision rtemp1, rtemp2, rtemp3, rtemp4, rtemp5, rtemp6
-	double precision rtemp7, rtemp8, rtemp9, rtemp10, rtemp11
-	double precision rtemp12, rtemp13, rtemp14, rtemp15, rtemp16
-	double precision rtemp17, rtemp18, rtemp20, rtemp21, rtemp22
+	real r2cos2theta, r2
+	real rtemp1, rtemp2, rtemp3, rtemp4, rtemp5, rtemp6
+	real rtemp7, rtemp8, rtemp9, rtemp10, rtemp11
+	real rtemp12, rtemp13, rtemp14, rtemp15, rtemp16
+	real rtemp17, rtemp18, rtemp20, rtemp21, rtemp22
         integer :: ip, im, jp, jm, ip2, im2, jp2, jm2
         real :: Ahx, Ahy, rH1, rH2, rH3, rH4
 
@@ -169,7 +169,7 @@ c ==================  diffuse_vv ==========================================
 
         implicit none
 
-        double precision :: sum_4ptd
+        real :: sum_4ptd
         integer, intent(in) :: index, i1, j1, i2, j2, i3, j3, i4, j4
 
 !#include "size.h"
@@ -215,7 +215,7 @@ c ==================  diffuse_vv ==========================================
             use size_mod, only: u, v, h, taum, k, rkmu, rkmv, rkmh
         implicit none
         
-        double precision :: sum_2ptd
+        real :: sum_2ptd
         integer, intent(in) :: index, i1, j1, i2, j2
 
 !#include "size.h"

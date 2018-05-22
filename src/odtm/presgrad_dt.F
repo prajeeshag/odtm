@@ -6,7 +6,7 @@
         public :: pressure_integral, density_nonlinear
         contains
 
-        subroutine pressure_integral (loop_ind)
+        subroutine pressure_integral
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
 c
@@ -18,7 +18,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only: rkmh, dxu, dyv, rkmu, rkmv  
             use param_mod, only : denss, g
         implicit none
-            integer, intent(in) :: loop_ind 
             integer :: ip, im, jp, jm, kk, ii, jj
             real :: rsum1, rsum2, rsum, rsumeta, rsumeta_init, rho_km, rho_kk
             real :: rtemp1, rho_k, rwall
@@ -192,7 +191,7 @@ c	write(*,*) pres_gradu(k), pres_gradv(k)
         use param_mod, only : denss
         implicit none
         
-        double precision :: rho_2pt
+        real :: rho_2pt
         integer, intent(in) :: i1, j1, k1
         real :: VolExpan, SalContr, rkappa_vol, rTemp, rSalt, rDep
 

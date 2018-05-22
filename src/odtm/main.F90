@@ -9,20 +9,20 @@ program main
     !c
     !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-    use size_mod, only : days, i, iday_start, iday_start_snap, itimer2
+    use size_mod, only : days, i, iday_start, itimer2
     use size_mod, only : itimermax, itimerrate, j, k, loop, loop_start, lpd
-    use size_mod, only : lpm, month, month_start, month_start_snap, month_wind
+    use size_mod, only : lpm, month, month_start, month_wind
     use size_mod, only : taum, taun, taup, taus, time_switch, tracer_switch 
-    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, shcoeff
-    use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz
+    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, shcoeff, rkmt
+    use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn
     use size_mod, only : t, eta, u, v, temp, h, we, pvort, salt, dxu, dyv
     use size_mod, only : uvel, vvel, smcoeff, SHCoeff, diag_ext1, diag_ext2
     use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
     use size_mod, only : sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr
-    use size_mod, only : taux_force, taux_snap, tauy_force, tauy_snap
+    use size_mod, only : taux_force, tauy_force
 
-    use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_ind, loop_total
-    use param_mod, only : nmid, number_of_snap, reflat, rnmid, sum_adv
+    use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_total
+    use param_mod, only : nmid, reflat, rnmid, sum_adv
     use param_mod, only : denss, rmld_misc
     
     use momentum_mod, only : momentum
@@ -32,23 +32,25 @@ program main
     
     use mpp_mod, only : mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init
     use mpp_mod, only : mpp_exit, mpp_max, mpp_sum
-    use mpp_io_mod, only : mpp_io_init, mpp_open, mpp_close, MPP_RDONLY, MPP_ASCII, MPP_MULTI
     use fms_mod,  only : field_exist, field_size, read_data, fms_init, fms_end
+    use fms_io_mod, only : register_restart_field, restart_file_type, save_restart, restore_state
+    use fms_io_mod, only : open_namelist_file, open_file, close_file, file_exist
+
     use mpp_domains_mod, only : domain2d, domain1d, mpp_define_layout, mpp_define_domains
     use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_domain_components, mpp_update_domains
     use diag_manager_mod, only : diag_manager_init, register_diag_field, register_static_field
     use diag_manager_mod, only : diag_axis_init, send_data, diag_manager_end
     use diag_data_mod, only : FILL_VALUE
     use data_override_mod, only : data_override_init, data_override
-    use time_manager_mod, only : set_calendar_type, NO_CALENDAR, JULIAN, NOLEAP
+    use time_manager_mod, only : set_calendar_type, NO_CALENDAR, JULIAN, NOLEAP, date_to_string
     use time_manager_mod, only : time_type, set_time, set_date, operator(+), assignment(=)
-    use time_manager_mod, only : print_time, set_ticks_per_second
+    use time_manager_mod, only : print_time, set_ticks_per_second, increment_date, operator(>=)
 
     implicit none
 
     integer :: iday_month, ii
     real :: age_time, day_night, rlct, depth_mld
-    type(time_type) :: time, time_step
+    type(time_type) :: time, time_step, time_restart
 
     integer :: domain_layout(2), halo=1, used
 
@@ -61,11 +63,16 @@ program main
 
     type(domain2d) :: domain
 
+    type(restart_file_type) :: restart_odtm
+
     real :: tmp2(imt,jmt), tmp3(imt,jmt,km), tmp3m(imt,jmt,kmaxMYM), rdepth(km)
 
     logical :: lmask(imt,jmt), lmask3(imt,jmt,km), lmask3m(imt,jmt,kmaxMYM)
     logical :: override
-
+    character (len=32) :: timestamp
+    integer :: restart_interval(6) = 0
+    
+    namelist /main_nml/ restart_interval
 
     call init_odtm()
 
@@ -76,20 +83,16 @@ program main
     taus = 4
 
     !c       do the integration
-    loop_ind=0
-    days = 1 !365*30
+    days = 365 !365*30
     month_start = 1
     loop_start = 1
-    number_of_snap = 6 !12*3*30
     month = month_start
-    month_start_snap = month_start
     lpm = dpm(month)*day2sec/dt
     lpd = day2sec/dt
     month_wind = month_start
     iday_month = month_start
     iday_wind = 1
     iday_start = iday_month !c-1
-    iday_start_snap = iday_start !- 7.0
     
     call check
     
@@ -185,10 +188,6 @@ program main
 
         call data_override('OCN','tauy_force',tauy_force,time,override)
 
-        call data_override('OCN','taux_snap',taux_snap,time,override)
-
-        call data_override('OCN','tauy_snap',tauy_snap,time,override)
-
 #if defined smagorinsky_laplacian
         call smagorinsky_coeff
     
@@ -266,13 +265,13 @@ program main
 #ifdef atmosphere
                     call atmos
 #endif
-                    call stability_check (loop)
+                    call stability_check ()
 
-                    call pressure_integral (loop_ind)
+                    call pressure_integral ()
     
                     rlct = rkmu(i,j) + rkmv(i,j)
                     if (rlct .ne. 0.0) then
-                        call momentum (loop_ind)
+                        call momentum ()
                     endif
 
 #ifdef trace
@@ -327,12 +326,19 @@ program main
 
         call send_data_diag(time)
 
-        if ( mod (loop,loop_total/number_of_snap) .eq. 0) then
-            call restart
-        endif
 
         time = time + time_step
     
+        if ( time >= time_restart ) then
+            
+           timestamp = date_to_string(time)
+
+           time_restart = increment_date(time, restart_interval(1), restart_interval(2), &
+                restart_interval(3), restart_interval(4), restart_interval(5), restart_interval(6) )
+
+           call save_restart(restart_odtm,timestamp) 
+
+        endif
 
         !cccccccccccccccccccccccccccccccccccccccccccc
         !c rotate the timestep once to achieve      c
@@ -357,22 +363,17 @@ program main
                         .or. u(i, k, j,taun) .lt. -10.0 .or. &
                         u(i, k, j,taun) .gt. 10.0 ) then
 
-                        loop_ind = loop_ind + 1
                         stop 'stop=>blow-up'
                     endif
                 enddo
             enddo
         enddo
-    
-        
-        if ( mod (loop,loop_total/number_of_snap) .eq. 0) then
-            loop_ind = loop_ind + 1
-            call timer
-        endif
     enddo
     
     write (*,*)
     write (*,*)'Integration finished'
+
+    call save_restart(restart_odtm) 
     
     call diag_manager_end(time)
     call fms_end()
@@ -382,11 +383,25 @@ program main
 
     subroutine init_odtm()
 
-         integer :: ii, used
- 
+        integer :: ii, used, unit
+
+        unit = open_namelist_file()
+        rewind(unit)
+        read(unit,nml=main_nml) 
+         
         call mpp_init()
         call fms_init()
         call set_calendar_type(NOLEAP)
+
+        time_step = set_time(seconds=int(dt))
+
+        time = set_date(1995, 1, 1, 0, 0, 0)
+      
+        if (all(restart_interval==0)) restart_interval(1) = 10
+ 
+        time_restart = increment_date(time, restart_interval(1), restart_interval(2), &
+        restart_interval(3), restart_interval(4), restart_interval(5), restart_interval(6) )
+
         call diag_manager_init()
 
         call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
@@ -397,13 +412,12 @@ program main
         
         call initial_declaration
 
-        call initial_condition
+        call init_grid()
+
+        !call initial_condition
 
         call polar_coord
     
-        time_step = set_time(seconds=int(dt))
-
-        time = set_date(1995, 1, 1, 0, 0, 0)
 
 
         lmask=.false.; lmask3 = .false.; lmask3m = .false.
@@ -554,9 +568,12 @@ program main
         tmp2 = 0.
         where(lmask) tmp2 = 1.
 
-        used = send_data(id_mask, tmp2, time)
+        used = send_data(id_mask, rkmt, time)
         used = send_data(id_dxu, dxu, time, mask=lmask)
         used = send_data(id_dyv, dyv, time, mask=lmask)
+
+        unit = open_file(file='RESTART/._tmp_',action='write')
+        call close_file(unit,'delete')
 
     end subroutine init_odtm
 
@@ -720,4 +737,212 @@ program main
 
     end subroutine send_data_diag
     
+
+
+    subroutine init_grid
+
+        use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, rrkmt
+        use size_mod, only : temp_read, salt_read
+
+        use param_mod, only : deg2rad, mask
+    
+        !c initialze model grid.
+    
+        implicit none
+    
+        real :: tempin(201), saltin(201)
+        integer :: ii, jj, kk, kmax, l, ll, nt
+        integer :: dimz(4), nlon, nlat
+        real :: saltout, tempout
+        real, allocatable :: tmp2(:,:)
+        integer :: id_restart
+        character (len=32) :: grid_file='INPUT/grid_spec.nc'
+        character (len=32) :: temp_clim_file='INPUT/temp_clim.nc'
+        character (len=32) :: salt_clim_file='INPUT/salt_clim.nc'
+        character (len=32) :: restart_file='odtm_restart.nc'
+  
+        taum = 1
+        taun = 2
+        taup = 3
+        taus = 4
+
+        if (.not.field_exist(grid_file, "geolon_t"))  &
+            call mpp_error(FATAL,'geolon_t not present in '//trim(grid_file))
+
+        if (.not.field_exist(grid_file, "geolat_t"))  &
+            call mpp_error(FATAL,'geolat_t not present in '//trim(grid_file))
+
+        if (.not.field_exist(grid_file, "rkmt"))  &
+            call mpp_error(FATAL,'rkmt not present in '//trim(grid_file))
+
+       
+        call field_size(grid_file, "geolon_t", dimz)
+        
+        nlon = dimz(1); nlat = dimz(2)
+        
+        allocate(tmp2(nlon,nlat))
+        
+        call read_data(grid_file, 'geolon_t', tmp2, no_domain=.true.)
+   
+        gdx = 0. ; gdy = 0.
+        gdx(1:nlon) = tmp2(:,1)
+
+        call read_data(grid_file, 'geolat_t', tmp2, no_domain=.true.)
+    
+        gdy(1:nlat) = tmp2(1,:)
+
+        do ii=1,imt-1
+           rdx(ii) = (gdx(ii+1) - gdx(ii))*deg2rad
+        enddo
+
+        rdx(0) = gdx(1)*deg2rad
+        rdx(imt) = rdx(imt-1)*deg2rad
+        rdx(imt+1) = rdx(imt)*deg2rad
+    
+        do ii=1,jmt-1
+         rdy(ii) = (gdy(ii+1) - gdy(ii))*deg2rad
+        enddo
+
+        rdy(0) = gdy(1)*deg2rad
+        rdy(jmt) = gdy(jmt-1)*deg2rad
+        rdy(jmt+1) = gdy(jmt)*deg2rad
+
+        call read_data(grid_file, 'rkmt', rkmt, no_domain=.true.)
+
+
+        deallocate(tmp2)
+
+
+        ! since a C grid is being used, u,v, h are defined at 3 different points, hence
+        ! each has a dfferent mask.    u--------h
+        !                                       |
+        !                                       |       
+        !                                       |
+        !                                       v
+
+        rkmu(:,:) = 1.0
+        rkmv(:,:) = 1.0
+        rkmh(:,:) = 1.0
+ 
+        do ii=1,imt
+            do jj=1,jmt
+                if (rkmt(ii,jj) .eq. 0.0 .and. rkmt(ii,jj+1) .eq. 0.0) &
+                        rkmu(ii,jj) = 0.0
+            enddo
+        enddo
+    
+        do ii=1,imt-1
+            do jj=1,jmt
+                if (rkmt(ii,jj) .eq. 0.0 .and. rkmt(ii+1,jj) .eq. 0.0) &
+                        rkmv(ii,jj) = 0.0
+            enddo
+        enddo
+    
+        do ii=1,imt-1
+            do jj=1,jmt-1
+                if (rkmu(ii,jj) .eq. 0.0 .and. rkmu(ii+1,jj) .eq. 0.0 .and. &
+                    rkmv(ii,jj) .eq. 0.0 .and. rkmv(ii,jj+1) .eq. 0.0) &
+                         rkmh(ii,jj) = 0.0
+            enddo
+        enddo
+
+        do ii=1,imt
+            do jj=1,jmt
+                if (rkmt(ii,jj) .eq. 0.0) mask (ii,jj) = 1.0
+                if (rkmt(ii,jj) .eq. 1.0) mask (ii,jj) = 0.0
+            enddo
+        enddo
+
+        rrkmt(:,:) = rkmt(:,:)
+
+        if (.not. field_exist(temp_clim_file, 'temp')) &
+            call mpp_error(FATAL, 'field temp not found in '//trim(temp_clim_file))
+
+        if (.not. field_exist(salt_clim_file, 'salt')) &
+            call mpp_error(FATAL, 'field salt not found in '//trim(salt_clim_file))
+
+        call field_size(temp_clim_file, 'temp', dimz)
+
+        allocate ( u(imt,km,jmt,4), v(imt,km,jmt,4) ) 
+
+        allocate ( t(imt,km,jmt,nn,4) ) 
+
+        allocate ( h(imt,km,jmt,4) ) 
+        
+        allocate ( temp(imt,kmaxMYM,jmt,2), salt(imt,kmaxMYM,jmt,2) )
+
+        allocate ( uvel(imt,kmaxMYM,jmt,2), vvel(imt,kmaxMYM,jmt,2) )
+
+        id_restart = register_restart_field(restart_odtm, restart_file, 'u', u(:,:,:,1), u(:,:,:,2))
+        id_restart = register_restart_field(restart_odtm, restart_file, 'v', v(:,:,:,1), v(:,:,:,2))
+        id_restart = register_restart_field(restart_odtm, restart_file, 't', t(:,:,:,1,1), t(:,:,:,1,2), mandatory=.true.)
+        id_restart = register_restart_field(restart_odtm, restart_file, 's', t(:,:,:,2,1), t(:,:,:,2,2), mandatory=.true.)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'h', h(:,:,:,1), h(:,:,:,2))
+        id_restart = register_restart_field(restart_odtm, restart_file, 'temp', temp(:,:,:,1), temp(:,:,:,2), mandatory=.true.)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'salt', salt(:,:,:,1), salt(:,:,:,2), mandatory=.true.)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'uvel', uvel(:,:,:,1), uvel(:,:,:,2))
+        id_restart = register_restart_field(restart_odtm, restart_file, 'vvel', vvel(:,:,:,1), vvel(:,:,:,2))
+
+        we_upwel(:,:,:) = 0.0
+        
+        do kk=1,km
+            h(:,kk,:,taum)=dz(kk)
+            h(:,kk,:,taun)=h(:,kk,:,taum) 
+            h(:,kk,:,taup)=h(:,kk,:,taum) 
+        enddo
+
+        we(:,:,:) = 0.0
+        wd(:,:,:) = 0.0
+        u(:,:,:,:) = 0.0
+        v(:,:,:,:) = 0.0
+        eta(:,:,:,:) = 0.0
+
+        t(:,:,:,:,taum) = 10.0
+        t(:,:,:,:,taun) = 10.0
+       
+ 
+        do nt = 1, 12
+            call read_data(temp_clim_file, 'temp', temp_read(:,:,:,nt), timelevel=nt)
+            call read_data(salt_clim_file, 'salt', salt_read(:,:,:,nt), timelevel=nt)
+        enddo
+
+        uvel(:,:,:,:) = 0.0
+        vvel(:,:,:,:) = 0.0
+
+        if (file_exist('INPUT/'//trim(restart_file))) then
+            call restore_state(restart_odtm)
+        else
+            call mpp_error(NOTE,'Model starting from initial state')
+            do i=1,imt
+                do j=1,jmt
+                    do k=1,201
+                        tempin(k) = temp_read(i,k,j,1)  
+                        saltin(k) = salt_read(i,k,j,1) 
+                    enddo
+                    do k=1,51
+                        temp(i,k,j,1) = temp_read(i,k,j,1)
+                        salt(i,k,j,1) = salt_read(i,k,j,1)
+                        temp(i,k,j,2) = temp_read(i,k,j,1)
+                        salt(i,k,j,2) = salt_read(i,k,j,1)
+                    enddo
+
+                    kmax = 201
+                    do k=1,km-1   
+                        call interp_extrap_initial (i,j,k,kmax,tempin, &
+                            saltin,tempout,saltout)
+                        t(i,k,j,1,taun) = tempout
+                        t(i,k,j,2,taun) = saltout
+                        t(i,k,j,1,taum) = tempout
+                        t(i,k,j,2,taum) = saltout
+                    enddo
+                    t(i,km,j,1,taun) = 8.0
+                    t(i,km,j,2,taun) = 35
+                    t(i,km,j,1,taum) = 8.0
+                    t(i,km,j,2,taum) = 35.0
+                enddo
+            enddo
+        endif
+  
+    end subroutine init_grid
+
 end program main

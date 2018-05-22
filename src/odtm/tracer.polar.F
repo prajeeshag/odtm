@@ -154,7 +154,7 @@ c        pvort(i,k,j) = zero_out_tradv
          function sum_2ptr (index, i1,j1, i2,j2,nt)
             use size_mod, only : k, t, rkmh, taun
         implicit none
-        double precision :: sum_2ptr
+        real :: sum_2ptr
         integer, intent(in) :: index, i1,j1, i2,j2,nt
 
         if (index .eq. 1) then

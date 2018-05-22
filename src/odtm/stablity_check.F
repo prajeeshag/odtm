@@ -1,4 +1,4 @@
-         subroutine stability_check (loop_ind)
+         subroutine stability_check ()
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
 c
@@ -10,7 +10,6 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only : tr02_min, t, zdz, h, tr01_min
             use presgrad_mod, only : density_nonlinear
         implicit none
-        integer, intent(in) :: loop_ind
         real :: rho_local(km), rtemp, rsalt, rDep
         integer :: kk, icheck, iter
 

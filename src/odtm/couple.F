@@ -20,28 +20,28 @@
 
         implicit none
 
-        double precision :: tempout_taum, tempout_taup
-        double precision :: saltout_taum, saltout_taup
-        double precision :: uvelout_taum, uvelout_taup
-        double precision :: vvelout_taum, vvelout_taup
+        real :: tempout_taum, tempout_taup
+        real :: saltout_taum, saltout_taup
+        real :: uvelout_taum, uvelout_taup
+        real :: vvelout_taum, vvelout_taup
 
-        double precision :: tempout_taumC, tempout_taupC
-        double precision :: saltout_taumC, saltout_taupC
-        double precision :: uvelout_taumC, uvelout_taupC
-        double precision :: vvelout_taumC, vvelout_taupC
+        real :: tempout_taumC, tempout_taupC
+        real :: saltout_taumC, saltout_taupC
+        real :: uvelout_taumC, uvelout_taupC
+        real :: vvelout_taumC, vvelout_taupC
 
-        double precision :: tempout_taumL, tempout_taupL
-        double precision :: saltout_taumL, saltout_taupL
-        double precision :: uvelout_taumL, uvelout_taupL
-        double precision :: vvelout_taumL, vvelout_taupL
+        real :: tempout_taumL, tempout_taupL
+        real :: saltout_taumL, saltout_taupL
+        real :: uvelout_taumL, uvelout_taupL
+        real :: vvelout_taumL, vvelout_taupL
 
-        double precision :: tempout_taumB, tempout_taupB
-        double precision :: saltout_taumB, saltout_taupB
-        double precision :: uvelout_taumB, uvelout_taupB
-        double precision :: vvelout_taumB, vvelout_taupB
+        real :: tempout_taumB, tempout_taupB
+        real :: saltout_taumB, saltout_taupB
+        real :: uvelout_taumB, uvelout_taupB
+        real :: vvelout_taumB, vvelout_taupB
 
-        double precision :: alpha_rgm, beta_mldm
-        double precision :: alpha_rgt, beta_mldt
+        real :: alpha_rgm, beta_mldm
+        real :: alpha_rgt, beta_mldt
 
         real :: diffuse_temp, diffuse_salt, rtheta_vu, rtheta_vd
         real :: relax_on_off, gama, diffuse_MY, diffuse_tr, zero_out_tradv
@@ -233,7 +233,7 @@ c         rmld_misc(i,kk,j) = tracedubdxmld(kk,3)
                 use size_mod, only: temp, salt, uvel, vvel, tmask, umask, smask, vmask
         implicit none
 
-        double precision :: sum_2ptr_mld
+        real :: sum_2ptr_mld
         integer, intent (in) :: index, i1,j1, i2,j2,kk,nt
 
         real :: rtemp1, rtemp2
@@ -282,7 +282,7 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
 	function sum_2pt_mld (index, i1,j1, i2,j2, kk)
            use size_mod, only: u, uvel, v, vvel, taun, rkmu, rkmv
         implicit none
-        double precision :: sum_2pt_mld
+        real :: sum_2pt_mld
         integer, intent(in) :: index, i1,j1, i2,j2, kk
 	
 	if (index .eq. 1) then

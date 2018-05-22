@@ -11,7 +11,7 @@
         real  cs, cl
         real  qs, ql, qm, qb, qnet_out
         real TT, TTt, ew,Pa
-        double precision sigma
+        real sigma
         real :: cldin, coe, del_t, dq, qsat, sb, tau
                
         rho_a= 1.175

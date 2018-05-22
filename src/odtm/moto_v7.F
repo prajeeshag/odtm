@@ -7,11 +7,11 @@
  
 ! ONE DIMENSIONAL MIXED LAYER MODEL
 !      DIMENSION UN(51),VN(51),TEN(51),SAN(51),
-      double precision UN(51),VN(51),TEN(51),SAN(51),
+      real UN(51),VN(51),TEN(51),SAN(51),
      1 U1(0:51),V1(0:51),TE1(0:51),SA1(0:51),Z(51),Z1(51),
      2 rQ(51),SM(51),SH(51),R(51),YQ(51),SM1(51),SH1(51)
-        double precision tempin(51), saltin(51)
-        double precision uvelin(51), vvelin(51), we_prof(0:52), we_baro
+        real tempin(51), saltin(51)
+        real uvelin(51), vvelin(51), we_prof(0:52), we_baro
         real sswin(51), zave
         real tauxin, tauyin, qnet, pmein, rLATin, dt_rg
         real :: dq, mf, qf, cp, h, ds, pme_eps

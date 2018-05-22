@@ -15,11 +15,11 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt, dtts
             use param_mod, only : imt, jmt, mld_mld, rmld_misc
         implicit none
-        double precision tempin(51), saltin(51)
+        real tempin(51), saltin(51)
         real rmldout
-        double precision uvelin(51), vvelin(51), we_profin(0:52)
+        real uvelin(51), vvelin(51), we_profin(0:52)
         real sswin(51)
-        double precision SM(51), SH(51), YQ(51)
+        real SM(51), SH(51), YQ(51)
         real tauxin, tauyin, entr_flux(51)
         real diag1(51), diag2(51), diag3(51)
         real diag4(51), diag5(51), diag6(51)

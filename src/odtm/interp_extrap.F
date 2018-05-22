@@ -12,9 +12,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only : vvel, we_baro, we_mld, we_prof, taun, km
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt
         implicit none
-        double precision tempout, saltout
-        double precision uvelout, vvelout
-        double precision rsum1, rsum2, rsum3, rsum4
+        real tempout, saltout
+        real uvelout, vvelout
+        real rsum1, rsum2, rsum3, rsum4
         integer hstart, hend, ii, jj, kk, tau_index
         
         real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt

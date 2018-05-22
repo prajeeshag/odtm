@@ -150,7 +150,7 @@
         use size_mod, only : u, v, h, taun, k, rkmu, rkmv, rkmh
         implicit none
         
-        double precision :: sum_4pt
+        real :: sum_4pt
         integer, intent(in) :: index, i1,j1, i2,j2, i3,j3, i4,j4
 	
 	if (index .eq. 1) then
@@ -190,7 +190,7 @@
         use size_mod, only: k, taun, u, v, h, rkmu, rkmv, rkmh
         implicit none
         
-        double precision :: sum_2pt
+        real :: sum_2pt
         integer, intent(in) :: index, i1,j1, i2,j2
 
 	

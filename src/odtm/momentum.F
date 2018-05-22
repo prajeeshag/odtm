@@ -9,7 +9,7 @@
 
         contains
 
-        subroutine momentum (loop_ind)
+        subroutine momentum ()
         !	subroutine to solve momentum equations
 
         use size_mod, only : i, j, k, loop, taux_force, temp, h, rho, tauy_force
@@ -24,14 +24,13 @@
 
         implicit none
         real tx,ty, Lv
-        integer, intent(in) :: loop_ind
         integer :: ip, im, jp, jm
         real :: diffuse_additional, rtemp1, cldin, uwndin, vwndin, speed, airt_in
         real :: sphm_in, sst_in, qnet_in, qs, ql, qb, h_ekman
         real :: rtemp_relax_u1, rtemp_relax_v1, relaxterm_u1, relaxterm_v1
         real :: relaxterm_u2, relaxterm_u3, relaxterm_v2, relaxterm_v3
         real :: rH1, rtemp2, rKE, rpert, rPE
-        double precision :: taux_1, tauy_1
+        real :: taux_1, tauy_1
 	
 	ip = i + 1
 	im = i - 1
@@ -298,7 +297,7 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
         use size_mod, only : k, u, v, h, taup, rkmu, rkmv, rkmh
         implicit none
         
-        double precision :: sum_2ptp 
+        real :: sum_2ptp 
         integer, intent(in) :: index, i1, j1, i2, j2
 !#include "size.h"
 !#include "polar.h"
@@ -338,7 +337,7 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
         use size_mod, only: taum, k, u, v, h, rkmv, rkmu, rkmh
         implicit none
 
-        double precision :: sum_2ptm
+        real :: sum_2ptm
         integer, intent(in) :: index, i1, j1, i2, j2
 
 !#include "size.h"

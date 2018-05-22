@@ -4,18 +4,18 @@
     
         integer :: i, k, km
 
-        double precision t1(km), t2(km), KH(km)
-	double precision t(0:km+1), dz(0:km+1)
-	double precision dtts, tmask(km)
-	double precision rD1(km),  rD2(km)
-	double precision rDDu(km), rDDl(km)
-        double precision dzfact(km,km), dzfact_rev(km,km)
-        double precision rheat1, rheat2
-        double precision a(km), b(km), c(km), d(km)
-        double precision bt_temp
-        double precision diffuse(0:km+1)
+        real t1(km), t2(km), KH(km)
+	real t(0:km+1), dz(0:km+1)
+	real dtts, tmask(km)
+	real rD1(km),  rD2(km)
+	real rDDu(km), rDDl(km)
+        real dzfact(km,km), dzfact_rev(km,km)
+        real rheat1, rheat2
+        real a(km), b(km), c(km), d(km)
+        real bt_temp
+        real diffuse(0:km+1)
         real dz_in, dt_in
-        double precision dz1, dt
+        real dz1, dt
         
 	
 c
@@ -88,8 +88,8 @@ c
         implicit none
         integer km, j
 
-        double precision, intent(inout) :: a(km),b(km)
-        double precision, intent(inout) :: c(km),d(km)
+        real, intent(inout) :: a(km),b(km)
+        real, intent(inout) :: c(km),d(km)
 
 !combined decomposition and forward substitution
         do j = 2,km 
