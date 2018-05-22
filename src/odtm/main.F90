@@ -569,8 +569,6 @@ program main
        
         used = send_data(id_sst,real(t(1:imt,1,1:jmt,1,taun)), time, mask=lmask)
 
-        used = send_data(id_sst,tmp2, time)
-
         used = send_data(id_sss,real(t(1:imt,1,1:jmt,2,taun)), time, mask=lmask)
 
         if (id_temp>0) then
@@ -596,7 +594,7 @@ program main
 
         if (id_eta>0) then
             do ii = 1, km
-                tmp3(:,:,ii) = eta(:,ii,:,taun)
+                tmp3(:,:,ii) = eta(:,ii,:,1)
             enddo
             used = send_data(id_eta,tmp3,time, mask=lmask3)
         endif

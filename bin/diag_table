@@ -13,6 +13,24 @@
 
 "odtm","sst","sst", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
 
+"odtm","airt","airt", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
+
+"odtm","sphm","sphm", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
+
+"odtm","uwnd","uwnd", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
+
+"odtm","vwnd","vwnd", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
+
+"odtm","ssw","ssw", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
+
+"odtm","cld","cld", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
+
+"odtm","chl","chl", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
+
+"odtm","pme","pme", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
+
+"odtm","rvr","rvr", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
+
 "odtm","sss","sss", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
 
 "odtm","dxu","dxu", "output%4yr%2mo%2dy%2hr","all",.true.,"none",2
