@@ -362,8 +362,10 @@ program main
                     if ( u(i, k, j,taun) .ne. u(i, k, j,taun) &
                         .or. u(i, k, j,taun) .lt. -10.0 .or. &
                         u(i, k, j,taun) .gt. 10.0 ) then
-
+                        
+                        call diag_manager_end(time)
                         stop 'stop=>blow-up'
+        
                     endif
                 enddo
             enddo
@@ -438,7 +440,7 @@ program main
         id_lat = diag_axis_init('lat', gdy(1:jmt), 'degrees_north', cart_name='Y', &
             long_name='latitude', domain2=domain) 
 
-        id_depth_mld = diag_axis_init('depth_mld', (/(real(ii)*0.5,ii=1,kmaxMYM)/), 'meters', &
+        id_depth_mld = diag_axis_init('depth_mld', (/(real(ii)*5.0,ii=1,kmaxMYM)/), 'meters', &
             cart_name='Z', long_name='depth')
 
         rdepth(1) = dz(1)

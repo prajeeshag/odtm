@@ -10,15 +10,18 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only : eta, h, loop, salt, t, temp, u, uvel, v
             use size_mod, only : vvel, we_baro, we_mld, we_prof, taun, km
+            use size_mod, only : imt, jmt
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt
         implicit none
-        real tempout, saltout
-        real uvelout, vvelout
+        integer, intent(in) :: ii, jj, kk, kmax, tau_index 
+
+        real, intent(out) :: tempout, saltout
+        real, intent(out) ::  uvelout, vvelout
         real rsum1, rsum2, rsum3, rsum4
-        integer hstart, hend, ii, jj, kk, tau_index
+        integer hstart, hend
         
         real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt
-        integer :: icount, irepeat, kmax, kkk
+        integer :: icount, irepeat, kkk
         real :: rdiv, rdrag, relax_East, relax_South, relax_on_off, rsum, widE, widS
         real :: zero_out_tradv
 
@@ -39,8 +42,13 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         uvelout = 0.0
         vvelout = 0.0
 
+           ! if (ii==imt/2.and.jj==jmt/2.and.tau_index==2) then
+           !     print *, 'interp_extrap.F :', hstart, hend, kk, tau_index, kmax, 1+hstart/5, hend/5 
+           ! endif
+
         do kkk = 1+hstart/5, hend/5
         icount = icount + 1
+
         if (kkk .gt. kmax) goto 101
         rsum1 = rsum1 + temp(ii,kkk,jj,tau_index) 
         rsum2 = rsum2 + salt(ii,kkk,jj,tau_index)
@@ -55,7 +63,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         saltout = rsum2/max(1,icount)
         uvelout = rsum3/max(1,icount)
         vvelout = rsum4/max(1,icount)
+
  101    continue
+
 ! if the mixed layer crosses layer 1 of reduced gravity model,
 ! to handle a portion of layer having reduced gravity, we assume a dummy
 ! rg layer with constant values same as RG, and this take the average,
@@ -84,8 +94,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         
 
  102    continue
+           ! if (ii==imt/2.and.jj==jmt/2) then
+           !     print *, 'interp_extrap.F  2 :', tempout
+           ! endif
         return
-        end
+        end subroutine
 
 
 

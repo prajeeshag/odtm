@@ -45,10 +45,10 @@
 
         real :: diffuse_temp, diffuse_salt, rtheta_vu, rtheta_vd
         real :: relax_on_off, gama, diffuse_MY, diffuse_tr, zero_out_tradv
-        real :: relax_south, widS, relax_East, widE, kmax, rdrag
+        real :: relax_south, widS, relax_East, widE, rdrag
         real :: rtemp1, rtemp2, rtemp3, rtemp4
         integer :: hstart, hend, ii, jj, kk, tau_index
-        integer :: im, jm, irepeat, nt, ip, jp
+        integer :: im, jm, irepeat, nt, ip, jp, kmax
 
         tracedubdxmld(:,:) = 0.0
         tracedvbdymld(:,:) = 0.0
@@ -65,7 +65,7 @@
 
 #include "cparam.h"  ! <== This file overrides above parameter setup
 
-        kmax  = 51
+            kmax  = 51
 
         do i=2,imt-1
         do j=2,jmt-1
@@ -124,6 +124,9 @@
 
         t(i,k,j,1,taup) =  (t(i,k,j,1,taup) + 
      &   alpha_rgt*(tempout_taup - tempout_taum)) * rkmh(i,j)
+!            if (i==imt/2.and.j==jmt/2) then
+!                print *, 'couple.F :', alpha_rgt, tempout_taup,  tempout_taum, rkmh(i,j)  
+!            endif
         t(i,k,j,2,taup) =  (t(i,k,j,2,taup) + 
      &   alpha_rgt*(saltout_taup - saltout_taum)) * rkmh(i,j)
         u(i,k,j,taup) =  (u(i,k,j,taup) +
