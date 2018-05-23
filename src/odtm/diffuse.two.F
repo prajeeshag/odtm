@@ -36,12 +36,16 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	
 	 ip = i + 1
 	 im = i - 1
+        if (im<1) im = 1 !Prajeesh  
 	 jp = j + 1
 	 jm = j - 1
+        if (jm<1) jm = 1 !Prajeesh  
 	 ip2 = i + 2
 	 im2 = i - 2
+        if (im2<1) im2 = 1 !Prajeesh  
 	 jp2 = j + 2
 	 jm2 = j - 2
+        if (jm2<1) jm2 = 1 !Prajeesh  
         
 #ifdef area_weighted123
         do ii = im2,ip2
@@ -218,11 +222,6 @@ c ==================  diffuse_vv ==========================================
         real :: sum_2ptd
         integer, intent(in) :: index, i1, j1, i2, j2
 
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
-        
         if (index .eq. 1) then
         sum_2ptd = (u(i1,k,j1,taum) + u(i2,k,j2,taum))
         endif

@@ -112,9 +112,6 @@ program main
     
     do loop = loop_start, (loop_total+loop_start)
 
-        age_time = age_time + 1
-        !c  if (loop .eq. loop_start) call maph
-    
         loop_day = loop*dt/day2sec
 
 #ifdef monthly_wind
@@ -828,14 +825,14 @@ program main
         rkmh(:,:) = 1.0
  
         do ii=1,imt
-            do jj=1,jmt
+            do jj=1,jmt-1 !Prajeesh 
                 if (rkmt(ii,jj) .eq. 0.0 .and. rkmt(ii,jj+1) .eq. 0.0) &
                         rkmu(ii,jj) = 0.0
             enddo
         enddo
     
         do ii=1,imt-1
-            do jj=1,jmt
+            do jj=1,jmt-1 !Prajeesh 
                 if (rkmt(ii,jj) .eq. 0.0 .and. rkmt(ii+1,jj) .eq. 0.0) &
                         rkmv(ii,jj) = 0.0
             enddo

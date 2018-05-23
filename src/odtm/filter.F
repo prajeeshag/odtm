@@ -79,13 +79,19 @@ c     &    eta(i,k,j,taup) -2*eta(i,k,j,taun) + eta(i,k,j,taum) )
 	t(i,k,j,nt,taum) = t(i,k,j,nt,taun)
 	t(i,k,j,nt,taun) = t(i,k,j,nt,taup)
 	t(i,k,j,nt,taup) = 0.0
-        if (k.gt.1.and.t(i,k,j,1,taum).gt.t(i,k-1,j,1,taum))then
+
+        if (k.gt.1) then !Prajeesh  
+        if (t(i,k,j,1,taum).gt.t(i,k-1,j,1,taum))then
         t(i,k,j,1,taum) = (t(i,k-1,j,1,taum)+ t(i,k,j,1,taum))/2.0
         t(i,k-1,j,1,taum) = t(i,k,j,1,taum)
         endif
-        if (k.gt.1.and.t(i,k,j,1,taun).gt.t(i,k-1,j,1,taun))then
+        endif
+
+        if (k.gt.1) then !Prajeesh  
+        if (t(i,k,j,1,taun).gt.t(i,k-1,j,1,taun))then
         t(i,k,j,1,taun) = (t(i,k-1,j,1,taun)+ t(i,k,j,1,taun))/2.0
         t(i,k,j,1,taun) = t(i,k-1,j,1,taun)
+        endif
         endif
 	enddo
 	
@@ -308,5 +314,5 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
 	return
-	stop
-	end
+	
+	end subroutine filter

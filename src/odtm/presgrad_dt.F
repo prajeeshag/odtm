@@ -217,15 +217,18 @@ c	write(*,*) pres_gradu(k), pres_gradv(k)
         real :: density_nonlinear, rKtsp
 
         real :: rT1, rT2, rT3, rT4, rT5, rS1, rS2, rS1b2, rP1, rP2
-        real :: rTempt, rSaltt, rho_0, rT, rS
+        real :: rho_0, rT, rS
+
+         rT = 0 !Prajeesh   needs review
+         rS = 0 !Prajeesh   needs review
 
          rT1 = rTemp**1
-         rT2 = rTempt**2 !rTempt is not assigned !!??? Prajeesh  
-         rT3 = rTempt**3
-         rT4 = rTempt**4
-         rT5 = rTempt**5
+         rT2 = rTemp**2 !rTempt is not assigned !!??? Prajeesh  corrected
+         rT3 = rTemp**3
+         rT4 = rTemp**4
+         rT5 = rTemp**5
          rS1 = rSalt**1
-         rS2 = rSaltt**2 !rSaltt is not assigned !!?? Prajeesh
+         rS2 = rSalt**2 !rSaltt is not assigned !!?? Prajeesh
          rS1b2 = rSalt**1.5
          rP1 = rDepth*0.1  ! in bars approximately
          rP2 = rP1**2  

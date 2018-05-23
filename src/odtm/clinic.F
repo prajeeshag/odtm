@@ -26,8 +26,10 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	
 	ip = i + 1
 	im = i - 1
+        if (im<1) im=1 !Prajeesh 
 	jp = j + 1
 	jm = j - 1
+        if (jm<1) jm=1 !Prajeesh    
 
 	tropdubdx = 0.0
 	tropdvbdy = 0.0
@@ -77,14 +79,14 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	rtemp1 = Re*Re*cos(theta(j))*cos(theta(j)) 
 	rtemp1 = 1.0/rtemp1
 	 if (rkmh(i+1,j) .eq. 0.0) rmask_right = 0.0
-	 if (rkmh(i-1,j) .eq. 0.0) rmask_left = 0.0
+	 if (rkmh(im,j) .eq. 0.0) rmask_left = 0.0 !Prajeesh   
 	 if (rkmh(i,j+1) .eq. 0.0) rmask_top = 0.0
-	 if (rkmh(i,j-1) .eq. 0.0) rmask_bot = 0.0
+	 if (rkmh(i,jm) .eq. 0.0) rmask_bot = 0.0 !Prajeesh 
  
 	dphi = (rdx(i+1)+rdx(i))/2.0
 	rtemp2 = rmask_right*(h(i+1,k,j,taum) - h(i,k,j,taum) )/dphi
 	dphi = (rdx(i)+rdx(i-1))/2.0
-	rtemp3 = rmask_left*(h(i,k,j,taum) - h(i-1,k,j,taum) )/dphi
+	rtemp3 = rmask_left*(h(i,k,j,taum) - h(im,k,j,taum) )/dphi
 	dphi = rdx(i)
 	rtemp4 = (rtemp2 - rtemp3)/dphi
 	rtemp5 = rtemp1*rtemp4  ! reserve
@@ -93,7 +95,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	dthe = (rdy(j+1) + rdy(j))/2.0
 	rtemp2 = rmask_top*(h(i,k,j+1,taun) - h(i,k,j,taun))/dthe
 	dthe = (rdy(j-1) + rdy(j))/2.0
-	rtemp3 = rmask_bot*(h(i,k,j,taun) - h(i,k,j-1,taun))/dthe
+	rtemp3 = rmask_bot*(h(i,k,j,taun) - h(i,k,jm,taun))/dthe
 	dthe = rdy(j)
 	rtemp4 = (cos(rthetapone)*rtemp2 - cos(rthetamone)*rtemp3)/dthe
 	rtemp6 = rtemp1*rtemp4  ! reserve

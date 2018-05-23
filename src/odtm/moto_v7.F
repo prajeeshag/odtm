@@ -31,7 +31,8 @@
         
         real :: a1, a2, b1, b2, c1, day, deg2rad, dt, dtz, dz, dz2, dzz, f0, g1, g2
         real :: ga, r5, ro, y0, z0, z0d, al, bs, e1, e2, e3, e4, e5, e6, e7, f1, f2
-        real :: f3, f4, ft, g3, g4, gc, h1, h2, h3, hh, hj1, hj2, t, twx, twy, tx
+        real :: f3, f4, ft, g3, g4, gc, h1, h2, h3, hh, hj1, hj2, twx, twy, tx
+        !real :: t
         real :: xk, xk2, afkph, bt, bx, dfkph, diff_bryan_lewis, pi, q1, q2, qx
         real :: rcm2tom2, rtemp, sfkph, sz, txy, ty, UO, uu, uv, uvs, VO, vv
         real :: x1, x2, x3, ya, zfkph, zk, rvr_runoff, speed, UC2, VC2
@@ -150,7 +151,7 @@
       K1=0
     2 K1=K1+1
 ! TIME INCREASING
-      T=T+DT
+!      T=T+DT !Prajeesh  
 ! WIND STRESS
       TWX = tauxin
       TWY = tauyin
