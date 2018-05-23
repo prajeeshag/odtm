@@ -1,3 +1,7 @@
+        module interp_extrap_mod
+
+        contains
+         
         subroutine interp_extrap (ii,jj,kk,kmax,tau_index,
      &  tempout,saltout,uvelout,vvelout)
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -104,6 +108,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
         subroutine interp_extrap_we_profile (ii, jj, kmax)
+
         use size_mod, only : eta, h, loop, we_baro, we_mld, we_prof, taum, taun, km
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt
         implicit none
@@ -169,6 +174,6 @@ c 10     format(e12.5,2x,e12.5,2x,e12.5,2x,e12.5,2x,e12.5,2x,e12.5)
         we_baro = rsum/max(1,icount)
 
         return
-        end
+        end subroutine
 
-
+        end module interp_extrap_mod 

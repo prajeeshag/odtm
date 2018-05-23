@@ -1,4 +1,9 @@
-        subroutine heat_flux( hm, airt_in, sst, uwndin, vwndin, 
+       
+            module heat_flux_mod
+
+            contains
+         
+         subroutine heat_flux( hm, airt_in, sst, uwndin, vwndin, 
      &   cldin,qnet_out, qs, ql, qb, tx, ty, Lv)
 ! hm - humidity, airt- air temperature, c= fractional cloudiness
 ! qnet - to return net flux
@@ -12,7 +17,7 @@
         real  qs, ql, qm, qb, qnet_out
         real TT, TTt, ew,Pa
         real sigma
-        real :: cldin, coe, del_t, dq, qsat, sb, tau
+        real :: cldin, coe, del_t, dq, sb, tau
                
         rho_a= 1.175
         cd=2.8*10**(-3)
@@ -101,7 +106,7 @@
         qnet_out =  qs+ql+qb
  
         return
-        end
+        end subroutine heat_flux
 
  
          function qsat(Ta,Pa)
@@ -138,4 +143,5 @@
         qsat = 0.62197*(ew/(Pa-0.378*ew))  !% mb -> kg/kg        
    
 
-        end
+        end function 
+            end module heat_flux_mod 

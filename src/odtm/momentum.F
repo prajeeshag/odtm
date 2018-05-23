@@ -1,6 +1,7 @@
 
         module momentum_mod
         use advec_mod, only : advec        
+        use heat_flux_mod, only : heat_flux 
         implicit none
 
         private

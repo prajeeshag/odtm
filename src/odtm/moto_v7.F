@@ -1,4 +1,11 @@
-      SUBROUTINE MT1 (tempin, saltin, uvelin, vvelin, tauxin,tauyin, 
+        
+        module moto_mod
+
+        use implicit_thomas_mod, only : implicit_vmix
+
+        contains
+
+        SUBROUTINE MT1 (tempin, saltin, uvelin, vvelin, tauxin,tauyin, 
      &     qnet, sswin, pmein, rLATin,dt_rg,SM,SH,we_prof, we_baro, icval,R,
      &     entr_flux, speed, pme_eps, rvr_runoff,
      &     diag1, diag2, diag3, diag4, diag5, diag6,ii,jj)
@@ -357,5 +364,7 @@
 
         RETURN
       STOP
-      END
+      END SUBROUTINE
+
+        end module moto_mod
 

@@ -1,3 +1,8 @@
+       
+        module interp_extrap_initial_mod
+
+        contains
+ 
         subroutine interp_extrap_initial (ii,jj,kk,kmax,tempin,saltin,
      &  tempout,saltout)
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -69,3 +74,5 @@ c        if (kkk .gt. kmax) goto 101
  102    continue
         return
         end subroutine interp_extrap_initial
+
+        end module interp_extrap_initial_mod 

@@ -1,4 +1,5 @@
         module couple_mod
+        use interp_extrap_mod, only : interp_extrap
         implicit none
 
         private

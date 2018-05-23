@@ -14,6 +14,11 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only : diag_ext4, diag_ext5, diag_ext6
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt, dtts
             use param_mod, only : imt, jmt, mld_mld, rmld_misc
+
+            use interp_extrap_mod, only : interp_extrap_we_profile
+            use heat_flux_mod, only : heat_flux
+            use moto_mod, only : MT1
+
         implicit none
         real tempin(51), saltin(51)
         real rmldout

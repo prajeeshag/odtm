@@ -9,25 +9,27 @@ module size_mod
   integer, parameter :: NPP=225, nn=2, kmaxMYM=51
 
   real, pointer, dimension(:,:,:,:) :: u => null(), v => null()
+
   real, pointer, dimension(:,:,:,:,:) :: t => null()
+
   real :: we(imt,km,jmt), wd(imt,km,jmt)
+
   real :: we_mld(imt,0:km,jmt)
 
   real :: we_prof(0:52), we_baro
+
   real :: uN(imt,km,2), vN(imt,km,2), hhN(imt,km,2), etaN(imt,km,2)
-  real :: uS(imt,km,2),vS(imt,km,2),hhS(imt,km,2), etaS(imt,km,2)
+  real :: uS(imt,km,2), vS(imt,km,2), hhS(imt,km,2), etaS(imt,km,2)
   real :: uE(2,km,jmt), vE(2,km,jmt), hhE(2,km,jmt), etaE(2,km,jmt)
+
   real, pointer, dimension(:,:,:,:) :: temp => null(), salt => null()
   real, pointer, dimension(:,:,:,:) :: uvel => null(), vvel => null()
   real, pointer, dimension(:,:,:,:) :: h => null()
 
   real :: temp_read(imt,201,jmt,lm)
   real :: salt_read(imt,201,jmt,lm)
-  real :: rK13(imt,kmaxMYM,jmt)
-  real :: rK23(imt,kmaxMYM,jmt)
-  real :: rK31(imt,kmaxMYM,jmt)
-  real :: rK32(imt,kmaxMYM,jmt)
-  real :: rK33(imt,kmaxMYM,jmt)
+
+
   real :: gdx(0:imt+1), gdy(0:jmt+1)
   real :: rdx(0:imt+1), rdy(0:jmt+1)
   real :: tracedubdxmld(51,4), tracedvbdymld(51,4)

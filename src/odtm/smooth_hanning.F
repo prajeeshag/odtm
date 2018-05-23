@@ -1,4 +1,9 @@
-	subroutine smooth (idim1, idim2, idim3, idim4, idim5,
+
+        module smooth_hanning_mod
+
+        contains
+
+        subroutine smooth (idim1, idim2, idim3, idim4, idim5,
      &  imts, jmts, kmts, imte, jmte, kmte)
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
@@ -128,5 +133,6 @@ c=======================================================================
         enddo
 #endif
 	return
-	stop
-	end
+	end subroutine 
+    
+        end module smooth_hanning_mod

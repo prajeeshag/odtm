@@ -32,11 +32,20 @@ FMS_UTILITIES="$FMS_UTILS/include \
 
 paths="$thisdir/src/odtm"
 
-mkdir -p $execdir
+mkdir -p $execdir/lib_fms
 
-cd $execdir
 
-$mkmf -f -p $EXE -t $mkmftemplate $paths $FMS_UTILITIES
+cd $execdir/lib_fms
+
+$mkmf -f -p lib_fms.a -t $mkmftemplate $FMS_UTILITIES
+
+make -j 16
+
+mkdir -p $execdir/odtm
+
+cd $execdir/odtm
+
+$mkmf -f -p $EXE -t $mkmftemplate -o "-I$execdir/lib_fms" -l "$execdir/lib_fms/lib_fms.a" -a $paths
 
 make $@
 

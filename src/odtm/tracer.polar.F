@@ -22,6 +22,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use param_mod, only : day2sec, diffuse_h, diffuse_my, diffuse_tr, dphi
         use param_mod, only : dthe, dtts, nn, theta, dt
 
+        use interp_extrap_initial_mod, only : interp_extrap_initial 
+
         implicit none
         real relax_tr(nn), tempin(201), saltin(201)
         

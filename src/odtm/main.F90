@@ -29,6 +29,7 @@ program main
     use tracer_mod, only : tracer
     use couple_mod, only : couple_rgmld
     use presgrad_mod, only : pressure_integral
+    use interp_extrap_initial_mod, only : interp_extrap_initial
     
     use mpp_mod, only : mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init
     use mpp_mod, only : mpp_exit, mpp_max, mpp_sum
@@ -586,9 +587,9 @@ program main
         integer :: used
 
        
-        used = send_data(id_sst,real(t(1:imt,1,1:jmt,1,taun)), time, mask=lmask)
+        used = send_data(id_sst,t(1:imt,1,1:jmt,1,taun), time, mask=lmask)
 
-        used = send_data(id_sss,real(t(1:imt,1,1:jmt,2,taun)), time, mask=lmask)
+        used = send_data(id_sss,t(1:imt,1,1:jmt,2,taun), time, mask=lmask)
 
         if (id_temp>0) then
             do ii = 1, km

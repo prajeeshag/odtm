@@ -8,6 +8,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : eta, h, i, j, rkmh, rkmu, rkmv, t, u, v, k
         use size_mod, only : loop, rkmhH, taum, taun, taup, imt, jmt, km, nn
         use param_mod, only : alpha, dt
+        use smooth_hanning_mod, only : smooth
         implicit none
 	    real vel_lim(km), t_lim(k), t_llim(km)
         integer :: nt, idim5, idim4, idim3, idim2, idim1, ii, jj, kk, iii

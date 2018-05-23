@@ -1,4 +1,8 @@
-	subroutine implicit_vmix (KH, dz_in, dt_in, km, t1, t2)
+        module implicit_thomas_mod
+
+        contains 
+
+        subroutine implicit_vmix (KH, dz_in, dt_in, km, t1, t2)
         
         implicit none
     
@@ -81,7 +85,7 @@ c
  101    continue
 
         return
-	end
+	end subroutine 
 	
         subroutine thomas (km, a,b,c,d)
 
@@ -105,4 +109,6 @@ c
           end do
         
         return
-        end
+        end subroutine
+
+        end module implicit_thomas_mod 

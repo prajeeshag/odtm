@@ -29,7 +29,7 @@ use strict;
 use File::Basename;
 use Getopt::Std;
 use Config;			# use to put in platform-specific stuff
-use vars qw( $opt_a $opt_c $opt_d $opt_f $opt_l $opt_m $opt_o $opt_p $opt_t $opt_v $opt_x ); # declare these global to be shared with Getopt:Std
+use vars qw( $opt_a $opt_c $opt_d $opt_f $opt_l $opt_m $opt_o $opt_p $opt_t $opt_v $opt_x $opt_I ); # declare these global to be shared with Getopt:Std
 
 #subroutines
 sub ensureTrailingSlash {
@@ -37,10 +37,10 @@ sub ensureTrailingSlash {
    local $/ = '/'; chomp @_[0]; @_[0] .= '/';
 }
 
-my $version = '$Id: mkmf,v 1.1.2.1 2009/12/17 00:41:15 nnz Exp $ ';
+my $version = '$Id: mkmf,v 1.1.2.1 2013/12/18 17:47:54 Niki.Zadeh Exp $ ';
 
 # initialize variables: use getopts for these
-getopts( 'a:c:dfm:o:p:t:vx' ) || die "\aSyntax: $0 [-a abspath] [-c cppdefs] [-d] [-f] [-m makefile] [-o otherflags] ][-p program] [-t template] [-v] [-x] [targets]\n";
+getopts( 'a:I:c:dfm:o:l:p:t:vx' ) || die "\aSyntax: $0 [-a abspath] [-c cppdefs] [-d] [-f] [-m makefile] [-o otherflags] ][-p program] [-t template] [-v] [-x] [-I \"space separated include dirs\"] [targets]\n";
 $opt_v = 1 if $opt_d;	# debug flag turns on verbose flag also
 print "$0 $version\n" if $opt_v;
 
@@ -65,8 +65,8 @@ my @inc_suffixes = ( q/\.H/, q/\.fh/, q/\.h/, q/\.inc/, q/\.h90/ );
 my @tgt_suffixes = ( q/\.a/ );
 
 my %compile_cmd = (			# command to create .o file from a given source file suffix
-      q/.F/   => q/$(FC) $(CPPDEFS) $(CPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c/,
-      q/.F90/ => q/$(FC) $(CPPDEFS) $(CPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c/,
+      q/.F/   => q/$(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c/,
+      q/.F90/ => q/$(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c/,
       q/.c/   => q/$(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c/,
       q/.f/   => q/$(FC) $(FFLAGS) $(OTHERFLAGS) -c/,
       q/.f90/ => q/$(FC) $(FFLAGS) $(OTHERFLAGS) -c/              );
@@ -96,9 +96,9 @@ sub print_formatted_list{
 #begin writing makefile
 open MAKEFILE, ">$mkfile" or die "\aERROR opening file $mkfile for writing: $!\n";
 printf MAKEFILE "# Makefile created by %s $version\n\n", basename($0);
-print  MAKEFILE "include $opt_t\n\n" if $opt_t; #include template if supplied
 print  MAKEFILE "SRCROOT = $opt_a\n\n" if $opt_a; # make abspath a variable
 if ( $opt_c ) {
+   $opt_c =~ s/\s+$//;
    if ( $Config{osname} eq 'aix' ) {
       $opt_c .= ' -D__aix';
 #AIX fortran (xlf) requires -WF, in front, comma delimiter, no spaces
@@ -106,12 +106,14 @@ if ( $opt_c ) {
       $cppdefs_xlf =~ s/,/\\,/g; # escape any commas already there
       $cppdefs_xlf =~ s/\s+/,/g; # replace whitespace with commas
       &print_formatted_list("CPPDEFS_XLF = $cppdefs_xlf");
-      $compile_cmd{'.F'}   = q/$(FC) $(CPPDEFS_XLF) $(FFLAGS) -c/;
-      $compile_cmd{'.F90'} = q/$(FC) $(CPPDEFS_XLF) $(FFLAGS) -c/;
+      $compile_cmd{'.F'}   = q/$(FC) $(CPPDEFS_XLF) $(FFLAGS) $(OTHERFLAGS) -c/;
+      $compile_cmd{'.F90'} = q/$(FC) $(CPPDEFS_XLF) $(FFLAGS) $(OTHERFLAGS) -c/;
    }
    &print_formatted_list("CPPDEFS = $opt_c") if $opt_c;
 }
 print MAKEFILE "\nOTHERFLAGS = $opt_o" if $opt_o;
+#vb 2009-12-17, include now comes after vardefs, so that it can modify make variables
+print MAKEFILE "\n\ninclude $opt_t\n\n" if $opt_t; #include template if supplied
 print MAKEFILE "\n.DEFAULT:\n\t-echo \$@ does not exist.\n";
 print MAKEFILE "all: $opt_p\n"; # first target should be program, so you can type just 'make'
 
@@ -376,6 +378,11 @@ foreach $object ( sort @objects ) {
    }
    foreach ( @includepaths ) { # include files may be anywhere in directory array
       print MAKEFILE " -I$_" if $_;
+   }
+   if ( $opt_I ){
+     foreach ( split /\s+/, $opt_I ){
+       print MAKEFILE " -I$_";
+     }
    }
    print MAKEFILE "\t$source_of{$object}\n";
 
