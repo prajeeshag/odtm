@@ -24,10 +24,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         hstart = 0
         do irepeat = 1,kk-1
-        hstart = hstart + h(ii,irepeat,jj,taun)
+        hstart = hstart + h(ii,jj,irepeat,taun)
         enddo
 
-        hend = h(ii,kk,jj,taun) + hstart
+        hend = h(ii,jj,kk,taun) + hstart
         rsum1 = 0.0
         rsum2 = 0.0
         rsum3 = 0.0
@@ -59,14 +59,14 @@ c        if (kkk .gt. kmax) goto 101
       if (hstart .gt. kmax*5.0) goto 102
       if (kkk .gt. kmax) then
 
-        tempout = (t(ii,kk,jj,1,taun) * (h(ii,kk,jj,taun)-icount*5.0) +
-     &   rsum1*5.0 )/max(1.0,h(ii,kk,jj,taun))
-        saltout = (t(ii,kk,jj,2,taun) * (h(ii,kk,jj,taun)-icount*5.0) +
-     &   rsum2*5.0 )/max(1.0,h(ii,kk,jj,taun))
-        uvelout = (u(ii,kk,jj,taun) * (h(ii,kk,jj,taun)-icount*5.0) +
-     &   rsum3*5.0 )/max(1.0,h(ii,kk,jj,taun))
-        vvelout = (v(ii,kk,jj,taun) * (h(ii,kk,jj,taun)-icount*5.0) +
-     &   rsum4*5.0 )/max(1.0,h(ii,kk,jj,taun))
+        tempout = (t(ii,jj,kk,1,taun) * (h(ii,jj,kk,taun)-icount*5.0) +
+     &   rsum1*5.0 )/max(1.0,h(ii,jj,kk,taun))
+        saltout = (t(ii,jj,kk,2,taun) * (h(ii,jj,kk,taun)-icount*5.0) +
+     &   rsum2*5.0 )/max(1.0,h(ii,jj,kk,taun))
+        uvelout = (u(ii,jj,kk,taun) * (h(ii,jj,kk,taun)-icount*5.0) +
+     &   rsum3*5.0 )/max(1.0,h(ii,jj,kk,taun))
+        vvelout = (v(ii,jj,kk,taun) * (h(ii,jj,kk,taun)-icount*5.0) +
+     &   rsum4*5.0 )/max(1.0,h(ii,jj,kk,taun))
 
         endif
 

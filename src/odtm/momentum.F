@@ -96,7 +96,7 @@ c	 endif
          speed = (uwndin**2 + vwndin**2)**0.5
          airt_in = airt(i,j)
          sphm_in = sphm(i,j)
-         sst_in = temp(i,1,j,1) ! temperature of first layer
+         sst_in = temp(i,j,1,1) ! temperature of first layer
          call heat_flux(sphm_in,airt_in,sst_in,uwndin,vwndin,cldin,qnet_in,
      &   qs, ql, qb, tx, ty, Lv)
 	taux_1 = (tx / rho(1)  ) * (1 - mod(loop,2))
@@ -109,19 +109,19 @@ c        goto 183
 	 h_ekman = 20.0
 
 	 if (k .eq. 1) then
-	 if (h(i,1,j,taun) .lt. h_ekman) then
-	 taux_1 = taux_1 * h(i,1,j,taun)/h_ekman
-	 tauy_1 = tauy_1 * h(i,1,j,taun)/h_ekman
+	 if (h(i,j,1,taun) .lt. h_ekman) then
+	 taux_1 = taux_1 * h(i,j,1,taun)/h_ekman
+	 tauy_1 = tauy_1 * h(i,j,1,taun)/h_ekman
 	 endif
 	 endif
 	 if (k .eq. 2) then
-	 if (h(i,1,j,taun) .lt. h_ekman) then
-	 taux_1 = taux_1 * (h_ekman - h(i,1,j,taun))/h_ekman
-	 tauy_1 = tauy_1 * (h_ekman - h(i,1,j,taun))/h_ekman
+	 if (h(i,j,1,taun) .lt. h_ekman) then
+	 taux_1 = taux_1 * (h_ekman - h(i,j,1,taun))/h_ekman
+	 tauy_1 = tauy_1 * (h_ekman - h(i,j,1,taun))/h_ekman
 	 endif
 	 endif
 	
-	 if (k .eq. 2 .and. h(i,1,j,taun) .ge. h_ekman) then
+	 if (k .eq. 2 .and. h(i,j,1,taun) .ge. h_ekman) then
 	 taux_1 = 0.0
 	 tauy_1 = 0.0
 	 endif
@@ -149,14 +149,14 @@ c	 endif
 #endif
 	rtemp_relax_u1 = dz(k)
 	rtemp_relax_v1 = dz(k)
-	if (u(i,k,j,taum) .gt. 1.0 .and. u(i,k,j,taum) .ne. 0.0) 
-     &   relaxterm_u1 = rtemp_relax_u1*(1.0 - u(i,k,j,taum))/864000.0/3.0
-	if (v(i,k,j,taum) .gt. 1.0 .and. v(i,k,j,taum) .ne. 0.0) 
-     &   relaxterm_v1 = rtemp_relax_v1*(1.0 - v(i,k,j,taum))/864000.0/3.0
-	if (u(i,k,j,taum) .lt. 1.0 .and. u(i,k,j,taum) .ne. 0.0) 
-     &   relaxterm_u1 = rtemp_relax_u1*(1.0 - u(i,k,j,taum))/864000.0/3.0
-	if (v(i,k,j,taum) .lt. 1.0 .and. v(i,k,j,taum) .ne. 0.0) 
-     &   relaxterm_v1 = rtemp_relax_v1*(1.0 - v(i,k,j,taum))/864000.0/3.0
+	if (u(i,j,k,taum) .gt. 1.0 .and. u(i,j,k,taum) .ne. 0.0) 
+     &   relaxterm_u1 = rtemp_relax_u1*(1.0 - u(i,j,k,taum))/864000.0/3.0
+	if (v(i,j,k,taum) .gt. 1.0 .and. v(i,j,k,taum) .ne. 0.0) 
+     &   relaxterm_v1 = rtemp_relax_v1*(1.0 - v(i,j,k,taum))/864000.0/3.0
+	if (u(i,j,k,taum) .lt. 1.0 .and. u(i,j,k,taum) .ne. 0.0) 
+     &   relaxterm_u1 = rtemp_relax_u1*(1.0 - u(i,j,k,taum))/864000.0/3.0
+	if (v(i,j,k,taum) .lt. 1.0 .and. v(i,j,k,taum) .ne. 0.0) 
+     &   relaxterm_v1 = rtemp_relax_v1*(1.0 - v(i,j,k,taum))/864000.0/3.0
 	
 	relaxterm_u1 = 0.0
 	relaxterm_u2 = 0.0
@@ -169,8 +169,8 @@ c	 endif
 	rH1 = max(1.0, rH1)
 	
 	
-        u(i,k,j,taup) =
-     &   u(i,k,j,taum)*rH1
+        u(i,j,k,taup) =
+     &   u(i,j,k,taum)*rH1
      &   + ( 
      &   + fcoruh
 #if !defined density
@@ -187,9 +187,6 @@ c	 endif
      &    - advec_vu
      &    + polar_u
 #endif
-#ifdef entrain
-c     &    + 0.5*(wd(i,k,j)+wd(i-1,k,j))*u(i,k,j,taun)
-#endif
 #ifdef constant_laplacian
      &    + diffuse_uu
 #endif
@@ -205,20 +202,19 @@ c     &    + 0.5*(wd(i,k,j)+wd(i-1,k,j))*u(i,k,j,taun)
 
 	rH1 = sum_2ptp(3,i,j,im,j)/ sum_2ptp(31,i,j,im,j)
 	rH1 = max(1.0, rH1)
-	u(i,k,j,taup) = u(i,k,j,taup)/rH1
+	u(i,j,k,taup) = u(i,j,k,taup)/rH1
 	
-c	u(i,k,j,taup) = u(i,k,j,taup) *
+c	u(i,j,k,taup) = u(i,j,k,taup) *
 c     & rkmt(i,j)*rkmt(ip,j)*rkmt(ip,jp)*rkmt(i,jp)
 	
-	if (u(i,k,j,taup) .ne. u(i,k,j,taup)) then
-	 u(i,k,j,taup) = 0.0
+	if (u(i,j,k,taup) .ne. u(i,j,k,taup)) then
+	 u(i,j,k,taup) = 0.0
 	endif
 
 
         call drag_across_layers (1)
 	
 	
-c	write(*,*) u(i,2,j,taun)
 #ifdef density
 	 in_key = 2
 	 call rgravity (in_key)
@@ -227,8 +223,8 @@ c	write(*,*) u(i,2,j,taun)
 	rH1 = sum_2ptm(3,i,j,i,jm)/ sum_2ptm(31,i,j,i,jm)
 	rH1 = max(1.0, rH1)
 
-         v(i,k,j,taup) =
-     &   v(i,k,j,taum)*rH1
+         v(i,j,k,taup) =
+     &   v(i,j,k,taum)*rH1
      &    + ( 
      &    - fcorvh 
 #if !defined density
@@ -245,9 +241,6 @@ c	write(*,*) u(i,2,j,taun)
      &    - advec_vv
      &    - polar_v
 #endif
-#ifdef entrain
-c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
-#endif
 #ifdef constant_laplacian
      &    + diffuse_vv
 #endif
@@ -263,13 +256,10 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
 
 	rH1 = sum_2ptp(3,i,jm,i,j)/ sum_2ptp(31,i,jm,i,j)
 	rH1 = max(1.0, rH1)
-	v(i,k,j,taup) = v(i,k,j,taup)/rH1
+	v(i,j,k,taup) = v(i,j,k,taup)/rH1
 
-!	v(i,k,j,taup) = v(i,k,j,taup) *
-!     & rkmt(i,j)*rkmt(ip,j)*rkmt(ip,jp)*rkmt(i,jp)
-
-	if (v(i,k,j,taup) .ne. v(i,k,j,taup)) then
-	 v(i,k,j,taup) = 0.0
+	if (v(i,j,k,taup) .ne. v(i,j,k,taup)) then
+	 v(i,j,k,taup) = 0.0
 	endif
 	
 
@@ -277,10 +267,10 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
 
 	rtemp1 = 0.5*rho(k)
 	rtemp2 = 0.5*rho(k)*((rho(k+1)-rho(k))/rho(k))*g
-	rKE=rtemp1*dz(k)*((u(i,k,j,taun)**2)+(v(i,k,j,taun)**2))
-	rpert = h(i,k,j,taun) - dz(k)
+	rKE=rtemp1*dz(k)*((u(i,j,k,taun)**2)+(v(i,j,k,taun)**2))
+	rpert = h(i,j,k,taun) - dz(k)
 	rPE = rtemp2*(rpert**2)
-	rEnergy(i,k,j) = rEnergy(i,k,j) + (rKE + rPE)*dtts
+	rEnergy(i,j,k) = rEnergy(i,j,k) + (rKE + rPE)*dtts
 	relaxterm_u1 = 0.0
 	relaxterm_u2 = 0.0
 	relaxterm_u3 = 0.0
@@ -300,21 +290,17 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
         
         real :: sum_2ptp 
         integer, intent(in) :: index, i1, j1, i2, j2
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
         
         if (index .eq. 1) then
-        sum_2ptp = (u(i1,k,j1,taup) + u(i2,k,j2,taup))
+        sum_2ptp = (u(i1,j1,k,taup) + u(i2,j2,k,taup))
         endif
 
         if (index .eq. 2) then
-        sum_2ptp = (v(i1,k,j1,taup) + v(i2,k,j2,taup))
+        sum_2ptp = (v(i1,j1,k,taup) + v(i2,j2,k,taup))
         endif
 
         if (index .eq. 3) then
-        sum_2ptp = (h(i1,k,j1,taup) + h(i2,k,j2,taup))
+        sum_2ptp = (h(i1,j1,k,taup) + h(i2,j2,k,taup))
         endif
 
         if (index .eq. 11) then
@@ -341,21 +327,17 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
         real :: sum_2ptm
         integer, intent(in) :: index, i1, j1, i2, j2
 
-!#include "size.h"
-!#include "polar.h"
-!#include "param.h"
-
         
         if (index .eq. 1) then
-        sum_2ptm = (u(i1,k,j1,taum) + u(i2,k,j2,taum))
+        sum_2ptm = (u(i1,j1,k,taum) + u(i2,j2,k,taum))
         endif
 
         if (index .eq. 2) then
-        sum_2ptm = (v(i1,k,j1,taum) + v(i2,k,j2,taum))
+        sum_2ptm = (v(i1,j1,k,taum) + v(i2,j2,k,taum))
         endif
 
         if (index .eq. 3) then
-        sum_2ptm = (h(i1,k,j1,taum) + h(i2,k,j2,taum))
+        sum_2ptm = (h(i1,j1,k,taum) + h(i2,j2,k,taum))
         endif
 
         if (index .eq. 11) then
@@ -388,15 +370,15 @@ c     &    + 0.5*(wd(i,k,j)+wd(i,k,j-1))*v(i,k,j,taun)
 #include "cparam.h"
 
         if ( k .gt. 1 .and. k .lt. km-1 .and. ind_drag .eq. 1) then
-        u(i,k,j,taup) = u(i,k,j,taup)   
-     & +rdrag * (u(i,k-1,j,taup) - u(i,k,j,taup)) * dtts * rkmu(i,j) 
-     & +rdrag * (u(i,k+1,j,taup) - u(i,k,j,taup)) * dtts * rkmu(i,j)
+        u(i,j,k,taup) = u(i,j,k,taup)   
+     & +rdrag * (u(i,j,k-1,taup) - u(i,j,k,taup)) * dtts * rkmu(i,j) 
+     & +rdrag * (u(i,j,k+1,taup) - u(i,j,k,taup)) * dtts * rkmu(i,j)
         endif
         
         if ( k .gt. 1 .and. k .lt. km-1 .and. ind_drag .eq. 2) then
-        v(i,k,j,taup) = v(i,k,j,taup)   
-     & +rdrag * (v(i,k-1,j,taup) - v(i,k,j,taup)) * dtts * rkmv(i,j)
-     & +rdrag * (v(i,k+1,j,taup) - v(i,k,j,taup)) * dtts * rkmv(i,j)
+        v(i,j,k,taup) = v(i,j,k,taup)   
+     & +rdrag * (v(i,j,k-1,taup) - v(i,j,k,taup)) * dtts * rkmv(i,j)
+     & +rdrag * (v(i,j,k+1,taup) - v(i,j,k,taup)) * dtts * rkmv(i,j)
         endif
 
         return

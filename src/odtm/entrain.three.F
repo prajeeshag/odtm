@@ -24,13 +24,13 @@ c
 	do i=2,imt-1
 	do j=2,jmt-1
 	
-	if (he(k) .gt. h(i,k,j,taun) )  then
-	 we(i,k,j) =  rkmh(i,j) *( he(k) - h(i,k,j,taun) )**2
+	if (he(k) .gt. h(i,j,k,taun) )  then
+	 we(i,j,k) =  rkmh(i,j) *( he(k) - h(i,j,k,taun) )**2
      &           /(he(k)*te)
-	 wd(i,k+1,j) =  -1.0*rkmh(i,j) *( he(k) - h(i,k,j,taun) )**2
+	 wd(i,j,k+1) =  -1.0*rkmh(i,j) *( he(k) - h(i,j,k,taun) )**2
      &           /(he(k)*te)
 	
-         wd(i,km,j) = 0.0
+         wd(i,j,km) = 0.0
 	endif
 
 	enddo
@@ -44,10 +44,10 @@ c
         do i=2,imt-1
         do j=2,jmt-1
 
-        if (hd(k) .lt. h(i,k,j,taun) )  then
-         wd(i,k,j) =  wd(i,k,j) - rkmh(i,j)*(hd(k)-h(i,k,j,taun))**2
+        if (hd(k) .lt. h(i,j,k,taun) )  then
+         wd(i,j,k) =  wd(i,j,k) - rkmh(i,j)*(hd(k)-h(i,j,k,taun))**2
      &           /(hd(k)*td)
-         we(i,k+1,j) =  we(i,k+1,j) + rkmh(i,j)*(hd(k)-h(i,k,j,taun))**2
+         we(i,j,k+1) =  we(i,j,k+1) + rkmh(i,j)*(hd(k)-h(i,j,k,taun))**2
      &           /(hd(k)*td)
 
         endif

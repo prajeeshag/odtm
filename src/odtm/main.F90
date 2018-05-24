@@ -13,17 +13,16 @@ program main
     use size_mod, only : itimermax, itimerrate, j, k, loop, loop_start, lpd
     use size_mod, only : lpm, month, month_start, month_wind
     use size_mod, only : taum, taun, taup, taus, time_switch, tracer_switch 
-    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, shcoeff, rkmt
-    use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn
+    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, rkmt
+    use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn, lm
     use size_mod, only : t, eta, u, v, temp, h, we, pvort, salt, dxu, dyv
     use size_mod, only : uvel, vvel, smcoeff, SHCoeff, diag_ext1, diag_ext2
     use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
     use size_mod, only : sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr
-    use size_mod, only : taux_force, tauy_force
+    use size_mod, only : taux_force, tauy_force, init_size, denss, rmld_misc
 
     use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_total
     use param_mod, only : nmid, reflat, rnmid, sum_adv
-    use param_mod, only : denss, rmld_misc
     
     use momentum_mod, only : momentum
     use tracer_mod, only : tracer
@@ -225,7 +224,7 @@ program main
             deltax(k) = 0.0
             rsumu(k) = 0.0
             do j=1,jmt
-                rsumu(k) = rsumu(k) + u(1,k,j,taun)*h(1,k,j,taun)*dy
+                rsumu(k) = rsumu(k) + u(1,j,k,taun)*h(1,j,k,taun)*dy
             enddo
         enddo
 
@@ -235,8 +234,8 @@ program main
             rsumx = 0.0
             rsumy = 0.0
             do i=1,imt
-                rsumv(k) = rsumv(k) + v(i,k,1,taun)*h(i,k,1,taun)*dx
-                rsumh(k) = rsumh(k) + h(i,k,1,taun)*dx
+                rsumv(k) = rsumv(k) + v(i,1,k,taun)*h(i,1,k,taun)*dx
+                rsumh(k) = rsumh(k) + h(i,1,k,taun)*dx
                 rsumx  = rsumx + rkmt(i,1)
             enddo
         enddo
@@ -317,10 +316,8 @@ program main
 !c
 !cc interchange time-index for leap-frog scheme.
 !c 
-        write(*,*) temp(imt/2, 1, jmt/2 + 20, 1), h(imt/2, 1, jmt/2 + 20, taun), &
-                   loop, SHCoeff(imt/2, 5, jmt/2 + 20)
-        write(*,*) temp(imt/2, 1, jmt/2 + 20, 1), h(imt/2, 1, jmt/2 + 20, taun), &
-                    loop, SHCoeff(imt/2, 1, jmt/2 + 20)
+        write(*,*) temp(imt/2, jmt/2 + 20, 1, 1), h(imt/2, jmt/2 + 20, 1, taun), &
+                   loop, SHCoeff(imt/2, jmt/2 + 20, 5)
 
         call send_data_diag(time)
 
@@ -357,9 +354,9 @@ program main
         do i=1,imt
             do j=1,jmt
                 do k=1,km
-                    if ( u(i, k, j,taun) .ne. u(i, k, j,taun) &
-                        .or. u(i, k, j,taun) .lt. -10.0 .or. &
-                        u(i, k, j,taun) .gt. 10.0 ) then
+                    if ( u(i, j, k, taun) .ne. u(i, j, k, taun) &
+                        .or. u(i, j, k, taun) .lt. -10.0 .or. &
+                        u(i, j, k, taun) .gt. 10.0 ) then
                         
                         call diag_manager_end(time)
                         stop 'stop=>blow-up'
@@ -492,7 +489,7 @@ program main
         id_h = register_diag_field('odtm', 'h', (/id_lon,id_lat,id_depth/), init_time=Time, &
                  long_name='Hieght', units='meters',missing_value=FILL_VALUE)
 
-        id_eta = register_diag_field('odtm', 'eta', (/id_lon,id_lat,id_depth/), init_time=Time, &
+        id_eta = register_diag_field('odtm', 'eta', (/id_lon,id_lat/), init_time=Time, &
                  long_name='eta', units='meters',missing_value=FILL_VALUE)
 
         id_u = register_diag_field('odtm', 'u', (/id_lon,id_lat,id_depth/), init_time=Time, &
@@ -584,156 +581,51 @@ program main
         integer :: used
 
        
-        used = send_data(id_sst,t(1:imt,1,1:jmt,1,taun), time, mask=lmask)
+        used = send_data(id_sst,t(1:imt,1:jmt,1,1,taun), time, mask=lmask)
 
-        used = send_data(id_sss,t(1:imt,1,1:jmt,2,taun), time, mask=lmask)
+        used = send_data(id_sss,t(1:imt,1:jmt,1,2,taun), time, mask=lmask)
 
-        if (id_temp>0) then
-            do ii = 1, km
-                tmp3(:,:,ii) = t(:,ii,:,1,taun)
-            enddo
-            used = send_data(id_temp,tmp3,time, mask=lmask3)
-        endif
+        used = send_data(id_temp,t(:,:,:,1,taun),time, mask=lmask3)
 
-        if (id_salt>0) then
-            do ii = 1, km
-                tmp3(:,:,ii) = t(:,ii,:,2,taun)
-            enddo
-            used = send_data(id_salt,tmp3,time, mask=lmask3)
-        endif
+        used = send_data(id_salt,t(:,:,:,2,taun),time, mask=lmask3)
 
-        if (id_h>0) then
-            do ii = 1, km
-                tmp3(:,:,ii) = h(:,ii,:,taun)
-            enddo
-            used = send_data(id_h,tmp3,time, mask=lmask3)
-        endif
+        used = send_data(id_h,h(:,:,:,taun),time, mask=lmask3)
 
-        if (id_eta>0) then
-            do ii = 1, km
-                tmp3(:,:,ii) = eta(:,ii,:,1)
-            enddo
-            used = send_data(id_eta,tmp3,time, mask=lmask3)
-        endif
+        used = send_data(id_eta, eta(:,:,1,1), time, mask=lmask)
 
-        if (id_u>0) then
-            do ii = 1, km
-                tmp3(:,:,ii) = u(:,ii,:,taun)
-            enddo
-            used = send_data(id_u,tmp3,time, mask=lmask3)
-        endif
+        used = send_data(id_u, u(:,:,:,taun), time, mask=lmask3)
 
-        if (id_v>0) then
-            do ii = 1, km
-                tmp3(:,:,ii) = v(:,ii,:,taun)
-            enddo
-            used = send_data(id_v,tmp3,time, mask=lmask3)
-        endif
+        used = send_data(id_v, v(:,:,:,taun), time, mask=lmask3)
 
-        if (id_we>0) then
-            do ii = 1, km
-                tmp3(:,:,ii) = we(:,ii,:)
-            enddo
-            used = send_data(id_we,tmp3,time, mask=lmask3)
-        endif
+        used = send_data(id_we, we, time, mask=lmask3)
 
-        if (id_dens>0) then
-            do ii = 1, km
-                tmp3(:,:,ii) = denss(:,ii,:)
-            enddo
-            used = send_data(id_dens,tmp3,time, mask=lmask3)
-        endif
+        used = send_data(id_dens, denss, time, mask=lmask3)
 
-        if (id_pvort>0) then
-            do ii = 1, km
-                tmp3(:,:,ii) = pvort(:,ii,:)
-            enddo
-            used = send_data(id_pvort,tmp3,time, mask=lmask3)
-        endif
+        used = send_data(id_pvort, pvort, time, mask=lmask3)
         
-        if (id_temp_mld>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = temp(:,ii,:,1)
-            enddo
-            used = send_data(id_temp_mld,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_temp_mld,temp(:,:,:,1),time, mask=lmask3m)
 
-        if (id_salt_mld>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = salt(:,ii,:,1)
-            enddo
-            used = send_data(id_salt_mld,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_salt_mld,salt(:,:,:,1),time, mask=lmask3m)
 
-        if (id_u_mld>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = uvel(:,ii,:,taun)
-            enddo
-            used = send_data(id_u_mld,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_u_mld,uvel(:,:,:,taun),time, mask=lmask3m)
 
-        if (id_v_mld>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = vvel(:,ii,:,taun)
-            enddo
-            used = send_data(id_v_mld,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_v_mld,vvel(:,:,:,taun),time, mask=lmask3m)
 
-        if (id_diag>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = rmld_misc(:,ii,:)
-            enddo
-            used = send_data(id_diag,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_diag,rmld_misc,time, mask=lmask3m)
 
-        if (id_sh>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = shcoeff(:,ii,:)
-            enddo
-            used = send_data(id_sh,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_sh,SHCoeff,time, mask=lmask3m)
 
-        if (id_sm>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = smcoeff(:,ii,:)
-            enddo
-            used = send_data(id_sm,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_sm,SMCoeff,time, mask=lmask3m)
 
-        if (id_tke>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = diag_ext1(:,ii,:)
-            enddo
-            used = send_data(id_tke,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_tke,diag_ext1,time, mask=lmask3m)
 
-        if (id_rif>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = diag_ext2(:,ii,:)
-            enddo
-            used = send_data(id_rif,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_rif,diag_ext2,time, mask=lmask3m)
 
-        if (id_mlen>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = diag_ext3(:,ii,:)
-            enddo
-            used = send_data(id_mlen,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_mlen,diag_ext3,time, mask=lmask3m)
 
-        if (id_st_h>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = diag_ext4(:,ii,:)
-            enddo
-            used = send_data(id_st_h,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_st_h,diag_ext4,time, mask=lmask3m)
 
-        if (id_st_m>0) then
-            do ii = 1, kmaxMYM
-                tmp3m(:,:,ii) = diag_ext5(:,ii,:)
-            enddo
-            used = send_data(id_st_m,tmp3m,time, mask=lmask3m)
-        endif
+        used = send_data(id_st_m,diag_ext5,time, mask=lmask3m)
 
     end subroutine send_data_diag
     
@@ -742,9 +634,9 @@ program main
     subroutine init_grid
 
         use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, rrkmt
-        use size_mod, only : temp_read, salt_read
+        use size_mod, only : temp_read, salt_read, mask
 
-        use param_mod, only : deg2rad, mask
+        use param_mod, only : deg2rad
     
         !c initialze model grid.
     
@@ -863,15 +755,7 @@ program main
 
         call field_size(temp_clim_file, 'temp', dimz)
 
-        allocate ( u(imt,km,jmt,4), v(imt,km,jmt,4) ) 
-
-        allocate ( t(imt,km,jmt,nn,4) ) 
-
-        allocate ( h(imt,km,jmt,4) ) 
-        
-        allocate ( temp(imt,kmaxMYM,jmt,2), salt(imt,kmaxMYM,jmt,2) )
-
-        allocate ( uvel(imt,kmaxMYM,jmt,2), vvel(imt,kmaxMYM,jmt,2) )
+        call init_size()
 
         id_restart = register_restart_field(restart_odtm, restart_file, 'u', u(:,:,:,1), u(:,:,:,2))
         id_restart = register_restart_field(restart_odtm, restart_file, 'v', v(:,:,:,1), v(:,:,:,2))
@@ -886,9 +770,9 @@ program main
         we_upwel(:,:,:) = 0.0
         
         do kk=1,km
-            h(:,kk,:,taum)=dz(kk)
-            h(:,kk,:,taun)=h(:,kk,:,taum) 
-            h(:,kk,:,taup)=h(:,kk,:,taum) 
+            h(:,:,kk,taum)=dz(kk)
+            h(:,:,kk,taun)=h(:,:,kk,taum) 
+            h(:,:,kk,taup)=h(:,:,kk,taum) 
         enddo
 
         we(:,:,:) = 0.0
@@ -901,10 +785,12 @@ program main
         t(:,:,:,:,taun) = 10.0
        
  
-        do nt = 1, 12
+        do nt = 1, lm-1
             call read_data(temp_clim_file, 'temp', temp_read(:,:,:,nt), timelevel=nt)
             call read_data(salt_clim_file, 'salt', salt_read(:,:,:,nt), timelevel=nt)
         enddo
+        temp_read(:,:,:,lm) = temp_read(:,:,:,1)
+        salt_read(:,:,:,lm) = salt_read(:,:,:,1)
 
         uvel(:,:,:,:) = 0.0
         vvel(:,:,:,:) = 0.0
@@ -916,29 +802,29 @@ program main
             do i=1,imt
                 do j=1,jmt
                     do k=1,201
-                        tempin(k) = temp_read(i,k,j,1)  
-                        saltin(k) = salt_read(i,k,j,1) 
+                        tempin(k) = temp_read(i,j,k,1)  
+                        saltin(k) = salt_read(i,j,k,1) 
                     enddo
                     do k=1,51
-                        temp(i,k,j,1) = temp_read(i,k,j,1)
-                        salt(i,k,j,1) = salt_read(i,k,j,1)
-                        temp(i,k,j,2) = temp_read(i,k,j,1)
-                        salt(i,k,j,2) = salt_read(i,k,j,1)
+                        temp(i,j,k,1) = temp_read(i,j,k,1)
+                        salt(i,j,k,1) = salt_read(i,j,k,1)
+                        temp(i,j,k,2) = temp_read(i,j,k,1)
+                        salt(i,j,k,2) = salt_read(i,j,k,1)
                     enddo
 
                     kmax = 201
                     do k=1,km-1   
                         call interp_extrap_initial (i,j,k,kmax,tempin, &
                             saltin,tempout,saltout)
-                        t(i,k,j,1,taun) = tempout
-                        t(i,k,j,2,taun) = saltout
-                        t(i,k,j,1,taum) = tempout
-                        t(i,k,j,2,taum) = saltout
+                        t(i,j,k,1,taun) = tempout
+                        t(i,j,k,2,taun) = saltout
+                        t(i,j,k,1,taum) = tempout
+                        t(i,j,k,2,taum) = saltout
                     enddo
-                    t(i,km,j,1,taun) = 8.0
-                    t(i,km,j,2,taun) = 35
-                    t(i,km,j,1,taum) = 8.0
-                    t(i,km,j,2,taum) = 35.0
+                    t(i,j,km,1,taun) = 8.0
+                    t(i,j,km,2,taun) = 35
+                    t(i,j,km,1,taum) = 8.0
+                    t(i,j,km,2,taum) = 35.0
                 enddo
             enddo
         endif

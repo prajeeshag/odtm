@@ -34,10 +34,10 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	tropdubdx = 0.0
 	tropdvbdy = 0.0
 	
-	rtemp1 = u(ip,k,j,taun)* sum_2pt (3,ip,j,i,j) /
+	rtemp1 = u(ip,j,k,taun)* sum_2pt (3,ip,j,i,j) /
      &                           sum_2pt (31,ip,j,i,j)
 	rtemp1 = rtemp1 
-	rtemp2 = u(i,k,j,taun)*  sum_2pt (3,im,j,i,j) /
+	rtemp2 = u(i,j,k,taun)*  sum_2pt (3,im,j,i,j) /
      &                           sum_2pt (31,im,j,i,j)
 	rtemp2 = rtemp2 
 	dphi = (rdx(i+1)+rdx(i))/2.0
@@ -50,10 +50,10 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         rtheta_vd = cos((theta(j)+theta(j-1))*0.5)
 	dthe = (rdy(j) + rdy(j+1))/2.0
 
-	rtemp3 = v(i,k,jp,taun) * sum_2pt (3,i,j,i,jp) *rtheta_vu /
+	rtemp3 = v(i,jp,k,taun) * sum_2pt (3,i,j,i,jp) *rtheta_vu /
      &                            sum_2pt (31,i,j,i,jp)
 	rtemp3 = rtemp3 
-	rtemp4 = v(i,k,j,taun) * sum_2pt (3,i,j,i,jm)  *rtheta_vd/
+	rtemp4 = v(i,j,k,taun) * sum_2pt (3,i,j,i,jm)  *rtheta_vd/
      &                           sum_2pt (31,i,j,i,jm)
 	rtemp4 = rtemp4
 
@@ -84,18 +84,18 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	 if (rkmh(i,jm) .eq. 0.0) rmask_bot = 0.0 !Prajeesh 
  
 	dphi = (rdx(i+1)+rdx(i))/2.0
-	rtemp2 = rmask_right*(h(i+1,k,j,taum) - h(i,k,j,taum) )/dphi
+	rtemp2 = rmask_right*(h(i+1,j,k,taum) - h(i,j,k,taum) )/dphi
 	dphi = (rdx(i)+rdx(i-1))/2.0
-	rtemp3 = rmask_left*(h(i,k,j,taum) - h(im,k,j,taum) )/dphi
+	rtemp3 = rmask_left*(h(i,j,k,taum) - h(im,j,k,taum) )/dphi
 	dphi = rdx(i)
 	rtemp4 = (rtemp2 - rtemp3)/dphi
 	rtemp5 = rtemp1*rtemp4  ! reserve
 	rtemp1 = Re*Re*cos(theta(j))
 	rtemp1 = 1.0/rtemp1
 	dthe = (rdy(j+1) + rdy(j))/2.0
-	rtemp2 = rmask_top*(h(i,k,j+1,taun) - h(i,k,j,taun))/dthe
+	rtemp2 = rmask_top*(h(i,j+1,k,taun) - h(i,j,k,taun))/dthe
 	dthe = (rdy(j-1) + rdy(j))/2.0
-	rtemp3 = rmask_bot*(h(i,k,j,taun) - h(i,k,jm,taun))/dthe
+	rtemp3 = rmask_bot*(h(i,j,k,taun) - h(i,jm,k,taun))/dthe
 	dthe = rdy(j)
 	rtemp4 = (cos(rthetapone)*rtemp2 - cos(rthetamone)*rtemp3)/dthe
 	rtemp6 = rtemp1*rtemp4  ! reserve
@@ -125,17 +125,16 @@ c        else
 c        rtemp = 0.0
 c        endif
 
-        we_mld(i,k,j) = (tropdubdx + tropdvbdy) + we(i,k,j) 
-c        pvort(i,k,j) =  we_mld(i,k,j)
+        we_mld(i,j,k) = (tropdubdx + tropdvbdy) + we(i,j,k) 
 
-        h(i,k,j,taup) = h(i,k,j,taum)*rkmh(i,j) + (
+        h(i,j,k,taup) = h(i,j,k,taum)*rkmh(i,j) + (
      &  -(
      &     tropdubdx 
      &     +  tropdvbdy  
      &      )
 #ifdef entrain
-     &     +  we(i,k,j)*rkmh(i,j)*dtts_back/dtts
-     &     +  wd(i,k,j)*rkmh(i,j)*dtts_back/dtts
+     &     +  we(i,j,k)*rkmh(i,j)*dtts_back/dtts
+     &     +  wd(i,j,k)*rkmh(i,j)*dtts_back/dtts
 #endif
      &     + diffuse_th * diffuse_h
      &  ) *dtts*rkmh(i,j)
@@ -145,18 +144,17 @@ c        pvort(i,k,j) =  we_mld(i,k,j)
 	 call couple
 #endif
         
-        if ( h(i,k,j,taup) .gt. dz_max(k)) then
+        if ( h(i,j,k,taup) .gt. dz_max(k)) then
         do ii=im,ip
         do jj=jm,jp
-         h(ii,k,jj,taup) =  h(ii,k,jj,taup) - (10**(-1.5))*  h(ii,k,jj,taun)*
+         h(ii,jj,k,taup) =  h(ii,jj,k,taup) - (10**(-1.5))*  h(ii,jj,k,taun)*
      &   rkmh(ii,jj)
-c        pvort(ii,k,jj) = 1.0
         enddo
         enddo
         endif
 
-        NaN_check  = isnan(h(i,k,j,taup))
+        NaN_check  = isnan(h(i,j,k,taup))
         
-        if (NaN_check .eqv. .true.) h(i,k,j,taup) = dz(k)*rkmh(i,j)
+        if (NaN_check .eqv. .true.) h(i,j,k,taup) = dz(k)*rkmh(i,j)
 	return
 	end

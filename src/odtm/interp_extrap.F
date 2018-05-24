@@ -31,10 +31,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         hstart = 0
         do irepeat = 1,kk-1
-        hstart = hstart + h(ii,irepeat,jj,taun)
+        hstart = hstart + h(ii,jj,irepeat,taun)
         enddo
 
-        hend = h(ii,kk,jj,taun) + hstart
+        hend = h(ii,jj,kk,taun) + hstart
         rsum1 = 0.0
         rsum2 = 0.0
         rsum3 = 0.0
@@ -54,10 +54,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         icount = icount + 1
 
         if (kkk .gt. kmax) goto 101
-        rsum1 = rsum1 + temp(ii,kkk,jj,tau_index) 
-        rsum2 = rsum2 + salt(ii,kkk,jj,tau_index)
-        rsum3 = rsum3 + uvel(ii,kkk,jj,tau_index)
-        rsum4 = rsum4 + vvel(ii,kkk,jj,tau_index)
+        rsum1 = rsum1 + temp(ii,jj,kkk,tau_index) 
+        rsum2 = rsum2 + salt(ii,jj,kkk,tau_index)
+        rsum3 = rsum3 + uvel(ii,jj,kkk,tau_index)
+        rsum4 = rsum4 + vvel(ii,jj,kkk,tau_index)
         enddo
 
 
@@ -76,21 +76,21 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ! thereby assuming a mixed layer in the complete RG layer 
         if (hstart .gt. kmax*5.0) goto 102
         if (kkk .gt. kmax) then
-        tempout = (t(ii,kk,jj,1,tau_index)*
-     &    (h(ii,kk,jj,taun)-icount*5.0) + 
-     &   rsum1*5.0 )/max(1.0, (h(ii,kk,jj,taun)) )
+        tempout = (t(ii,jj,kk,1,tau_index)*
+     &    (h(ii,jj,kk,taun)-icount*5.0) + 
+     &   rsum1*5.0 )/max(1.0, (h(ii,jj,kk,taun)) )
 
-        saltout = (t(ii,kk,jj,2,tau_index)*
-     &    (h(ii,kk,jj,taun)-icount*5.0) + 
-     &   rsum2*5.0 )/max(1.0, (h(ii,kk,jj,taun)) )
+        saltout = (t(ii,jj,kk,2,tau_index)*
+     &    (h(ii,jj,kk,taun)-icount*5.0) + 
+     &   rsum2*5.0 )/max(1.0, (h(ii,jj,kk,taun)) )
 
-        uvelout = (u(ii,kk,jj,tau_index)*
-     &    (h(ii,kk,jj,taun)-icount*5.0) + 
-     &   rsum3*5.0 )/max(1.0, (h(ii,kk,jj,taun)) )
+        uvelout = (u(ii,jj,kk,tau_index)*
+     &    (h(ii,jj,kk,taun)-icount*5.0) + 
+     &   rsum3*5.0 )/max(1.0, (h(ii,jj,kk,taun)) )
 
-        vvelout = (v(ii,kk,jj,tau_index)*
-     &    (h(ii,kk,jj,taun)-icount*5.0) + 
-     &   rsum4*5.0 )/max(1.0, (h(ii,kk,jj,taun)) )
+        vvelout = (v(ii,jj,kk,tau_index)*
+     &    (h(ii,jj,kk,taun)-icount*5.0) + 
+     &   rsum4*5.0 )/max(1.0, (h(ii,jj,kk,taun)) )
 
         
         endif
@@ -122,19 +122,19 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 #include "cparam.h"  ! <== This file overrides above parameter setup
 
-        we_mld(ii,0,jj) = (eta(ii,1,jj,taun)-eta(ii,1,jj,taum))/dt  ! surface boundary condition
+        we_mld(ii,jj,0) = (eta(ii,jj,1,taun)-eta(ii,jj,1,taum))/dt  ! surface boundary condition
         we_prof(:) = 0.0
 
         do kk=1,km-1
         hstart = 0
         do irepeat = 1,kk-1
-        hstart = hstart + h(ii,irepeat,jj,taun)
+        hstart = hstart + h(ii,jj,irepeat,taun)
         enddo
-        hend = h(ii,kk,jj,taun) + hstart
+        hend = h(ii,jj,kk,taun) + hstart
 
 c        write(*,*) hstart, hend
 
-        we_prof(1+hstart/5-1) = we_mld(ii,kk-1,jj)
+        we_prof(1+hstart/5-1) = we_mld(ii,jj,kk-1)
 
         rdiv = (1 + hend/5 - hstart/5)
         if (hend/5 .gt. kmax) then
@@ -152,7 +152,7 @@ c        write(*,*) hstart, hend
         do kkk = 1+hstart/5, hend/5
         if (kkk .ge. kmax-1) goto 101
         we_prof(kkk) = we_prof(kkk-1) + 
-     &          ((we_mld(ii,kk,jj) - we_mld(ii,kk-1,jj))/
+     &          ((we_mld(ii,jj,kk) - we_mld(ii,jj,kk-1))/
      &          (rdiv)) 
         enddo
         enddo
@@ -163,12 +163,6 @@ c        write(*,*) hstart, hend
         rsum = rsum + we_prof(kkk)  * gama
         if ( we_prof(kkk) .ne. 0.0) icount = icount + 1
         we_prof(kkk) = we_prof(kkk) * gama
-
-c        if (ii .eq. 28 .and. jj .eq. 52) then
-c        write(*,10)  we_prof(kkk), we_mld(ii,0,jj), we_mld(ii,1,jj),
-c     &   we_mld(ii,2,jj), we_mld(ii,3,jj), rsum/max(1,icount)
-c        endif
-c 10     format(e12.5,2x,e12.5,2x,e12.5,2x,e12.5,2x,e12.5,2x,e12.5)
 
         enddo
         we_baro = rsum/max(1,icount)

@@ -15,8 +15,8 @@ c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only: i, j, k, km, taun, pres_gradu, pres_gradv, h, eta
-            use size_mod, only: rkmh, dxu, dyv, rkmu, rkmv  
-            use param_mod, only : denss, g
+            use size_mod, only: rkmh, dxu, dyv, rkmu, rkmv, denss
+            use param_mod, only : g
         implicit none
             integer :: ip, im, jp, jm, kk, ii, jj
             real :: rsum1, rsum2, rsum, rsumeta, rsumeta_init, rho_km, rho_kk
@@ -40,14 +40,14 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	do kk=1,km-1
 	rho_km = rho_2pt (i,j,km)
 	rho_kk = rho_2pt (i,j,kk)
-	rsumeta = rsumeta + (rho_km - rho_kk )*h(i,kk,j,taun) /rho_km
-	rsum1 = ((rho_km - rho_kk )/rho_km)*h(i,kk,j,taun)
+	rsumeta = rsumeta + (rho_km - rho_kk )*h(i,j,kk,taun) /rho_km
+	rsum1 = ((rho_km - rho_kk )/rho_km)*h(i,j,kk,taun)
 	rho_km = rho_2pt (i,j,km)
 	rho_kk = rho_2pt (i,j,kk)
-	rsum2 = ((rho_km - rho_kk )/rho_km)*h(im,kk,j,taun)
+	rsum2 = ((rho_km - rho_kk )/rho_km)*h(im,j,kk,taun)
 	rsum = rsum + (rsum1 - rsum2)/dxu(i,j)
 	enddo
-	eta(i,k,j,taun) = rsumeta*rkmh(i,j)
+	eta(i,j,k,taun) = rsumeta*rkmh(i,j)
 	rtemp1 = sum_2pt (3,i,j,im,j) /sum_2pt (31,i,j,im,j)
 	rho_k = rho_2pt (i,j,k)
 	rsum1 = rsum*rho_k*rtemp1
@@ -62,10 +62,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	do kk=1,k-1,1
 	rho_k = rho_2pt (i,j,k)
 	rho_kk = rho_2pt(i,j,kk)
-	rsum1 = ( rho_k - rho_kk)*h(i,kk,j,taun)
+	rsum1 = ( rho_k - rho_kk)*h(i,j,kk,taun)
 	rho_k = rho_2pt (i,j,k)
 	rho_kk = rho_2pt(i,j,kk)
-	rsum2 = ( rho_k - rho_kk)*h(im,kk,j,taun)
+	rsum2 = ( rho_k - rho_kk)*h(im,j,kk,taun)
 	rsum = rsum + (rsum1 - rsum2)/dxu(i,j)
 	enddo
 	rtemp1 = sum_2pt (3,im,j,i,j) /sum_2pt (31,im,j,i,j)
@@ -86,11 +86,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	rho_km = rho_2pt (i,j,km)
 	rho_kk = rho_2pt (i,j,kk)
 c        if (rho_km .le. rho_kk) rho_km = rho_kk+0.1
-	rsum1 = ((rho_km - rho_kk )/rho_km)*h(i,kk,j,taun)
+	rsum1 = ((rho_km - rho_kk )/rho_km)*h(i,j,kk,taun)
 	rho_km = rho_2pt (i,j,km)
 	rho_kk = rho_2pt (i,j,kk)
 c        if (rho_km .le. rho_kk) rho_km = rho_kk+0.1
-	rsum2 = ((rho_km - rho_kk )/rho_km)*h(i,kk,jm,taun)
+	rsum2 = ((rho_km - rho_kk )/rho_km)*h(i,jm,kk,taun)
 	rsum = rsum + (rsum1 - rsum2)/dyv(i,j)
 	enddo
 	rtemp1 = sum_2pt (3,i,j,i,jm) /sum_2pt (31,i,j,i,jm)
@@ -108,10 +108,10 @@ c        if (rho_km .le. rho_kk) rho_km = rho_kk+0.1
 	do kk=1,k-1,1
 	rho_k = rho_2pt (i,j,k)
 	rho_kk = rho_2pt(i,j,kk)
-	rsum1 = ( rho_k - rho_kk)*h(i,kk,j,taun)
+	rsum1 = ( rho_k - rho_kk)*h(i,j,kk,taun)
 	rho_k = rho_2pt (i,j,k)
 	rho_kk = rho_2pt(i,j,kk)
-	rsum2 = ( rho_k - rho_kk)*h(i,kk,jm,taun)
+	rsum2 = ( rho_k - rho_kk)*h(i,jm,kk,taun)
 	rsum = rsum + (rsum1 - rsum2)/dyv(i,j)
 	enddo
 	rtemp1 = sum_2pt (3,i,j,i,jm) /sum_2pt (31,i,j,i,jm)
@@ -187,8 +187,7 @@ c	write(*,*) pres_gradu(k), pres_gradv(k)
 
 	function rho_2pt (i1,j1,k1)
 
-        use size_mod, only : taun, t, zdz, rkmh
-        use param_mod, only : denss
+        use size_mod, only : taun, t, zdz, rkmh, denss
         implicit none
         
         real :: rho_2pt
@@ -199,12 +198,12 @@ c	write(*,*) pres_gradu(k), pres_gradv(k)
 	VolExpan = -0.15
         SalContr =  0.78
         rkappa_vol = 0.0045
-        rTemp = t(i1,k1,j1,1,taun)
-        rSalt = t(i1,k1,j1,2,taun)
+        rTemp = t(i1,j1,k1,1,taun)
+        rSalt = t(i1,j1,k1,2,taun)
         rDep = zdz(k1)
 	rho_2pt = density_nonlinear (rTemp, rSalt, rDep) !rho(km) + rho_2pt
 
-        denss(i1,k1,j1) = rho_2pt * rkmh(i1,j1)
+        denss(i1,j1,k1) = rho_2pt * rkmh(i1,j1)
         
 	end function rho_2pt
 

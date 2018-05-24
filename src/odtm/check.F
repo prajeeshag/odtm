@@ -7,9 +7,9 @@ c
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod, only : k, dz, rho, he, days, month_start
+        use size_mod, only : k, dz, rho, he, days
         use param_mod, only : deg2rad, diffuse, diffuse_th, dt, dx, dx2, dxd
-        use param_mod, only : dy, dy2, g, imt, jmt, km, re, stamp_time, theta
+        use param_mod, only : dy, dy2, g, imt, jmt, km, re, theta
         implicit none
         
         real :: amin, rsumk, rtemp1, rtemp2, rmode_speed, rtemp3
@@ -160,7 +160,6 @@ c	 stop '=>check.F'
 	write (*,26)' grid dimension (lon x lat) = ', imt,' x ',jmt
 	write (*,21)' grid spacing (lon x lat) = ', dx,' x ',dy
 	write (*,22)' total rundays = ', days,' = ', days/365.0,' years '
-	write (*,23)' starting month of run = ',stamp_time(month_start)
 	write (*,24)'Running==='
 	write (*,*)'Time ellapsed after each snapshot (minutes)'
 	 

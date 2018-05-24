@@ -18,7 +18,7 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : dxu, dyu, gdx, gdy, h, i, j, k, loop, month, rdx
         use size_mod, only : rdy, rkmh, salt_read, t, taum, taum1, taun, taun1
-        use size_mod, only : taup1, temp_read, dyv, taup
+        use size_mod, only : taup1, temp_read, dyv, taup, kclim
         use param_mod, only : day2sec, diffuse_h, diffuse_my, diffuse_tr, dphi
         use param_mod, only : dthe, dtts, nn, theta, dt
 
@@ -80,16 +80,16 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #endif
 
 	rtemp1 = rkmh(ip,j)*
-     &    (t(ip,k,j,nt,taum) - t(i,k,j,nt,taum) )/dxu(ip,j)
+     &    (t(ip,j,k,nt,taum) - t(i,j,k,nt,taum) )/dxu(ip,j)
 	rtemp2 = rkmh(im,j)*
-     &    (t(i,k,j,nt,taum) - t(im,k,j,nt,taum) )/dxu(i,j)
+     &    (t(i,j,k,nt,taum) - t(im,j,k,nt,taum) )/dxu(i,j)
 	rtemp3 = (rtemp1 - rtemp2)/((dxu(ip,j)+dxu(i,j))*0.5) !reserve
 
 	rtemp4 = rkmh(i,jp)*
-     &   (t(i,k,jp,nt,taun) - t(i,k,j,nt,taun))/dyv(i,jp)
+     &   (t(i,jp,k,nt,taun) - t(i,j,k,nt,taun))/dyv(i,jp)
 	dthe = (rdy(j-1) + rdy(j))/2.0
 	rtemp5 = rkmh(i,jm)*
-     &   (t(i,k,j,nt,taun) - t(i,k,jm,nt,taun))/dyv(i,j)
+     &   (t(i,j,k,nt,taun) - t(i,jm,k,nt,taun))/dyv(i,j)
 	rtemp6 = (rtemp4 - rtemp5)/((dyv(i,jp)+dyv(i,j))*0.5)  ! reserve
 	
 	diffuse_h = rtemp3 + rtemp6
@@ -97,26 +97,26 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	rtemp1 = (gdx(i+1) - gdx(i))
         rtemp2 = (gdy(j+1) - gdy(j))
 
-        kmax = 201
+        kmax = kclim
         do kk=1,kmax
-         tempin(kk) = temp_read(i,kk,j,month)
-         saltin(kk) = salt_read(i,kk,j,month)
+         tempin(kk) = temp_read(i,j,kk,month)
+         saltin(kk) = salt_read(i,j,kk,month)
          enddo
         call interp_extrap_initial (i,j,k,kmax,tempin,
      &   saltin,tempout,saltout)
 
 
-        relax_tr(1) = (tempout - t(i,k,j,1,taun))/
+        relax_tr(1) = (tempout - t(i,j,k,1,taun))/
      &      (30.0*day2sec)
-        relax_tr(2) = (saltout - t(i,k,j,2,taun))/
+        relax_tr(2) = (saltout - t(i,j,k,2,taun))/
      &      (30.0*day2sec)
 
         hstart = 0
         kmax = 51
         do irepeat = 1,k-1
-        hstart = hstart + h(i,irepeat,j,taun)
+        hstart = hstart + h(i,j,irepeat,taun)
         enddo
-        hend = h(i,k,j,taun) + hstart
+        hend = h(i,j,k,taun) + hstart
 ! upadting MYM 
         if (hend .le. 5.0*kmax) then 
         zero_out_tradv = 0.0
@@ -133,7 +133,7 @@ c        pvort(i,k,j) = zero_out_tradv
          rtemp2 = (gdy(j+1) - gdy(j))
 
 
-        t(i,k,j,nt,taup) = t(i,k,j,nt,taum)*rkmh(i,j) + (
+        t(i,j,k,nt,taup) = t(i,j,k,nt,taum)*rkmh(i,j) + (
      &  -(
      &     tracedubdx * zero_out_tradv
      &     + tracedvbdy * zero_out_tradv
@@ -160,7 +160,7 @@ c        pvort(i,k,j) = zero_out_tradv
         integer, intent(in) :: index, i1,j1, i2,j2,nt
 
         if (index .eq. 1) then
-        sum_2ptr = (t(i1,k,j1,nt,taun) + t(i2,k,j2,nt,taun))
+        sum_2ptr = (t(i1,j1,k,nt,taun) + t(i2,j2,k,nt,taun))
         endif
 
         if (index .eq. 11) then

@@ -45,7 +45,7 @@ mkdir -p $execdir/odtm
 
 cd $execdir/odtm
 
-$mkmf -f -p $EXE -t $mkmftemplate -o "-I$execdir/lib_fms" -l "$execdir/lib_fms/lib_fms.a" -a $paths
+$mkmf -f -p $EXE -t $mkmftemplate -o "-I$execdir/lib_fms" -l "$execdir/lib_fms/lib_fms.a" $paths
 
 make $@
 

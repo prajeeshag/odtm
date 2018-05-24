@@ -15,24 +15,24 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         do kk=1,km-1
 
-       if(t(i,kk,j,1,taun) .gt. tr01_max(kk))
-     &   t(i,kk,j,1,taun)=tr01_max(kk)*rkmh(i,j)
-       if(t(i,kk,j,2,taun) .gt. tr02_max(kk))
-     &   t(i,kk,j,2,taun)=tr02_max(kk)*rkmh(i,j)
+       if(t(i,j,kk,1,taun) .gt. tr01_max(kk))
+     &   t(i,j,kk,1,taun)=tr01_max(kk)*rkmh(i,j)
+       if(t(i,j,kk,2,taun) .gt. tr02_max(kk))
+     &   t(i,j,kk,2,taun)=tr02_max(kk)*rkmh(i,j)
 
-       if(t(i,kk,j,1,taun) .lt. tr01_min(kk))
-     &   t(i,kk,j,1,taun)=tr01_min(kk)*rkmh(i,j)
-       if(t(i,kk,j,2,taun) .lt. tr02_min(kk))
-     &   t(i,kk,j,2,taun)=tr02_min(kk)*rkmh(i,j)
+       if(t(i,j,kk,1,taun) .lt. tr01_min(kk))
+     &   t(i,j,kk,1,taun)=tr01_min(kk)*rkmh(i,j)
+       if(t(i,j,kk,2,taun) .lt. tr02_min(kk))
+     &   t(i,j,kk,2,taun)=tr02_min(kk)*rkmh(i,j)
 
         enddo
 
-        do iter = 1,100
+        do iter = 1,100 !Prajeesh why checking 100 times
         icheck = 0
         
         do kk=1,km
-         rTemp = t(i,kk,j,1,taun)
-         rSalt = t(i,kk,j,2,taun)
+         rTemp = t(i,j,kk,1,taun)
+         rSalt = t(i,j,kk,2,taun)
          rDep = zdz(kk)
          rho_local(kk) = density_nonlinear (rTemp, rSalt, rDep) * rkmh(i,j)
         enddo
@@ -40,13 +40,13 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         do kk=2,km
         if ( rho_local(kk)*rkmh(i,j) .lt. rho_local(kk-1)*rkmh(i,j)) then
         
-        t(i,kk,j,1,taun) = (
-     &   (t(i,kk,j,1,taun)*h(i,kk,j,taun) + 
-     &    t(i,kk-1,j,1,taun)*h(i,kk-1,j,taun))/
-     &   (h(i,kk,j,taun) + 
-     &    h(i,kk-1,j,taun)) )*rkmh(i,j)
+        t(i,j,kk,1,taun) = (
+     &   (t(i,j,kk,1,taun)*h(i,j,kk,taun) + 
+     &    t(i,j,kk-1,1,taun)*h(i,j,kk-1,taun))/
+     &   (h(i,j,kk,taun) + 
+     &    h(i,j,kk-1,taun)) )*rkmh(i,j)
         
-        t(i,kk-1,j,1,taun) = t(i,kk,j,1,taun) * rkmh(i,j)
+        t(i,j,kk-1,1,taun) = t(i,j,kk,1,taun) * rkmh(i,j)
         
         icheck = 1
         endif
@@ -62,8 +62,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         icheck = 0
         
         do kk=1,km
-         rTemp = t(i,kk,j,1,taun)
-         rSalt = t(i,kk,j,2,taun)
+         rTemp = t(i,j,kk,1,taun)
+         rSalt = t(i,j,kk,2,taun)
          rDep = zdz(kk)
          rho_local(kk) = density_nonlinear (rTemp, rSalt, rDep)*rkmh(i,j)
         enddo
@@ -71,13 +71,13 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         do kk=2,km
         if ( rho_local(kk)*rkmh(i,j) .lt. rho_local(kk-1)*rkmh(i,j)) then
         
-        t(i,kk,j,2,taun) = (
-     &   (t(i,kk,j,2,taun)*h(i,kk,j,taun) + 
-     &    t(i,kk-1,j,2,taun)*h(i,kk-1,j,taun))/
-     &   (h(i,kk,j,taun) +  
-     &    h(i,kk-1,j,taun)) )*rkmh(i,j)
+        t(i,j,kk,2,taun) = (
+     &   (t(i,j,kk,2,taun)*h(i,j,kk,taun) + 
+     &    t(i,j,kk-1,2,taun)*h(i,j,kk-1,taun))/
+     &   (h(i,j,kk,taun) +  
+     &    h(i,j,kk-1,taun)) )*rkmh(i,j)
 
-        t(i,kk-1,j,2,taun) = t(i,kk,j,2,taun) * rkmh(i,j)
+        t(i,j,kk-1,2,taun) = t(i,j,kk,2,taun) * rkmh(i,j)
 
         icheck = 1
 
@@ -92,4 +92,4 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
         return
-        end
+        end subroutine

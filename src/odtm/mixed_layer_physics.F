@@ -12,8 +12,9 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only : salt_read, SHCoeff, SMCoeff, temp_read, month
             use size_mod, only : diag_ext1, diag_ext2, diag_ext3
             use size_mod, only : diag_ext4, diag_ext5, diag_ext6
+            use size_mod, only : rmld_misc, mld_mld
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt, dtts
-            use param_mod, only : imt, jmt, mld_mld, rmld_misc
+            use param_mod, only : imt, jmt
 
             use interp_extrap_mod, only : interp_extrap_we_profile
             use heat_flux_mod, only : heat_flux
@@ -60,10 +61,10 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c        pvort(i,km,j) = we_baro
          do kk = 1,kmax
          ! print *, 'test=', temp(i,kk,j,1), rkmh(i,j)
-         tempin(kk) = temp(i,kk,j,1) *rkmh(i,j)
-         saltin(kk) = salt(i,kk,j,1) *rkmh(i,j)
-         uvelin(kk) = uvel(i,kk,j,1) *rkmh(i,j)
-         vvelin(kk) = vvel(i,kk,j,1) *rkmh(i,j)
+         tempin(kk) = temp(i,j,kk,1) *rkmh(i,j)
+         saltin(kk) = salt(i,j,kk,1) *rkmh(i,j)
+         uvelin(kk) = uvel(i,j,kk,1) *rkmh(i,j)
+         vvelin(kk) = vvel(i,j,kk,1) *rkmh(i,j)
          we_profin(kk) = we_prof(kk)
          enddo
 
@@ -116,21 +117,21 @@ c         enddo
          tauyin = ty
          qnet_in = qnet_in !* (1 - mod(loop,2))
 
-         rmld_misc(i,1,j)  = qnet_in
-         rmld_misc(i,2,j)  = ssw(i,j)
-         rmld_misc(i,3,j)  = pme_in
-         rmld_misc(i,4,j)  = uwndin
-         rmld_misc(i,5,j)  = vwndin
-         rmld_misc(i,6,j)  = tauxin
-         rmld_misc(i,7,j)  = tauyin
-         rmld_misc(i,8,j)  = sphm_in
-         rmld_misc(i,9,j)  = airt_in
-         rmld_misc(i,10,j)  = cldin
-         rmld_misc(i,11,j)  = chl(i,j)
-         rmld_misc(i,12,j)  = ql
-         rmld_misc(i,13,j)  = qs
-         rmld_misc(i,14,j)  = qb
-         rmld_misc(i,15,j)  = rvr(i,j)
+         rmld_misc(i,j,1)  = qnet_in
+         rmld_misc(i,j,2)  = ssw(i,j)
+         rmld_misc(i,j,3)  = pme_in
+         rmld_misc(i,j,4)  = uwndin
+         rmld_misc(i,j,5)  = vwndin
+         rmld_misc(i,j,6)  = tauxin
+         rmld_misc(i,j,7)  = tauyin
+         rmld_misc(i,j,8)  = sphm_in
+         rmld_misc(i,j,9)  = airt_in
+         rmld_misc(i,j,10)  = cldin
+         rmld_misc(i,j,11)  = chl(i,j)
+         rmld_misc(i,j,12)  = ql
+         rmld_misc(i,j,13)  = qs
+         rmld_misc(i,j,14)  = qb
+         rmld_misc(i,j,15)  = rvr(i,j)
 
 
          call MT1 (tempin, saltin, uvelin, vvelin, tauxin,
@@ -151,66 +152,63 @@ c         enddo
 
          do kk = 1,kmax
 !         rmld_misc(i,kk,j) = entr_flux(kk)
-         temp(i,kk,j,2) = tempin(kk) * rkmh(i,j)
-         salt(i,kk,j,2) = saltin(kk) * rkmh(i,j)
-         uvel(i,kk,j,2) = uvelin(kk) * rkmh(i,j)
-         vvel(i,kk,j,2) = vvelin(kk) * rkmh(i,j)
+         temp(i,j,kk,2) = tempin(kk) * rkmh(i,j)
+         salt(i,j,kk,2) = saltin(kk) * rkmh(i,j)
+         uvel(i,j,kk,2) = uvelin(kk) * rkmh(i,j)
+         vvel(i,j,kk,2) = vvelin(kk) * rkmh(i,j)
          relax_South = 0.0
          relax_East = 0.0
 #include "cparam.h"
          if (relax_South .eq. 1) then
-         if (j .le. widS) temp(i,kk,j,2) = temp(i,kk,j,2) -
-     & (tempin(kk) - temp_read(i,kk,j,month))*dtts*
+         if (j .le. widS) temp(i,j,kk,2) = temp(i,j,kk,2) -
+     & (tempin(kk) - temp_read(i,j,kk,month))*dtts*
      & rkmh(i,j)/(day2sec*100.0*((j-1)/widS))
-         if (j .le. widS) salt(i,kk,j,2) = salt(i,kk,j,2) -
-     & (saltin(kk) - salt_read(i,kk,j,month))*dtts*
+         if (j .le. widS) salt(i,j,kk,2) = salt(i,j,kk,2) -
+     & (saltin(kk) - salt_read(i,j,kk,month))*dtts*
      & rkmh(i,j)/(day2sec*100.0*((j-1)/widS))
 c         if (j .le. widS) pvort(i,1,j) = (j-1)/widS
 c         if (j .le. widS) pvort(i,2,j) = (widS+1-j)/widS
          endif
          if (relax_East .eq. 1) then
-         if (i .ge. imt-widE+1) temp(i,kk,j,2) = temp(i,kk,j,2) -
-     & (tempin(kk) - temp_read(i,kk,j,month))*dtts*
+         if (i .ge. imt-widE+1) temp(i,j,kk,2) = temp(i,j,kk,2) -
+     & (tempin(kk) - temp_read(i,j,kk,month))*dtts*
      & rkmh(i,j)/(day2sec*100.0*((widE+i-imt)/widE))
-         if (i .ge. imt-widE+1) salt(i,kk,j,2) = salt(i,kk,j,2) -
-     & (saltin(kk) - salt_read(i,kk,j,month))*dtts*
+         if (i .ge. imt-widE+1) salt(i,j,kk,2) = salt(i,j,kk,2) -
+     & (saltin(kk) - salt_read(i,j,kk,month))*dtts*
      & rkmh(i,j)/(day2sec*100.0*((widE+i-imt)/widE))
 c         if (i .ge. imt-widE+1) pvort(i,1,j) = (imt-i)/widE
 c         if (i .ge. imt-widE+1) pvort(i,2,j) = (widE+i-imt)/widE
          endif
          enddo
-c Relaxation of surface salt
-c         salt(i,1,j,2) = salt(i,1,j,2) +
-c     &   (salt_read(i,1,j,month) - salt(i,1,j,2))*dt/(30.0*day2sec) * rkmh(i,j)
 
         if ( mod(loop,100000) .eq. 0) then
          do kk = 3,kmax-2
-         temp(i,kk,j,2) = (1.0/16.0)*
+         temp(i,j,kk,2) = (1.0/16.0)*
      &   (-tempin(kk-2) +4.0*tempin(kk-1) + 10.0*tempin(kk)
      &    +4.0*tempin(kk+1) - tempin(kk+2) ) * rkmh(i,j)
-         salt(i,kk,j,2) = (1.0/16.0)*
+         salt(i,j,kk,2) = (1.0/16.0)*
      &   (-saltin(kk-2) +4.0*saltin(kk-1) + 10.0*saltin(kk)
      &    +4.0*saltin(kk+1) - saltin(kk+2) ) * rkmh(i,j)
-         uvel(i,kk,j,2) = (1.0/16.0)*
+         uvel(i,j,kk,2) = (1.0/16.0)*
      &   (-uvelin(kk-2) +4.0*uvelin(kk-1) + 10.0*uvelin(kk)
      &    +4.0*uvelin(kk+1) - uvelin(kk+2) ) * rkmh(i,j)
-         vvel(i,kk,j,2) = (1.0/16.0)*
+         vvel(i,j,kk,2) = (1.0/16.0)*
      &   (-vvelin(kk-2) +4.0*vvelin(kk-1) + 10.0*vvelin(kk)
      &    +4.0*vvelin(kk+1) - vvelin(kk+2) ) * rkmh(i,j)
          enddo
          endif
          do kk = 1,kmax
-         SMCoeff(i,kk,j) = entr_flux(kk) * rkmh(i,j)
-         SHCoeff(i,kk,j) = SH(kk) * rkmh(i,j)
+         SMCoeff(i,j,kk) = entr_flux(kk) * rkmh(i,j)
+         SHCoeff(i,j,kk) = SH(kk) * rkmh(i,j)
          enddo
 #ifdef snap_mld_extended
          do kk = 1,kmax
-         diag_ext1(i,kk,j) = diag1(kk) * rkmh(i,j)
-         diag_ext2(i,kk,j) = diag2(kk) * rkmh(i,j)
-         diag_ext3(i,kk,j) = diag3(kk) * rkmh(i,j)
-         diag_ext4(i,kk,j) = diag4(kk) * rkmh(i,j)
-         diag_ext5(i,kk,j) = diag5(kk) * rkmh(i,j)
-         diag_ext6(i,kk,j) = diag6(kk) * rkmh(i,j)
+         diag_ext1(i,j,kk) = diag1(kk) * rkmh(i,j)
+         diag_ext2(i,j,kk) = diag2(kk) * rkmh(i,j)
+         diag_ext3(i,j,kk) = diag3(kk) * rkmh(i,j)
+         diag_ext4(i,j,kk) = diag4(kk) * rkmh(i,j)
+         diag_ext5(i,j,kk) = diag5(kk) * rkmh(i,j)
+         diag_ext6(i,j,kk) = diag6(kk) * rkmh(i,j)
          enddo
 #endif
 

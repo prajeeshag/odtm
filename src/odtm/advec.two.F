@@ -37,8 +37,8 @@
 #ifdef area_weighted123
 	do ii = im,ip
 	do jj = jm,jp
-	 u(ii,k,jj,taun) = u(ii,k,jj,taun)*dxu(ii,jj)*dyu(ii,jj)
-	 v(ii,k,jj,taun) = v(ii,k,jj,taun)*dyv(ii,jj)*dxv(ii,jj)
+	 u(ii,jj,k,taun) = u(ii,jj,k,taun)*dxu(ii,jj)*dyu(ii,jj)
+	 v(ii,jj,k,taun) = v(ii,jj,k,taun)*dyv(ii,jj)*dxv(ii,jj)
 	 rkmu(ii,jj) = rkmu(ii,jj) * dxu(ii,jj)*dyu(ii,jj)
 	 rkmv(ii,jj) = rkmv(ii,jj) * dyv(ii,jj)*dxv(ii,jj)
 	enddo
@@ -51,9 +51,9 @@
 
 
 	rtemp1 = sum_2pt (1,i,j,ip,j) / sum_2pt(11,i,j,ip,j)
-	rtemp2 = rtemp1 * rtemp1 * h(i,k,j,taun)
+	rtemp2 = rtemp1 * rtemp1 * h(i,j,k,taun)
 	rtemp3 = sum_2pt (1,i,j,im,j) / sum_2pt(11,i,j,im,j)
-	rtemp4 = rtemp3 * rtemp3 * h(im,k,j,taun)
+	rtemp4 = rtemp3 * rtemp3 * h(im,j,k,taun)
 	
 	advec_uu = (rtemp2 - rtemp4)/ dxu(i,j)
         
@@ -75,7 +75,7 @@
 	advec_vu = (rtemp4*rUp - rtemp8*rDw)/ (dyu(i,j)*dxu(i,j))
 
 	
-	rtemp1 = u(i,k,j,taun) / dxu(i,j) / dyu(i,j)
+	rtemp1 = u(i,j,k,taun) / dxu(i,j) / dyu(i,j)
 	rtemp2 = sum_4pt (2,i,j,i,jp,im,jp,im,j)/
      &           sum_4pt (21,i,j,i,jp,im,jp,im,j)
 	rtemp3 = sum_2pt (3,i,j,im,j) /sum_2pt (31,i,j,im,j)
@@ -98,9 +98,9 @@
 
 
 	rtemp1 = sum_2pt (2,i,jp,i,j) /sum_2pt (21,i,jp,i,j)
-	rtemp2 = rtemp1 * rtemp1 * h(i,k,j,taun)
+	rtemp2 = rtemp1 * rtemp1 * h(i,j,k,taun)
 	rtemp3 = sum_2pt (2,i,j,i,jm) /sum_2pt (21,i,j,i,jm)
-	rtemp4 = rtemp3 * rtemp3 * h(i,k,jm,taun)
+	rtemp4 = rtemp3 * rtemp3 * h(i,jm,k,taun)
 
 	rUp = (dxv(i,jp) + dxv(i,j))*0.5
 	rDw = (dxv(i,j) + dxv(i,jm))*0.5
@@ -123,7 +123,7 @@
 
 	rtemp1 = sum_4pt (1,i,j,ip,j,ip,jm,i,jm)/
      &           sum_4pt (11,i,j,ip,j,ip,jm,i,jm)
-	rtemp2 = v(i,k,j,taun) / dyv(i,j) / dxv(i,j)
+	rtemp2 = v(i,j,k,taun) / dyv(i,j) / dxv(i,j)
 	rtemp3 = sum_2pt (3,i,j,i,jm) /sum_2pt (31,i,j,i,jm)
 	rtemp4 = (rtemp1*rtemp1 - rtemp2*rtemp2) * rtemp3
 
@@ -132,8 +132,8 @@
 #ifdef area_weighted123
 	do ii = im,ip
 	do jj = jm,jp
-	 u(ii,k,jj,taun) = u(ii,k,jj,taun)/dxu(ii,jj)/dyu(ii,jj)
-	 v(ii,k,jj,taun) = v(ii,k,jj,taun)/dyv(ii,jj)/dxv(ii,jj)
+	 u(ii,jj,k,taun) = u(ii,jj,k,taun)/dxu(ii,jj)/dyu(ii,jj)
+	 v(ii,jj,k,taun) = v(ii,jj,k,taun)/dyv(ii,jj)/dxv(ii,jj)
 	 rkmu(ii,jj) = rkmu(ii,jj) / dxu(ii,jj)/dyu(ii,jj)
 	 rkmv(ii,jj) = rkmv(ii,jj) / dyv(ii,jj)/dxv(ii,jj)
 	enddo
@@ -154,18 +154,18 @@
         integer, intent(in) :: index, i1,j1, i2,j2, i3,j3, i4,j4
 	
 	if (index .eq. 1) then
-	sum_4pt = (u(i1,k,j1,taun) + u(i2,k,j2,taun) + 
-     &             u(i3,k,j3,taun) + u(i4,k,j4,taun))
+	sum_4pt = (u(i1,j1,k,taun) + u(i2,j2,k,taun) + 
+     &             u(i3,j3,k,taun) + u(i4,j4,k,taun))
 	endif
 
 	if (index .eq. 2) then
-	sum_4pt = (v(i1,k,j1,taun) + v(i2,k,j2,taun) + 
-     &             v(i3,k,j3,taun) + v(i4,k,j4,taun))
+	sum_4pt = (v(i1,j1,k,taun) + v(i2,j2,k,taun) + 
+     &             v(i3,j3,k,taun) + v(i4,j4,k,taun))
 	endif
 
 	if (index .eq. 3) then
-	sum_4pt = (h(i1,k,j1,taun) + h(i2,k,j2,taun) + 
-     &             h(i3,k,j3,taun) + h(i4,k,j4,taun))
+	sum_4pt = (h(i1,j1,k,taun) + h(i2,j2,k,taun) + 
+     &             h(i3,j3,k,taun) + h(i4,j4,k,taun))
 	endif
 
 	if (index .eq. 11) then
@@ -195,15 +195,15 @@
 
 	
 	if (index .eq. 1) then
-	sum_2pt = (u(i1,k,j1,taun) + u(i2,k,j2,taun))
+	sum_2pt = (u(i1,j1,k,taun) + u(i2,j2,k,taun))
 	endif
 
 	if (index .eq. 2) then
-	sum_2pt = (v(i1,k,j1,taun) + v(i2,k,j2,taun))
+	sum_2pt = (v(i1,j1,k,taun) + v(i2,j2,k,taun))
 	endif
 
 	if (index .eq. 3) then
-	sum_2pt = (h(i1,k,j1,taun) + h(i2,k,j2,taun))
+	sum_2pt = (h(i1,j1,k,taun) + h(i2,j2,k,taun))
 	endif
 
 	if (index .eq. 11) then

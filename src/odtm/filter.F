@@ -31,23 +31,20 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	do k=1,km-1
 	do j=1,jmt
 
-	 u(i,k,j,taun) = u(i,k,j,taun)+ alpha*rkmu(i,j)*(
-     &    u(i,k,j,taup) -2*u(i,k,j,taun) + u(i,k,j,taum) )
+	 u(i,j,k,taun) = u(i,j,k,taun)+ alpha*rkmu(i,j)*(
+     &    u(i,j,k,taup) -2*u(i,j,k,taun) + u(i,j,k,taum) )
 	
-         v(i,k,j,taun) = v(i,k,j,taun)+ alpha*rkmv(i,j)*(
-     &    v(i,k,j,taup) -2*v(i,k,j,taun) + v(i,k,j,taum) )
+         v(i,j,k,taun) = v(i,j,k,taun)+ alpha*rkmv(i,j)*(
+     &    v(i,j,k,taup) -2*v(i,j,k,taun) + v(i,j,k,taum) )
 	
 	 do nt=1,nn
-         t(i,k,j,nt,taun) = t(i,k,j,nt,taun)+ alpha*(
-     &    t(i,k,j,nt,taup) -2*t(i,k,j,nt,taun) + t(i,k,j,nt,taum) )
+         t(i,j,k,nt,taun) = t(i,j,k,nt,taun)+ alpha*(
+     &    t(i,j,k,nt,taup) -2*t(i,j,k,nt,taun) + t(i,j,k,nt,taum) )
 	 enddo
 	
 	
-        h(i,k,j,taun) = h(i,k,j,taun)+ alpha*rkmh(i,j)*(
-     &    h(i,k,j,taup) -2*h(i,k,j,taun) + h(i,k,j,taum) )
-
-c        eta(i,k,j,taun) = eta(i,k,j,taun)+ alpha*rkmh(i,j)*(
-c     &    eta(i,k,j,taup) -2*eta(i,k,j,taun) + eta(i,k,j,taum) )
+        h(i,j,k,taun) = h(i,j,k,taun)+ alpha*rkmh(i,j)*(
+     &    h(i,j,k,taup) -2*h(i,j,k,taun) + h(i,j,k,taum) )
 
 #ifdef atmosphere
         u_atmos(i,j,taun) = u_atmos(i,j,taun)+ alpha*(
@@ -58,39 +55,39 @@ c     &    eta(i,k,j,taup) -2*eta(i,k,j,taun) + eta(i,k,j,taum) )
      &    h_atmos(i,j,taup) -2*h_atmos(i,j,taun) + h_atmos(i,j,taum) )
 #endif
 	
-	u(i,k,j,taum) = u(i,k,j,taun)
-	u(i,k,j,taun) = u(i,k,j,taup)
-	u(i,k,j,taup) = 0.0
+	u(i,j,k,taum) = u(i,j,k,taun)
+	u(i,j,k,taun) = u(i,j,k,taup)
+	u(i,j,k,taup) = 0.0
 
 	
-	v(i,k,j,taum) = v(i,k,j,taun)
-	v(i,k,j,taun) = v(i,k,j,taup)
-	v(i,k,j,taup) = 0.0
+	v(i,j,k,taum) = v(i,j,k,taun)
+	v(i,j,k,taun) = v(i,j,k,taup)
+	v(i,j,k,taup) = 0.0
 
-	h(i,k,j,taum) = h(i,k,j,taun)
-	h(i,k,j,taun) = h(i,k,j,taup)
-	h(i,k,j,taup) = 0.0
+	h(i,j,k,taum) = h(i,j,k,taun)
+	h(i,j,k,taun) = h(i,j,k,taup)
+	h(i,j,k,taup) = 0.0
 
-	eta(i,k,j,taum) = eta(i,k,j,taun)
-	eta(i,k,j,taun) = eta(i,k,j,taup)
-	eta(i,k,j,taup) = 0.0
+	eta(i,j,k,taum) = eta(i,j,k,taun)
+	eta(i,j,k,taun) = eta(i,j,k,taup)
+	eta(i,j,k,taup) = 0.0
 	
 	do nt=1,nn
-	t(i,k,j,nt,taum) = t(i,k,j,nt,taun)
-	t(i,k,j,nt,taun) = t(i,k,j,nt,taup)
-	t(i,k,j,nt,taup) = 0.0
+	t(i,j,k,nt,taum) = t(i,j,k,nt,taun)
+	t(i,j,k,nt,taun) = t(i,j,k,nt,taup)
+	t(i,j,k,nt,taup) = 0.0
 
         if (k.gt.1) then !Prajeesh  
-        if (t(i,k,j,1,taum).gt.t(i,k-1,j,1,taum))then
-        t(i,k,j,1,taum) = (t(i,k-1,j,1,taum)+ t(i,k,j,1,taum))/2.0
-        t(i,k-1,j,1,taum) = t(i,k,j,1,taum)
+        if (t(i,j,k,1,taum).gt.t(i,j,k-1,1,taum))then
+        t(i,j,k,1,taum) = (t(i,j,k-1,1,taum)+ t(i,j,k,1,taum))/2.0
+        t(i,j,k-1,1,taum) = t(i,j,k,1,taum)
         endif
         endif
 
         if (k.gt.1) then !Prajeesh  
-        if (t(i,k,j,1,taun).gt.t(i,k-1,j,1,taun))then
-        t(i,k,j,1,taun) = (t(i,k-1,j,1,taun)+ t(i,k,j,1,taun))/2.0
-        t(i,k,j,1,taun) = t(i,k-1,j,1,taun)
+        if (t(i,j,k,1,taun).gt.t(i,j,k-1,1,taun))then
+        t(i,j,k,1,taun) = (t(i,j,k-1,1,taun)+ t(i,j,k,1,taun))/2.0
+        t(i,j,k,1,taun) = t(i,j,k-1,1,taun)
         endif
         endif
 	enddo
@@ -112,62 +109,18 @@ c     &    eta(i,k,j,taup) -2*eta(i,k,j,taun) + eta(i,k,j,taum) )
         do i=1,imt
         do j=1,2
         do k=1,km
-         u(i,k,j,taun) = 0.0 * rkmu(i,j) * rkmv(i,j)
+         u(i,j,k,taun) = 0.0 * rkmu(i,j) * rkmv(i,j)
         enddo
         enddo
         enddo
         do i=1,imt-1
         do j=1,2
         do k=1,km
-         v(i,k,j,taun) = 0.0 * rkmv(i,j) * rkmu(i,j)
+         v(i,j,k,taun) = 0.0 * rkmv(i,j) * rkmu(i,j)
         enddo
         enddo
         enddo
         
-#endif
-#ifdef prescribe_N_boundary
-        do i=1,imt
-        do j=jmt-2,jmt-1
-        do k=1,km
-           jj = j - (jmt-3)
-         u(i,k,j,taun) = uN(i,k,jj) * rkmu(i,j) * rkmv(i,j)
-        enddo
-        enddo
-        enddo
-        do i=1,imt-1
-        do j=jmt-1,jmt
-        do k=1,km
-           jj = j - (jmt-2)
-         v(i,k,j,taun) = vN(i,k,jj) * rkmv(i,j) * rkmu(i,j)
-        enddo
-        enddo
-        enddo
-        do i=1,imt-1
-        do j=jmt-2,jmt-1
-        do k=1,km
-           jj = j - (jmt-3)
-         h(i,k,j,taun) = hhN(i,k,jj) * rkmh(i,j)
-         eta(i,k,j,taun) = etaN(i,k,jj) * rkmh(i,j)
-         eta(i,k,j,taum) = etaN(i,k,jj) * rkmh(i,j)
-        enddo
-        enddo
-        enddo
-#endif
-#ifdef prescribe_E_boundary
-        do i=imt-1,imt
-        do j=1,jmt-1
-        do k=1,km
-         u(i,k,j,taun) = 0.0 !* rkmu(i,j) *rkmv(i,j)
-        enddo
-        enddo
-        enddo
-        do i=imt-2,imt-1
-        do j=1,jmt
-        do k=1,km
-         v(i,k,j,taun) = 0.0 !v(i-1,k,j,taup) * rkmv(i,j) * rkmu(i,j)
-        enddo
-        enddo
-        enddo
 #endif
 
 
@@ -186,16 +139,16 @@ c
 	do jj=1,jmt
          rkmhH(ii,jj) = 1.0
 	do kk=1,km
-         u(ii,kk,jj,4) = u(ii,kk,jj,2)
-         v(ii,kk,jj,4) = v(ii,kk,jj,2)
-         h(ii,kk,jj,4) = h(ii,kk,jj,2)
-         u(ii,kk,jj,3) = u(ii,kk,jj,1)
-         v(ii,kk,jj,3) = v(ii,kk,jj,1)
-         h(ii,kk,jj,3) = h(ii,kk,jj,1)
+         u(ii,jj,kk,4) = u(ii,jj,kk,2)
+         v(ii,jj,kk,4) = v(ii,jj,kk,2)
+         h(ii,jj,kk,4) = h(ii,jj,kk,2)
+         u(ii,jj,kk,3) = u(ii,jj,kk,1)
+         v(ii,jj,kk,3) = v(ii,jj,kk,1)
+         h(ii,jj,kk,3) = h(ii,jj,kk,1)
 #ifdef trace
         do nt=1,nn
-         t(ii,kk,jj,nt,4) = t(ii,kk,jj,nt,2)
-         t(ii,kk,jj,nt,3) = t(ii,kk,jj,nt,1)
+         t(ii,jj,kk,nt,4) = t(ii,jj,kk,nt,2)
+         t(ii,jj,kk,nt,3) = t(ii,jj,kk,nt,1)
         enddo
 #endif
         enddo
@@ -220,8 +173,8 @@ c        pvort(:,:,:) = 0.0
         t_switch = 1.0 *mod(loop,int(86400/dt)*10)
 
 	
-	 if (abs(u(ii,kk,jj,taun)) .ge. vel_lim(kk) .or. 
-     &    abs(v(ii,kk,jj,taun))  .ge. vel_lim(kk) .or.
+	 if (abs(u(ii,jj,kk,taun)) .ge. vel_lim(kk) .or. 
+     &    abs(v(ii,jj,kk,taun))  .ge. vel_lim(kk) .or.
      &    linear_switch .eq. 0 .or. t_switch .eq. 0)  then
 
 
@@ -231,10 +184,6 @@ c        pvort(:,:,:) = 0.0
 	  jmte = jj+1
 	call smooth (idim1, idim2, idim3, idim4, idim5,
      &  imts, jmts, kk, imte, jmte, kk)
-c	write(*,*)'Smoothing at lon, lat, level at loop ',
-c     &   gdx(ii),gdy(jj), kk, loop, h(ii,kk,jj,taun), 
-c     &   u(ii,kk,jj,taun),
-c     &   v(ii,kk,jj,taun)
 	 endif
 
         enddo
@@ -243,6 +192,7 @@ c     &   v(ii,kk,jj,taun)
 
 
 #endif
+
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #ifdef apply_spatial_filter_mld
 c
@@ -262,18 +212,18 @@ c
 	do ii=1,imt
 	do jj=1,jmt
 	do kk=1,kmax
-         temp(ii,kk,jj,2) = 0.0
-         salt(ii,kk,jj,2) = 0.0
-         uvel(ii,kk,jj,2) = 0.0
-         vvel(ii,kk,jj,2) = 0.0
+         temp(ii,jj,kk,2) = 0.0
+         salt(ii,jj,kk,2) = 0.0
+         uvel(ii,jj,kk,2) = 0.0
+         vvel(ii,jj,kk,2) = 0.0
          tmask(ii,jj) = 1.0
          smask(ii,jj) = 1.0
          umask(ii,jj) = 1.0
          vmask(ii,jj) = 1.0
-        if(temp(ii,kk,jj,1).eq. 0.0)tmask(ii,jj) = 0.0
-        if(salt(ii,kk,jj,1).eq. 0.0)smask(ii,jj) = 0.0
-        if(uvel(ii,kk,jj,1).eq. 0.0)umask(ii,jj) = 0.0
-        if(vvel(ii,kk,jj,1).eq. 0.0)vmask(ii,jj) = 0.0
+        if(temp(ii,jj,kk,1).eq. 0.0)tmask(ii,jj) = 0.0
+        if(salt(ii,jj,kk,1).eq. 0.0)smask(ii,jj) = 0.0
+        if(uvel(ii,jj,kk,1).eq. 0.0)umask(ii,jj) = 0.0
+        if(vvel(ii,jj,kk,1).eq. 0.0)vmask(ii,jj) = 0.0
         enddo
         enddo
         enddo
@@ -295,14 +245,10 @@ c
 	do ii=2,imt-1
 	do jj=2,jmt-1
 	do kk=1,kmax
-         if (temp(ii,kk,jj,2) .ne. 0.0 ) 
-     & temp(ii,kk,jj,1) = temp(ii,kk,jj,2) 
-         if (salt(ii,kk,jj,2) .ne. 0.0 ) 
-     & salt(ii,kk,jj,1) = salt(ii,kk,jj,2)
-c         if (uvel(ii,kk,jj,2) .ne. 0.0 ) 
-c     & uvel(ii,kk,jj,1) = uvel(ii,kk,jj,2)
-c         if (vvel(ii,kk,jj,2) .ne. 0.0 ) 
-c     & vvel(ii,kk,jj,1) = vvel(ii,kk,jj,2)
+         if (temp(ii,jj,kk,2) .ne. 0.0 ) 
+     & temp(ii,jj,kk,1) = temp(ii,jj,kk,2) 
+         if (salt(ii,jj,kk,2) .ne. 0.0 ) 
+     & salt(ii,jj,kk,1) = salt(ii,jj,kk,2)
         enddo
         enddo
         enddo

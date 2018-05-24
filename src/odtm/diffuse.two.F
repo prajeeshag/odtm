@@ -47,16 +47,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	 jm2 = j - 2
         if (jm2<1) jm2 = 1 !Prajeesh  
         
-#ifdef area_weighted123
-        do ii = im2,ip2
-        do jj = jm2,jp2
-         u(ii,k,jj,taun) = u(ii,k,jj,taun)*dxu(ii,jj)*dyv(ii,jj)
-         v(ii,k,jj,taun) = v(ii,k,jj,taun)*dyv(ii,jj)*dxu(ii,jj)
-         rkmu(ii,jj) = rkmu(ii,jj) * dxu(ii,jj)*dyv(ii,jj)
-         rkmv(ii,jj) = rkmv(ii,jj) * dyv(ii,jj)*dxu(ii,jj)
-        enddo
-        enddo
-#endif
 c =========================== diffuse_uu ============================
 	 rtemp1 = (gdx(i+1) - gdx(i))
 	 rtemp2 = (gdy(j+1) - gdy(j))
@@ -67,11 +57,11 @@ c =========================== diffuse_uu ============================
 	 dphi = (rdx(i+1) + rdx(i))/2.0
 	 rH1 = sum_2ptd (3,ip,j,i,j) /sum_2ptd (31,ip,j,i,j)
 	 rH2 = sum_2ptd (3,im,j,i,j) /sum_2ptd (31,im,j,i,j)
-	 rtemp1 = (u(i+1,k,j,taum) - u(i,k,j,taum))/dphi
+	 rtemp1 = (u(i+1,j,k,taum) - u(i,j,k,taum))/dphi
 	 dphi = (rdx(i-1) + rdx(i))/2.0
 	 rH3 = sum_2ptd (3,im,j,i,j) /sum_2ptd (31,im,j,i,j)
 	 rH4 = sum_2ptd (3,im2,j,im,j) /sum_2ptd (31,im2,j,im,j)
-	 rtemp2 = (u(i,k,j,taum) - u(i-1,k,j,taum))/dphi
+	 rtemp2 = (u(i,j,k,taum) - u(i-1,j,k,taum))/dphi
 	 dphi = rdx(i)
 	 rtemp3 = (rtemp1 - rtemp2)*Ahx*rH2/dphi  ! giving Ah here
 	 rtemp4 = r2cos2theta*rtemp3  ! reserve
@@ -79,17 +69,17 @@ c =========================== diffuse_uu ============================
 	 dthe = (rdy(j+1) + rdy(j))/2.0
 	 rH1 = sum_2ptd (3,i,jp,im,jp) /sum_2ptd (31,i,jp,im,jp)
 	 rH2 = sum_2ptd (3,i,j,im,j) /sum_2ptd (31,i,j,im,j)
-	 rtemp5 = (u(i,k,j+1,taum) - u(i,k,j,taum))/dthe
+	 rtemp5 = (u(i,j+1,k,taum) - u(i,j,k,taum))/dthe
 	 dthe = (rdy(j-1) + rdy(j))/2.0
 	 rH3 = sum_2ptd (3,i,j,im,j) /sum_2ptd (31,i,j,im,j)
 	 rH4 = sum_2ptd (31,i,jm,im,jm) /sum_2ptd (31,i,jm,im,jm)
-	 rtemp6 = (u(i,k,j,taum) - u(i,k,j-1,taum))/dthe
+	 rtemp6 = (u(i,j,k,taum) - u(i,j-1,k,taum))/dthe
 	 dthe = rdy(j)
 	 rtemp7 = (rtemp5 - rtemp6)*Ahy*rH2/dthe ! taking Ah here
 	 rtemp8 = r2*rtemp7 ! reserve
 
 	 rH1 = sum_2ptd (3,i,j,im,j) /sum_2ptd (31,i,j,im,j)
-	 rtemp9 = u(i,k,j,taum)*rH1*(1-2.0*cos(theta(j))**2) ! reserve
+	 rtemp9 = u(i,j,k,taum)*rH1*(1-2.0*cos(theta(j))**2) ! reserve
 	 dphi = rdx(i)
 
 	 rtemp10 = sum_2ptd(2,i,jp,i,j)/
@@ -114,11 +104,11 @@ c ==================  diffuse_vv ==========================================
          dphi = (rdx(i+1) + rdx(i))/2.0
          rH1 = sum_2ptd(3,ip,j,ip,jm) /sum_2ptd(31,ip,j,ip,jm)
          rH2 = sum_2ptd(3,i,j,i,jm) /sum_2ptd(31,i,j,i,jm)
-         rtemp1 = (v(i+1,k,j,taum) - v(i,k,j,taum))/dphi
+         rtemp1 = (v(i+1,j,k,taum) - v(i,j,k,taum))/dphi
          dphi = (rdx(i-1) + rdx(i))/2.0
          rH3 = sum_2ptd(3,i,j,i,jm) /sum_2ptd(31,i,j,i,jm) 
          rH4 = sum_2ptd(3,im,j,im,jm) /sum_2ptd(31,im,j,im,jm)
-         rtemp2 = (v(i,k,j,taum) - v(i-1,k,j,taum))/dphi
+         rtemp2 = (v(i,j,k,taum) - v(i-1,j,k,taum))/dphi
          dphi = rdx(i)
          rtemp3 = (rtemp1 - rtemp2)*Ahx*rH2/dphi  ! giving Ah here
          rtemp4 = r2cos2theta*rtemp3  ! reserve
@@ -126,22 +116,22 @@ c ==================  diffuse_vv ==========================================
          dthe = (rdy(j+1) + rdy(j))/2.0
          rH1 = sum_2ptd (3,i,jp,i,j) /sum_2ptd (31,i,jp,i,j)
          rH2 = sum_2ptd (3,i,j,i,jm) /sum_2ptd (31,i,j,i,jm)
-         rtemp5 = (v(i,k,j+1,taum) - v(i,k,j,taum))/dthe
+         rtemp5 = (v(i,j+1,k,taum) - v(i,j,k,taum))/dthe
          dthe = (rdy(j-1) + rdy(j))/2.0
          rH3 = sum_2ptd (3,i,j,i,jm) /sum_2ptd (31,i,j,i,jm)
          rH4 = sum_2ptd (3,i,jm,i,jm2) /sum_2ptd (31,i,jm,i,jm2)
-         rtemp6 = (v(i,k,j,taum) - v(i,k,j-1,taum))/dthe
+         rtemp6 = (v(i,j,k,taum) - v(i,j-1,k,taum))/dthe
          dthe = rdy(j)
          rtemp7 = (rtemp5 - rtemp6)*Ahy*rH2/dthe ! taking Ah here
          rtemp8 = r2*rtemp7 ! reserve
 
          rH1 = sum_2ptd (3,i,j,i,jm) /sum_2ptd (31,i,j,i,jm)
-         rtemp9 = v(i,k,j,taum)*rH1*(1-2.0*cos(theta(j))**2) ! reserve
+         rtemp9 = v(i,j,k,taum)*rH1*(1-2.0*cos(theta(j))**2) ! reserve
          dphi = rdx(i)
 
-         rtemp10 = h(i,k,j,taum)*sum_2ptd(1,i,j,ip,j)/
+         rtemp10 = h(i,j,k,taum)*sum_2ptd(1,i,j,ip,j)/
      &                           sum_2ptd(11,i,j,ip,j)
-         rtemp11 = h(i,k,j-1,taum)*sum_2ptd(1,i,jm,ip,jm)/
+         rtemp11 = h(i,j-1,k,taum)*sum_2ptd(1,i,jm,ip,jm)/
      &                             sum_2ptd(11,i,jm,ip,jm)
 	 rH1 = sum_2ptd(3,i,jm,i,j)/sum_2ptd(31,i,jm,i,j)
          rtemp12 = (rtemp10 - rtemp11)*2.0*sin(theta(j))*rH1/dphi  ! reserve
@@ -150,17 +140,6 @@ c ==================  diffuse_vv ==========================================
      &   - rtemp12) * Ahy
 
 
-#ifdef area_weighted123
-        do ii = im2,ip2
-        do jj = jm2,jp2
-         u(ii,k,jj,taun) = u(ii,k,jj,taun)/dxu(ii,jj)/dyv(ii,jj)
-         v(ii,k,jj,taun) = v(ii,k,jj,taun)/dyv(ii,jj)/dxu(ii,jj)
-         rkmu(ii,jj) = rkmu(ii,jj) / dxu(ii,jj)/dyv(ii,jj)
-         rkmv(ii,jj) = rkmv(ii,jj) / dyv(ii,jj)/dxu(ii,jj)
-        enddo
-        enddo
-#endif	
-	
 	return
 	end subroutine laplacian
 #endif
@@ -182,18 +161,18 @@ c ==================  diffuse_vv ==========================================
 
         
         if (index .eq. 1) then
-        sum_4ptd = (u(i1,k,j1,taum) + u(i2,k,j2,taum) + 
-     &             u(i3,k,j3,taum) + u(i4,k,j4,taum))
+        sum_4ptd = (u(i1,j1,k,taum) + u(i2,j2,k,taum) + 
+     &             u(i3,j3,k,taum) + u(i4,j4,k,taum))
         endif
 
         if (index .eq. 2) then
-        sum_4ptd = (v(i1,k,j1,taum) + v(i2,k,j2,taum) + 
-     &             v(i3,k,j3,taum) + v(i4,k,j4,taum))
+        sum_4ptd = (v(i1,j1,k,taum) + v(i2,j2,k,taum) + 
+     &             v(i3,j3,k,taum) + v(i4,j4,k,taum))
         endif
 
         if (index .eq. 3) then
-        sum_4ptd = (h(i1,k,j1,taum) + h(i2,k,j2,taum) + 
-     &             h(i3,k,j3,taum) + h(i4,k,j4,taum))
+        sum_4ptd = (h(i1,j1,k,taum) + h(i2,j2,k,taum) + 
+     &             h(i3,j3,k,taum) + h(i4,j4,k,taum))
         endif
 
         if (index .eq. 11) then
@@ -223,15 +202,15 @@ c ==================  diffuse_vv ==========================================
         integer, intent(in) :: index, i1, j1, i2, j2
 
         if (index .eq. 1) then
-        sum_2ptd = (u(i1,k,j1,taum) + u(i2,k,j2,taum))
+        sum_2ptd = (u(i1,j1,k,taum) + u(i2,j2,k,taum))
         endif
 
         if (index .eq. 2) then
-        sum_2ptd = (v(i1,k,j1,taum) + v(i2,k,j2,taum))
+        sum_2ptd = (v(i1,j1,k,taum) + v(i2,j2,k,taum))
         endif
 
         if (index .eq. 3) then
-        sum_2ptd = (h(i1,k,j1,taum) + h(i2,k,j2,taum))
+        sum_2ptd = (h(i1,j1,k,taum) + h(i2,j2,k,taum))
         endif
 
         if (index .eq. 11) then

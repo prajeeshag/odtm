@@ -16,28 +16,25 @@ module param_mod
     real :: fracx, fracy
 
     integer :: loop_ind
-    integer :: mask(imt,jmt)
-    real :: rmld_misc(imt,51,jmt), denss(imt,km,jmt)
-    real :: mld_mld(imt,jmt)
 
-    character(len=20) :: stamp_time(12) = (/ &
-                    '01-JAN-1995 00:00:00', &
-                    '01-FEB-1995 00:00:00', &
-                    '01-MAR-1995 00:00:00', &
-                    '01-APR-1995 00:00:00', &
-                    '01-MAY-1995 00:00:00', &
-                    '01-JUN-1995 00:00:00', &
-                    '01-JUL-1995 00:00:00', &
-                    '01-AUG-1995 00:00:00', &
-                    '01-SEP-1995 00:00:00', &
-                    '01-OCT-1995 00:00:00', &
-                    '01-NOV-1995 00:00:00', &
-                    '01-DEC-1995 00:00:00'/)
+  !  character(len=20) :: stamp_time(12) = (/ &
+  !                  '01-JAN-1995 00:00:00', &
+  !                  '01-FEB-1995 00:00:00', &
+  !                  '01-MAR-1995 00:00:00', &
+  !                  '01-APR-1995 00:00:00', &
+  !                  '01-MAY-1995 00:00:00', &
+  !                  '01-JUN-1995 00:00:00', &
+  !                  '01-JUL-1995 00:00:00', &
+  !                  '01-AUG-1995 00:00:00', &
+  !                  '01-SEP-1995 00:00:00', &
+  !                  '01-OCT-1995 00:00:00', &
+  !                  '01-NOV-1995 00:00:00', &
+  !                  '01-DEC-1995 00:00:00'/)
 
-    character(len=21) :: stamp_day_daily(365)
-    character(len=21) :: stamp_time_daily(365)
+  !  character(len=21) :: stamp_day_daily(365)
+  !  character(len=21) :: stamp_time_daily(365)
 
-    integer :: number_of_snap
+  !  integer :: number_of_snap
 
     !c  time stamps for netcdf snapshots.
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
