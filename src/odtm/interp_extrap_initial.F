@@ -39,6 +39,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         do kkk = 1+hstart/5, hend/5
         icount = icount + 1
         if (kkk .gt. kmax-1) goto 101
+        if (kkk < 1) print *, kkk, ii, jj, kk
         rsum1 = rsum1 + tempin(kkk) 
         rsum2 = rsum2 + saltin(kkk)
 c        if (kkk .gt. kmax) goto 101

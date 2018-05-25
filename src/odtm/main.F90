@@ -669,9 +669,12 @@ program main
 
         call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
 
-        call mpp_get_compute_domain(domain, isd, ied, jsd, jed)
+        call mpp_get_data_domain(domain, isd, ied, jsd, jed)
 
-        print *, 'PE, isc, iec, jsc, jec, halo = ', mpp_pe(), isc, iec, jsc, jec, halo
+        print *, '-----------------------Domain Decomposition-----------------------------'
+        print *, 'Compute Domain: PE, isc, iec, jsc, jec = ', mpp_pe(), isc, iec, jsc, jec
+        print *, 'Data Domain:    PE, isd, ied, jsd, jed = ', mpp_pe(), isd, ied, jsd, jed
+        print *, '------------------------------------------------------------------------'
 
         call init_size()
 

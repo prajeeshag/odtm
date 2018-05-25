@@ -55,9 +55,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         rsum4 = rsum4 + vvel(ii,jj,kkk,tau_index)
         enddo
 
-
-
-
         tempout = rsum1/max(1,icount)
         saltout = rsum2/max(1,icount)
         uvelout = rsum3/max(1,icount)
@@ -87,7 +84,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      &    (h(ii,jj,kk,taun)-icount*5.0) + 
      &   rsum4*5.0 )/max(1.0, (h(ii,jj,kk,taun)) )
 
-        
         endif
 
         

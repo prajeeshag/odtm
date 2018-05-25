@@ -6,7 +6,8 @@ c	an implimentation of Asselin-Robert Filter
 c	
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : eta, h, i, j, rkmh, rkmu, rkmv, t, u, v, k
-        use size_mod, only : loop, taum, taun, taup, imt, jmt, km, nn
+        use size_mod, only : loop, taum, taun, taup, km, nn
+        use size_mod, only : isc, iec, jsc, jec
         use param_mod, only : alpha, dt
         use smooth_hanning_mod, only : smooth
         implicit none
@@ -27,9 +28,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         t_llim(3) = 05.0
         t_llim(4) = 01.0
 
-	do i=1,imt
+	do i=isc, iec
+	do j=jsc, jec
 	do k=1,km-1
-	do j=1,jmt
 
 	 u(i,j,k,taun) = u(i,j,k,taun)+ alpha*rkmu(i,j)*(
      &    u(i,j,k,taup) -2*u(i,j,k,taun) + u(i,j,k,taum) )
@@ -106,14 +107,14 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	enddo
 
 #ifdef prescribe_S_boundary
-        do i=1,imt
+        do i=isc, iec
         do j=1,2
         do k=1,km
          u(i,j,k,taun) = 0.0 * rkmu(i,j) * rkmv(i,j)
         enddo
         enddo
         enddo
-        do i=1,imt-1
+        do i=isc, iec
         do j=1,2
         do k=1,km
          v(i,j,k,taun) = 0.0 * rkmv(i,j) * rkmu(i,j)
@@ -135,8 +136,8 @@ c
 	idim2 = 2  ! index for v, if =2 it smooths
 	idim1 = 1  ! index for u, if =1 it smooths
 	
-	do ii=1,imt
-	do jj=1,jmt
+	do ii=isc, iec
+	do jj=jsc, jec
 	do kk=1,km
          u(ii,jj,kk,4) = u(ii,jj,kk,2)
          v(ii,jj,kk,4) = v(ii,jj,kk,2)
@@ -155,8 +156,8 @@ c
         enddo
 
 c        pvort(:,:,:) = 0.0
-	do ii=2,imt-1
-	do jj=2,jmt-1
+	do ii=isc, iec
+	do jj=jsc, jec
 	do kk=1,km-1
 	
         t_switch = 1.0
@@ -208,8 +209,8 @@ c
 
         if (mod (loop, 10000000) .eq. 0) then
 
-	do ii=1,imt
-	do jj=1,jmt
+	do ii=isc, iec
+	do jj=jsc, jec
 	do kk=1,kmax
          temp(ii,jj,kk,2) = 0.0
          salt(ii,jj,kk,2) = 0.0
@@ -227,8 +228,8 @@ c
         enddo
         enddo
 
-	do ii=2,imt-1
-	do jj=2,jmt-1
+	do ii=isc, iec
+	do jj=jsc, jec
 	
 	  imts = ii-1
 	  imte = ii+1
@@ -241,8 +242,8 @@ c
 	enddo
 	enddo
 
-	do ii=2,imt-1
-	do jj=2,jmt-1
+	do ii=isc, iec
+	do jj=jsc, jec
 	do kk=1,kmax
          if (temp(ii,jj,kk,2) .ne. 0.0 ) 
      & temp(ii,jj,kk,1) = temp(ii,jj,kk,2) 

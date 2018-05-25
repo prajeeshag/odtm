@@ -13,6 +13,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only : diag_ext1, diag_ext2, diag_ext3
             use size_mod, only : diag_ext4, diag_ext5, diag_ext6
             use size_mod, only : rmld_misc, mld_mld, imt, jmt
+            use size_mod, only : isc, iec, jsc, jec
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt, dtts
 
             use interp_extrap_mod, only : interp_extrap_we_profile
@@ -41,8 +42,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !! Here is the start of Mixed Layer Model
 
 
-         do i=1,imt
-         do j=1,jmt
+         do i=isc, iec
+         do j=jsc, jec
 
          kmax = 51
          dzmym(1) = 5.0
@@ -218,9 +219,6 @@ c          call mld_consistency (kmax,ii,jj)
 
         enddo
         enddo
-c            write(*,*) SHCoeff(imt/2-10:imt/2+10,1,jmt/2+20)
-c            write(*,*) rmld_misc(imt/2:imt/2,12,jmt/2+20)
-
         return
         end
 !! Here is the end of Mixed Layer Model

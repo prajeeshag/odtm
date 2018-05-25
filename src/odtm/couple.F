@@ -12,8 +12,9 @@
 
         ! linear interpolation for wind forcing
 
+        use size_mod, only : isc, iec, jsc, jec
         use size_mod, only : taum, taun, taup, taus, tracedubdxmld, tracedvbdymld
-        use size_mod, only : loop, imt, jmt, km, i, j, k, rkmh, t, u, rkmu, v
+        use size_mod, only : loop, km, i, j, k, rkmh, t, u, rkmu, v
         use size_mod, only : rkmv, h, nn, temp, rkmu, rkmv
         use size_mod, only : salt, uvel, vvel, rdx, dxu, rdy, dyu, dyv
         use size_mod, only : temp_read, salt_read, month, theta
@@ -68,8 +69,8 @@
 
             kmax  = 51
 
-        do i=2,imt-1
-        do j=2,jmt-1
+        do i=isc,iec
+        do j=jsc,jec
         do k=1,km-1
 
         im = i-1
@@ -125,17 +126,12 @@
 
         t(i,j,k,1,taup) =  (t(i,j,k,1,taup) + 
      &   alpha_rgt*(tempout_taup - tempout_taum)) * rkmh(i,j)
-!            if (i==imt/2.and.j==jmt/2) then
-!                print *, 'couple.F :', alpha_rgt, tempout_taup,  tempout_taum, rkmh(i,j)  
-!            endif
         t(i,j,k,2,taup) =  (t(i,j,k,2,taup) + 
      &   alpha_rgt*(saltout_taup - saltout_taum)) * rkmh(i,j)
         u(i,j,k,taup) =  (u(i,j,k,taup) +
      &   alpha_rgm*(uvelout_taup - uvelout_taum )) * rkmu(i,j)
         v(i,j,k,taup) =  (v(i,j,k,taup) +
      &   alpha_rgm*(vvelout_taup - vvelout_taum )) * rkmv(i,j)
-
-
 
 ! T_taup = (1-beta_mld)T_taup + beta_mld (Tbar_taup - Tbar_taun)
 
