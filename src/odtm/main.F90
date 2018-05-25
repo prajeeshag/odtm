@@ -671,6 +671,8 @@ program main
 
         call mpp_get_compute_domain(domain, isd, ied, jsd, jed)
 
+        print *, 'PE, isc, iec, jsc, jec, halo = ', mpp_pe(), isc, iec, jsc, jec, halo
+
         call init_size()
 
         allocate(tmp2(imt+1,jmt+1))
