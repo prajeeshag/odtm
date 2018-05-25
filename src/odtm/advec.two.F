@@ -10,7 +10,7 @@
         ! implimenting fully non-linear advection
 
         use size_mod, only : i, j, k, taun, u, v, h, rkmu, rkmv, rdx, rdy, dxu, dxv
-        use size_mod, only : dyu, dyv, theta
+        use size_mod, only : dyu, dyv, theta, tan_theta
         use param_mod, only : advec_uu, advec_uv, advec_vu, advec_vv, dphi
         use param_mod, only : dthe, polar_u, polar_v, re
 
@@ -80,7 +80,8 @@
      &           sum_4pt (21,i,j,i,jp,im,jp,im,j)
 	rtemp3 = sum_2pt (3,i,j,im,j) /sum_2pt (31,i,j,im,j)
 
-	polar_u = 2.0*(rtemp1*rtemp2*rtemp3)/(Re*(1/tan(theta(j))))
+!	polar_u = 2.0*(rtemp1*rtemp2*rtemp3)/(Re*(1/tan(theta(j))))  !Prajeesh 	??????????
+	polar_u = 2.0*(rtemp1*rtemp2*rtemp3)*tan_theta(j)/Re
 
 
 	rtemp1=0.0
@@ -127,7 +128,8 @@
 	rtemp3 = sum_2pt (3,i,j,i,jm) /sum_2pt (31,i,j,i,jm)
 	rtemp4 = (rtemp1*rtemp1 - rtemp2*rtemp2) * rtemp3
 
-	polar_v = rtemp4/(Re*(1/tan(theta(j))))
+!	polar_v = rtemp4/(Re*(1/tan(theta(j)))) !Prajeesh   ????????
+	polar_v = rtemp4*tan_theta(j)/Re
 	
 #ifdef area_weighted123
 	do ii = im,ip

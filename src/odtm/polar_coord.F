@@ -9,7 +9,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : imt, jmt, i, j, k, gdx, gdy, fcor, gdxb, gdyb
         use size_mod, only : dxu, dyu, dxv, dyv, dxh, dyh, dah
         use size_mod, only : rdxu,rdyu, rdxv, rdyv, rdxh, rdyh
-        use size_mod, only : phi, theta
+        use size_mod, only : phi, theta, tan_theta
         use param_mod, only : deg2rad, omega, pi, re, deg2meter
         implicit none
 
@@ -55,21 +55,30 @@ c
 	        jp = j + 1
 	        jm = j - 1
             deg2meter_x = deg2meter * cos(theta(j))
-            dxu(i,j) = deg2meter_x * gdx(i) - gdx(im)
+            if(i>1) dxu(i,j) = deg2meter_x * gdx(i) - gdx(im)
             if (dxu(i,j)>0.) rdxu(i,j) = 1./dxu(i,j) 
+
             dyu(i,j) = deg2meter * gdyb(jp) - gdyb(j)
             if (dyu(i,j)>0.) rdyu(i,j) = 1./dyu(i,j) 
+
             dxv(i,j) = deg2meter_x * gdxb(ip) - gdxb(i)
             if (dxv(i,j)>0.) rdxv(i,j) = 1./dxv(i,j) 
-            dyv(i,j) = deg2meter * gdy(j) - gdy(jm)
+
+            if(j>1) dyv(i,j) = deg2meter * gdy(j) - gdy(jm)
             if (dyv(i,j)>0.) rdyv(i,j) = 1./dyv(i,j) 
+
             dxh(i,j) = deg2meter_x * gdxb(ip) - gdxb(i)
             if (dxh(i,j)>0.) rdxh(i,j) = 1./dxh(i,j) 
+
             dyh(i,j) = deg2meter * gdyb(jp) - gdyb(j)
             if (dyh(i,j)>0.) rdyh(i,j) = 1./dyh(i,j) 
+
 	        dah(i,j) = (dxh(i,j)*dyh(i,j))
 	    enddo
 	enddo
+
+        tan_theta(:) = 0.
+        tan_theta(1:jmt) = tan(theta(1:jmt))
 	
 	return
 	end subroutine polar_coord

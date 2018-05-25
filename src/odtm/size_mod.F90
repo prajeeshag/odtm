@@ -96,7 +96,7 @@ module size_mod
   real, pointer, dimension(:) :: dzmym => null(), zdepth => null()
   real, pointer, dimension(:) :: tr01_max => null(), tr02_max => null(), tr01_min => null(), tr02_min => null()
   real, pointer, dimension(:) :: rho => null(), rho_min => null(), rho_max => null()
-  real, pointer, dimension(:) :: phi => null(), theta => null()
+  real, pointer, dimension(:) :: phi => null(), theta => null(), tan_theta => null()
 
     contains
 
@@ -128,7 +128,7 @@ module size_mod
         allocate ( mask(imt,jmt) )
         allocate ( we_prof(0:kmaxMYM+1) )
         allocate ( gdx(imt), gdy(jmt) )
-        allocate ( gdxb(imt+1), gdy(jmt+1) )
+        allocate ( gdxb(imt+1), gdyb(jmt+1) )
         allocate ( rdx(imt), rdy(jmt) )
         allocate ( tracedubdxmld(kmaxMYM,4), tracedvbdymld(kmaxMYM,4) )
         allocate ( dxu(imt,jmt), dyu(imt,jmt) )
@@ -161,6 +161,7 @@ module size_mod
         allocate ( fcor(imt,jmt) )
         allocate ( rho(km), rho_min(km), rho_max(km) )
         allocate ( phi(imt), theta(jmt) )
+        allocate ( tan_theta(jmt) )
 
         dz(1) = 50.0     ! layer-1
         dz(2) = 25.0     ! layer-2

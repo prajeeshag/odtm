@@ -663,6 +663,16 @@ program main
         
         imt = dimz(1); jmt = dimz(2)
         
+        call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
+
+        call mpp_define_domains((/1,imt,1,jmt/), domain_layout, domain, xhalo=halo, yhalo=halo )
+
+        call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
+
+        call mpp_get_compute_domain(domain, isd, ied, jsd, jed)
+
+        call init_size()
+
         allocate(tmp2(imt+1,jmt+1))
         
         call read_data(grid_file, 'geolon_t', tmp2(1:imt,1:jmt), no_domain=.true.)
@@ -683,14 +693,14 @@ program main
         call read_data(grid_file, 'geolat_vert_t', tmp2, no_domain=.true.)
     
         gdyb = 0.
-        gdy(1:jmt+1) = tmp2(1,1:jmt+1)
+        gdyb(1:jmt+1) = tmp2(1,1:jmt+1)
 
         do ii=1,imt
            rdx(ii) = (gdxb(ii+1) - gdxb(ii))*deg2rad
         enddo
 
         do ii=1,jmt
-           rdy(ii) = (gdyb(ii+1) - gdy(ii))*deg2rad
+           rdy(ii) = (gdyb(ii+1) - gdyb(ii))*deg2rad
         enddo
 
         deallocate(tmp2)
@@ -728,15 +738,6 @@ program main
     
         rrkmt(1:imt,1:jmt) = rkmt(1:imt,1:jmt)
 
-        call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
-
-        call mpp_define_domains((/1,imt,1,jmt/), domain_layout, domain, xhalo=halo, yhalo=halo )
-
-        call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
-
-        call mpp_get_compute_domain(domain, isd, ied, jsd, jed)
-
-        call init_size()
 
         call polar_coord
 
