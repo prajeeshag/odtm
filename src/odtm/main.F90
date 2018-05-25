@@ -22,7 +22,7 @@ program main
     use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
     use size_mod, only : sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr
     use size_mod, only : taux_force, tauy_force, init_size, denss, rmld_misc
-    use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, rrkmt
+    use size_mod, only : rdx, rdy, rkmt, we_upwel, wd
     use size_mod, only : temp_read, salt_read, mask
 
     use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_total
@@ -204,9 +204,9 @@ program main
         call average_density
 #endif
 
-        do i=1,imt-1
-            do k=1,km-1
-                do j=1,jmt-1
+        do i=isc,iec
+            do j=jsc,jec
+                do k=1,km-1
                     if (rkmh(i,j) .ne. 0.0) then
                         nmid = (jmt/2)+1
                         call clinic
@@ -228,7 +228,7 @@ program main
         do k=1,km
             deltax(k) = 0.0
             rsumu(k) = 0.0
-            do j=1,jmt
+            do j=jsc,jec
                 rsumu(k) = rsumu(k) + u(1,j,k,taun)*h(1,j,k,taun)*dy
             enddo
         enddo
@@ -238,14 +238,14 @@ program main
             rsumh(k) = 0.0
             rsumx = 0.0
             rsumy = 0.0
-            do i=1,imt
+            do i=isc, iec
                 rsumv(k) = rsumv(k) + v(i,1,k,taun)*h(i,1,k,taun)*dx
                 rsumh(k) = rsumh(k) + h(i,1,k,taun)*dx
                 rsumx  = rsumx + rkmt(i,1)
             enddo
         enddo
 
-        do j=1,jmt
+        do j=jsc,jec
             rsumy  = rsumy + rkmt(1,j)
         enddo
 
@@ -258,9 +258,9 @@ program main
         endif
 #endif
 
-        do i=2,imt-1
-            do k=1,km-1
-                do j=2,jmt-1
+        do i=isc,iec
+            do j=jsc,jec
+                do k=1,km-1
                     nmid = (jmt/2)+1
     
 #ifdef atmosphere
@@ -272,7 +272,7 @@ program main
     
                     rlct = rkmu(i,j) + rkmv(i,j)
                     if (rlct .ne. 0.0) then
-                        call momentum ()
+                        call momentum
                     endif
 
 #ifdef trace
@@ -563,7 +563,7 @@ program main
         id_st_m = register_diag_field('odtm', 'st_m', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
                  long_name='?', units='?',missing_value=FILL_VALUE)
 
-        used = send_data(id_mask, rkmt(isc:iec,jsc:jec), time)
+        used = send_data(id_mask, rkmh(isc:iec,jsc:jec), time)
         used = send_data(id_dxu, dxu(isc:iec,jsc:jec), time)
         used = send_data(id_dyv, dyv(isc:iec,jsc:jec), time)
 
@@ -576,21 +576,21 @@ program main
         integer :: used
 
        
-        used = send_data(id_sst,t(1:imt,1:jmt,1,1,taun), time, mask=lmask)
+        used = send_data(id_sst,t(isc:iec,jsc:jec,1,1,taun), time, mask=lmask)
 
-        used = send_data(id_sss,t(1:imt,1:jmt,1,2,taun), time, mask=lmask)
+        used = send_data(id_sss,t(isc:iec,jsc:jec,1,2,taun), time, mask=lmask)
 
-        used = send_data(id_temp,t(:,:,:,1,taun),time, mask=lmask3)
+        used = send_data(id_temp,t(isc:iec,jsc:jec,:,1,taun),time, mask=lmask3)
 
-        used = send_data(id_salt,t(:,:,:,2,taun),time, mask=lmask3)
+        used = send_data(id_salt,t(isc:iec,jsc:jec,:,2,taun),time, mask=lmask3)
 
-        used = send_data(id_h,h(:,:,:,taun),time, mask=lmask3)
+        used = send_data(id_h,h(isc:iec,jsc:jec,:,taun),time, mask=lmask3)
 
-        used = send_data(id_eta, eta(:,:,1,1), time, mask=lmask)
+        used = send_data(id_eta, eta(isc:iec,jsc:jec,1,1), time, mask=lmask)
 
-        used = send_data(id_u, u(:,:,:,taun), time, mask=lmask3)
+        used = send_data(id_u, u(isc:iec,jsc:jec,:,taun), time, mask=lmask3)
 
-        used = send_data(id_v, v(:,:,:,taun), time, mask=lmask3)
+        used = send_data(id_v, v(isc:iec,jsc:jec,:,taun), time, mask=lmask3)
 
         used = send_data(id_we, we, time, mask=lmask3)
 
@@ -598,13 +598,13 @@ program main
 
         used = send_data(id_pvort, pvort, time, mask=lmask3)
         
-        used = send_data(id_temp_mld,temp(:,:,:,1),time, mask=lmask3m)
+        used = send_data(id_temp_mld,temp(isc:iec,jsc:jec,:,1),time, mask=lmask3m)
 
-        used = send_data(id_salt_mld,salt(:,:,:,1),time, mask=lmask3m)
+        used = send_data(id_salt_mld,salt(isc:iec,jsc:jec,:,1),time, mask=lmask3m)
 
-        used = send_data(id_u_mld,uvel(:,:,:,taun),time, mask=lmask3m)
+        used = send_data(id_u_mld,uvel(isc:iec,jsc:jec,:,taun),time, mask=lmask3m)
 
-        used = send_data(id_v_mld,vvel(:,:,:,taun),time, mask=lmask3m)
+        used = send_data(id_v_mld,vvel(isc:iec,jsc:jec,:,taun),time, mask=lmask3m)
 
         used = send_data(id_diag,rmld_misc,time, mask=lmask3m)
 
@@ -741,9 +741,6 @@ program main
             enddo
         enddo
     
-        rrkmt(1:imt,1:jmt) = rkmt(1:imt,1:jmt)
-
-
         call polar_coord
 
         id_restart = register_restart_field(restart_odtm, restart_file, 'u', u(:,:,:,1), u(:,:,:,2))
@@ -797,8 +794,8 @@ program main
             call restore_state(restart_odtm)
         else
             call mpp_error(NOTE,'Model starting from initial state')
-            do i=1,imt
-                do j=1,jmt
+            do i=isc,iec
+                do j=jsc,jec
                     do k=1,kclim
                         tempin(k) = temp_read(i,j,k,1)  
                         saltin(k) = salt_read(i,j,k,1) 
@@ -826,7 +823,8 @@ program main
                 enddo
             enddo
         endif
-  
+ 
+        call save_restart(restart_odtm,'initial') 
     end subroutine init_grid
 
 end program main

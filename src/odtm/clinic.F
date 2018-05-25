@@ -6,9 +6,9 @@ c	subroutine to solve baroclinic pressure gradient
 c
 c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod, only : dxu, dyu, dz, dz_max, gdx, gdy, h, i, j, loop
+        use size_mod, only : dz, dz_max, gdx, gdy, h, i, j, loop
         use size_mod, only : rdx, rkmh, rdy, taum1, taun1, taup1, u, v, wd
-        use size_mod, only : we, we_mld, dyv, k, taum, taun, taup, theta
+        use size_mod, only : we, we_mld, k, taum, taun, taup, theta, rdxh, rdyh
         use param_mod, only : day2sec, diffuse_h, diffuse_th, dphi, dt, dthe
         use param_mod, only : dtts, pi, re, tropdubdx, tropdvbdy
 
@@ -42,8 +42,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	rtemp2 = rtemp2 
 	dphi = (rdx(i+1)+rdx(i))/2.0
 
-	tropdubdx = (rtemp1 - rtemp2)/
-     &              ( (dxu(i,j)+dxu(ip,j))/2  )
+	tropdubdx = (rtemp1 - rtemp2)*rdxh(i,j)
 
 
 	rtheta_vu = cos((theta(j)+theta(j+1))*0.5)
@@ -57,9 +56,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      &                           sum_2pt (31,i,j,i,jm)
 	rtemp4 = rtemp4
 
-	tropdvbdy = ( rtemp3 - rtemp4 )/
-     &              (  cos(theta(j)) *
-     &                (dyv(i,jp)+dyv(i,j))/2 )
+	tropdvbdy = ( rtemp3 - rtemp4 ) * rdyh(i,j) / cos(theta(j))
 
 
 	

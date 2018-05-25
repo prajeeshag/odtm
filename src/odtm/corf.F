@@ -17,17 +17,6 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	jp = j + 1
 	jm = j - 1
 	
-#ifdef area_weighted123
-	do ii = im,ip
-        do jj = jm,jp
-         u(ii,k,jj,taun) = u(ii,k,jj,taun)*dxu(ii,jj)*dyv(ii,jj)
-         v(ii,k,jj,taun) = v(ii,k,jj,taun)*dyv(ii,jj)*dxu(ii,jj)
-         rkmu(ii,jj) = rkmu(ii,jj) * dxu(ii,jj)*dyv(ii,jj)
-         rkmv(ii,jj) = rkmv(ii,jj) * dyv(ii,jj)*dxu(ii,jj)
-        enddo
-        enddo
-#endif
-	
 	fcoru =  (fcor(im,j)+fcor(i,j))*0.5
 	rtemp1 = sum_4pt (2,im,jp,i,jp,i,j,im,j) /
      &           sum_4pt (21,im,jp,i,jp,i,j,im,j)
@@ -43,17 +32,6 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	
 	fcorvh = fcorv * rtemp1 * rtemp2  
 	
-
-#ifdef area_weighted123
-	do ii = im,ip
-        do jj = jm,jp
-         u(ii,k,jj,taun) = u(ii,k,jj,taun)/dxu(ii,jj)/dyv(ii,jj)
-         v(ii,k,jj,taun) = v(ii,k,jj,taun)/dyv(ii,jj)/dxu(ii,jj)
-         rkmu(ii,jj) = rkmu(ii,jj) / dxu(ii,jj)/dyv(ii,jj)
-         rkmv(ii,jj) = rkmv(ii,jj) / dyv(ii,jj)/dxu(ii,jj)
-        enddo
-        enddo
-#endif
 
 	return
 	stop

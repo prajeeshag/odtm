@@ -160,14 +160,14 @@ module size_mod
         allocate ( dxv(imt,jmt), dyv(imt,jmt) )
         allocate ( dxh(imt,jmt), dyh(imt,jmt) )
         allocate ( dah(imt,jmt) )
-        allocate ( rdxu(imt,jmt), rdyu(imt,jmt) )
-        allocate ( rdxv(imt,jmt), rdyv(imt,jmt) )
-        allocate ( rdxh(imt,jmt), rdyh(imt,jmt) )
+
+        allocate ( rdxu(0:imt+1,0:jmt+1), rdyu(0:imt+1,0:jmt+1) )
+        allocate ( rdxv(0:imt+1,0:jmt+1), rdyv(0:imt+1,0:jmt+1) )
+        allocate ( rdxh(0:imt+1,0:jmt+1), rdyh(0:imt+1,0:jmt+1) )
         allocate ( omask(imt,jmt) )
         allocate ( mask(imt,jmt) )
-        allocate ( rkmt(imt,jmt), rkmh(imt,jmt) )
-        allocate ( rkmu(imt,jmt), rkmv(imt,jmt) )
-        allocate ( rrkmt(imt,jmt) )
+        allocate ( rkmt(imt,jmt), rkmh(0:imt+1,0:jmt+1) )
+        allocate ( rkmu(0:imt+1,0:jmt+1), rkmv(0:imt+1,0:jmt+1) )
 
         dz(1) = 50.0     ! layer-1
         dz(2) = 25.0     ! layer-2

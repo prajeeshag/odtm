@@ -9,8 +9,8 @@
         subroutine advec
         ! implimenting fully non-linear advection
 
-        use size_mod, only : i, j, k, taun, u, v, h, rkmu, rkmv, rdx, rdy, dxu, dxv
-        use size_mod, only : dyu, dyv, theta, tan_theta
+        use size_mod, only : i, j, k, taun, u, v, h, rkmu, rkmv, rdx, rdy, dxv
+        use size_mod, only : dyu, rdyv, theta, tan_theta, rdxu, rdyu, rdxv
         use param_mod, only : advec_uu, advec_uv, advec_vu, advec_vv, dphi
         use param_mod, only : dthe, polar_u, polar_v, re
 
@@ -34,17 +34,6 @@
 	jp = j + 1
 	jm = j - 1
 
-#ifdef area_weighted123
-	do ii = im,ip
-	do jj = jm,jp
-	 u(ii,jj,k,taun) = u(ii,jj,k,taun)*dxu(ii,jj)*dyu(ii,jj)
-	 v(ii,jj,k,taun) = v(ii,jj,k,taun)*dyv(ii,jj)*dxv(ii,jj)
-	 rkmu(ii,jj) = rkmu(ii,jj) * dxu(ii,jj)*dyu(ii,jj)
-	 rkmv(ii,jj) = rkmv(ii,jj) * dyv(ii,jj)*dxv(ii,jj)
-	enddo
-	enddo
-#endif
-	
 !cccccccccccccccc u.du/dx + v.du/dy cccccccccccccccccccccccccccccccccccccccc
 	dphi = (rdx(i-1) + rdx(i))/2.0
 	dthe = rdy(j)
@@ -55,7 +44,8 @@
 	rtemp3 = sum_2pt (1,i,j,im,j) / sum_2pt(11,i,j,im,j)
 	rtemp4 = rtemp3 * rtemp3 * h(im,j,k,taun)
 	
-	advec_uu = (rtemp2 - rtemp4)/ dxu(i,j)
+	advec_uu = (rtemp2 - rtemp4)*rdxu(i,j)
+!	advec_uu = (rtemp2 - rtemp4)/dxu(i,j)
         
 	
 	rtemp1 = sum_2pt (1,i,jp,i,j) /sum_2pt (11,i,jp,i,j)
@@ -72,10 +62,10 @@
 
 	rUp = (dxv(im,jp) + dxv(i,jp))*0.5
 	rDw = (dxv(im,j) + dxv(i,j))*0.5
-	advec_vu = (rtemp4*rUp - rtemp8*rDw)/ (dyu(i,j)*dxu(i,j))
+	advec_vu = (rtemp4*rUp - rtemp8*rDw)*rdyu(i,j)*rdxu(i,j)
 
 	
-	rtemp1 = u(i,j,k,taun) / dxu(i,j) / dyu(i,j)
+	rtemp1 = u(i,j,k,taun) * rdxu(i,j) * rdyu(i,j)
 	rtemp2 = sum_4pt (2,i,j,i,jp,im,jp,im,j)/
      &           sum_4pt (21,i,j,i,jp,im,jp,im,j)
 	rtemp3 = sum_2pt (3,i,j,im,j) /sum_2pt (31,i,j,im,j)
@@ -105,7 +95,7 @@
 
 	rUp = (dxv(i,jp) + dxv(i,j))*0.5
 	rDw = (dxv(i,j) + dxv(i,jm))*0.5
-	advec_vv = (rtemp2*rUp - rtemp4*rDw)/ (dyv(i,j)*dxv(i,j))
+	advec_vv = (rtemp2*rUp - rtemp4*rDw)*rdyv(i,j)*rdxv(i,j)
 
 
 	rtemp1 = sum_2pt (1,ip,jm,ip,j) /sum_2pt (11,ip,jm,ip,j)
@@ -124,24 +114,12 @@
 
 	rtemp1 = sum_4pt (1,i,j,ip,j,ip,jm,i,jm)/
      &           sum_4pt (11,i,j,ip,j,ip,jm,i,jm)
-	rtemp2 = v(i,j,k,taun) / dyv(i,j) / dxv(i,j)
+	rtemp2 = v(i,j,k,taun) * rdyv(i,j) * rdxv(i,j)
 	rtemp3 = sum_2pt (3,i,j,i,jm) /sum_2pt (31,i,j,i,jm)
 	rtemp4 = (rtemp1*rtemp1 - rtemp2*rtemp2) * rtemp3
 
 !	polar_v = rtemp4/(Re*(1/tan(theta(j)))) !Prajeesh   ????????
 	polar_v = rtemp4*tan_theta(j)/Re
-	
-#ifdef area_weighted123
-	do ii = im,ip
-	do jj = jm,jp
-	 u(ii,jj,k,taun) = u(ii,jj,k,taun)/dxu(ii,jj)/dyu(ii,jj)
-	 v(ii,jj,k,taun) = v(ii,jj,k,taun)/dyv(ii,jj)/dxv(ii,jj)
-	 rkmu(ii,jj) = rkmu(ii,jj) / dxu(ii,jj)/dyu(ii,jj)
-	 rkmv(ii,jj) = rkmv(ii,jj) / dyv(ii,jj)/dxv(ii,jj)
-	enddo
-	enddo
-#endif
-	
 	
 	return
 	stop

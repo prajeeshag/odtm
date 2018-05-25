@@ -16,11 +16,12 @@ c	subroutine to solve baroclinic pressure gradient
 c
 c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod, only : dxu, dyu, gdx, gdy, h, i, j, k, loop, month, rdx
+        use size_mod, only : gdx, gdy, h, i, j, k, loop, month, rdx
         use size_mod, only : rdy, rkmh, salt_read, t, taum, taum1, taun, taun1
-        use size_mod, only : taup1, temp_read, dyv, taup, kclim, theta, nn
+        use size_mod, only : taup1, temp_read, taup, kclim, theta, nn
+        use size_mod, only : rdxu, rdyv, rdxh, rdyh, kmaxMYM
         use param_mod, only : day2sec, diffuse_h, diffuse_my, diffuse_tr, dphi
-        use param_mod, only : dthe, dtts, dt
+        use param_mod, only : dtts, dt, rad2deg
 
         use interp_extrap_initial_mod, only : interp_extrap_initial 
 
@@ -29,7 +30,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         
         integer :: nt, ip, im, jp, jm
         real :: tracedvbdy, tracedubdx, rtemp1, rtemp2, rtemp3, rtemp4, rtemp5, rtemp6
-        real :: rtheta_vu, rtheta_vd, tempout, saltout, hstart, hend, zero_out_tradv
+        real :: tempout, saltout, hstart, hend, zero_out_tradv
         real :: relax_on_off, alpha_rgm, alpha_rgt, beta_mldm, beta_mldt, gama, rdrag
         real :: relax_South, widS, relax_East, widE
         integer :: irepeat, kmax, kk
@@ -51,24 +52,17 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      &                           sum_2ptr (11,ip,j,i,j,nt)
 	rtemp2 = sum_2ptr (1,im,j,i,j,nt) /
      &                           sum_2ptr (11,im,j,i,j,nt)
-	dphi = (rdx(i+1)+rdx(i))/2.0
 
 	tracedubdx = (rtemp1 - rtemp2)* (sum_2pt (1,ip,j,i,j)/
-     &                              sum_2pt (11,ip,j,i,j) ) /
-     &              ( (dxu(i,j)+dxu(ip,j))/2  )
+     &                              sum_2pt (11,ip,j,i,j) ) * rdxh(i,j)
 
-
-	rtheta_vu = cos((theta(j)+theta(j+1))*0.5)
-        rtheta_vd = cos((theta(j)+theta(j-1))*0.5)
-	dthe = (rdy(j) + rdy(j+1))/2.0
 
 	rtemp3 = sum_2ptr (1,i,j,i,jp,nt) /
      &                            sum_2ptr (11,i,j,i,jp,nt)
 	rtemp4 = sum_2ptr (1,i,j,i,jm,nt) /
      &                           sum_2ptr (11,i,j,i,jm,nt)
 	tracedvbdy = ( rtemp3 - rtemp4 )* (sum_2pt (2,i,jp,i,j)/
-     &                              sum_2pt (21,i,jp,i,j) ) /
-     &                ( (dyv(i,jp)+dyv(i,j))/2 )
+     &                              sum_2pt (21,i,jp,i,j) ) * rdyh(i,j) 
 
 
 
@@ -79,23 +73,15 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         if ( loop .eq. 1) dtts = dt
 #endif
 
-	rtemp1 = rkmh(ip,j)*
-     &    (t(ip,j,k,nt,taum) - t(i,j,k,nt,taum) )/dxu(ip,j)
-	rtemp2 = rkmh(im,j)*
-     &    (t(i,j,k,nt,taum) - t(im,j,k,nt,taum) )/dxu(i,j)
-	rtemp3 = (rtemp1 - rtemp2)/((dxu(ip,j)+dxu(i,j))*0.5) !reserve
+	rtemp1 = rkmh(ip,j)*(t(ip,j,k,nt,taum) - t(i,j,k,nt,taum) )*rdxu(ip,j)
+	rtemp2 = rkmh(im,j)*(t(i,j,k,nt,taum) - t(im,j,k,nt,taum) )*rdxu(i,j)
+	rtemp3 = (rtemp1 - rtemp2)*rdxh(i,j) !reserve
 
-	rtemp4 = rkmh(i,jp)*
-     &   (t(i,jp,k,nt,taun) - t(i,j,k,nt,taun))/dyv(i,jp)
-	dthe = (rdy(j-1) + rdy(j))/2.0
-	rtemp5 = rkmh(i,jm)*
-     &   (t(i,j,k,nt,taun) - t(i,jm,k,nt,taun))/dyv(i,j)
-	rtemp6 = (rtemp4 - rtemp5)/((dyv(i,jp)+dyv(i,j))*0.5)  ! reserve
+	rtemp4 = rkmh(i,jp)*(t(i,jp,k,nt,taun) - t(i,j,k,nt,taun))*rdyv(i,jp)
+	rtemp5 = rkmh(i,jm)*(t(i,j,k,nt,taun) - t(i,jm,k,nt,taun))*rdyv(i,j)
+	rtemp6 = (rtemp4 - rtemp5)*rdyh(i,j)
 	
 	diffuse_h = rtemp3 + rtemp6
-
-	rtemp1 = (gdx(i+1) - gdx(i))
-        rtemp2 = (gdy(j+1) - gdy(j))
 
         kmax = kclim
         do kk=1,kmax
@@ -112,25 +98,26 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      &      (30.0*day2sec)
 
         hstart = 0
-        kmax = 51
+        kmax = kmaxMYM
         do irepeat = 1,k-1
         hstart = hstart + h(i,j,irepeat,taun)
         enddo
         hend = h(i,j,k,taun) + hstart
 ! upadting MYM 
+
+        relax_on_off = 1.0
+#include "cparam.h"  ! <== This file overrides above parameter setup
+        
         if (hend .le. 5.0*kmax) then 
         zero_out_tradv = 0.0
         else
         zero_out_tradv = 1.0
         endif
 
-        relax_on_off = 1.0
-#include "cparam.h"  ! <== This file overrides above parameter setup
-        
 c        pvort(i,k,j) = zero_out_tradv
 
-	 rtemp1 = (gdx(i+1) - gdx(i))
-         rtemp2 = (gdy(j+1) - gdy(j))
+	     rtemp1 = rdx(i) * rad2deg
+         rtemp2 = rdy(j) * rad2deg
 
 
         t(i,j,k,nt,taup) = t(i,j,k,nt,taum)*rkmh(i,j) + (
@@ -142,10 +129,6 @@ c        pvort(i,k,j) = zero_out_tradv
      &      )
      &  ) *dtts*rkmh(i,j)
 
-!     &     + max(0.0, we(i,k,j)*0.0)*
-!     &          (t(i,k,j,nt,taun) - t(i,k+1,j,nt,taun))/
-!     &       (he(k))
-	
 	enddo
         
 	return

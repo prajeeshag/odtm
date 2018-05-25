@@ -16,9 +16,9 @@
         use size_mod, only : taum, taun, taup, taus, tracedubdxmld, tracedvbdymld
         use size_mod, only : loop, km, i, j, k, rkmh, t, u, rkmu, v
         use size_mod, only : rkmv, h, nn, temp, rkmu, rkmv
-        use size_mod, only : salt, uvel, vvel, rdx, dxu, rdy, dyu, dyv
+        use size_mod, only : salt, uvel, vvel, rdx, rdxh, rdy, rdyh
         use size_mod, only : temp_read, salt_read, month, theta
-        use param_mod, only : day2sec, dphi, dt, dthe, sec2day
+        use param_mod, only : day2sec, dt, sec2day
 
         implicit none
 
@@ -161,17 +161,13 @@
      &               sum_2ptr_mld (11,ip,j,i,j,kk,nt)
         rtemp2 = sum_2ptr_mld (1,im,j,i,j,kk,nt) /
      &               sum_2ptr_mld (11,im,j,i,j,kk,nt)
-        dphi = (rdx(i+1)+rdx(i))/2.0
 
         tracedubdxmld(kk,nt) = (rtemp1 - rtemp2)*
      &         (sum_2pt_mld (1,ip,j,i,j,k)/
-     &          sum_2pt_mld (11,ip,j,i,j,k) ) /
-     &         ( (dxu(i,j)+dxu(ip,j))/2  )
+     &          sum_2pt_mld (11,ip,j,i,j,k) ) * rdxh(i,j)
+!     &         ( (dxu(i,j)+dxu(ip,j))/2  )
 
 
-        rtheta_vu = cos((theta(j)+theta(j+1))*0.5)
-        rtheta_vd = cos((theta(j)+theta(j-1))*0.5)
-        dthe = (rdy(j) + rdy(j+1))/2.0
 
 c        if (i .eq. 47 .and. j .eq. 28) then
 c        write(*,*)   tracedvbdymld(kk,nt), nt, kk
@@ -183,8 +179,7 @@ c        endif
      &         sum_2ptr_mld (11,i,j,i,jm,kk,nt)
         tracedvbdymld(kk,nt) =(rtemp3-rtemp4 )* 
      &        (sum_2pt_mld (2,i,jp,i,j,k)/
-     &        sum_2pt_mld (12,i,jp,i,j,k) ) /
-     &        ( (dyv(i,jp)+dyv(i,j))/2 )
+     &        sum_2pt_mld (12,i,jp,i,j,k) ) * rdyh(i,j)
 
         enddo
 
@@ -299,8 +294,7 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
 	end function sum_2pt_mld
 
         subroutine tsuv_diffuse (ii,jj,kk, diffuse_temp, diffuse_salt)
-            use size_mod, only : temp, dxu, rkmh, rdy, dyv, salt
-            use param_mod, only : dthe
+            use size_mod, only : temp, rdxu, rkmh, rdy, rdyv, salt, rdxh, rdyh
         implicit none
 
         integer :: ii, jj, kk
@@ -315,38 +309,34 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
         jjm = jj-1
 
         rtemp1 = rkmh(iip,jj)*
-     &    (temp(iip,jj,kk,2) - temp(ii,jj,kk,2) )/dxu(iip,jj)
+     &    (temp(iip,jj,kk,2) - temp(ii,jj,kk,2) )*rdxu(iip,jj)
         rtemp2 = rkmh(iim,jj)*
-     &    (temp(ii,jj,kk,2) - temp(iim,jj,kk,2) )/dxu(ii,jj)
-        rtemp3 = (rtemp1 - rtemp2)/((dxu(iip,jj)+dxu(ii,jj))*0.5)
+     &    (temp(ii,jj,kk,2) - temp(iim,jj,kk,2) )*rdxu(ii,jj)
+        rtemp3 = (rtemp1 - rtemp2)*rdxh(ii,jj)
 
-        rtemp4 = rkmh(ii,jjp)*
-     &   (temp(ii,jjp,kk,2) - temp(ii,jj,kk,2))/dyv(ii,jjp)
-        dthe = (rdy(jj-1) + rdy(jj))/2.0
-        rtemp5 = rkmh(ii,jjm)*
-     &   (temp(ii,jj,kk,2) - temp(ii,jjm,kk,2))/dyv(ii,jj)
-        rtemp6 = (rtemp4 - rtemp5)/((dyv(ii,jjp)+dyv(ii,jj))*0.5)  !
+        rtemp4 = rkmh(ii,jjp)* (temp(ii,jjp,kk,2) - temp(ii,jj,kk,2))*rdyv(ii,jjp)
+        rtemp5 = rkmh(ii,jjm)* (temp(ii,jj,kk,2) - temp(ii,jjm,kk,2))*rdyv(ii,jj)
+        rtemp6 = (rtemp4 - rtemp5)*rdyh(ii,jj)  !
 
 
         diffuse_temp = rtemp3 + rtemp6
-        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diiffuse_temp = 0.0 !Prajeesh 
+        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diffuse_temp = 0.0 !Prajeesh 
 
 
         rtemp1 = rkmh(iip,jj)*
-     &    (salt(iip,jj,kk,2) - salt(ii,jj,kk,2) )/dxu(iip,jj)
+     &    (salt(iip,jj,kk,2) - salt(ii,jj,kk,2) )*rdxu(iip,jj)
         rtemp2 = rkmh(iim,jj)*
-     &    (salt(ii,jj,kk,2) - salt(iim,jj,kk,2) )/dxu(ii,jj)
-        rtemp3 = (rtemp1 - rtemp2)/((dxu(iip,jj)+dxu(ii,jj))*0.5)
+     &    (salt(ii,jj,kk,2) - salt(iim,jj,kk,2) )*rdxu(ii,jj)
+        rtemp3 = (rtemp1 - rtemp2)*rdxh(ii,jj)
 
         rtemp4 = rkmh(ii,jjp)*
-     &   (salt(ii,jjp,kk,2) - salt(ii,jj,kk,2))/dyv(ii,jjp)
-        dthe = (rdy(jj-1) + rdy(jj))/2.0
+     &   (salt(ii,jjp,kk,2) - salt(ii,jj,kk,2))*rdyv(ii,jjp)
         rtemp5 = rkmh(ii,jjm)*
-     &   (salt(ii,jj,kk,2) - salt(ii,jjm,kk,2))/dyv(ii,jj)
-        rtemp6 = (rtemp4 - rtemp5)/((dyv(ii,jjp)+dyv(ii,jj))*0.5)  !
+     &   (salt(ii,jj,kk,2) - salt(ii,jjm,kk,2))*rdyv(ii,jj)
+        rtemp6 = (rtemp4 - rtemp5)*rdyh(ii,jj)
 
         diffuse_salt = rtemp3 + rtemp6
-        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diiffuse_salt = 0.0 !Prajeesh 
+        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diffuse_salt = 0.0 !Prajeesh 
 
         return
         end subroutine tsuv_diffuse

@@ -26,6 +26,7 @@ module param_mod
     real, parameter :: g= 9.8 !0.0098 !0.0196 !0.090 !0.03
     real, parameter :: pi =22.0/7.0
     real, parameter :: deg2rad = pi/180.0
+    real, parameter :: rad2deg = 1./deg2rad
     real, parameter :: omega = 0.7272205e-4
     real, parameter :: Re = 6368.0e3
     real, parameter :: deg2meter = deg2rad*Re
