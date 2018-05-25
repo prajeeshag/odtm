@@ -42,7 +42,7 @@ program main
 
     use mpp_domains_mod, only : domain2d, domain1d, mpp_define_layout, mpp_define_domains
     use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_domain_components, mpp_update_domains
-    use mpp_domains_mod, only : mpp_get_data_domain
+    use mpp_domains_mod, only : mpp_get_data_domain, CGRID_SW
     use diag_manager_mod, only : diag_manager_init, register_diag_field, register_static_field
     use diag_manager_mod, only : diag_axis_init, send_data, diag_manager_end
     use diag_data_mod, only : FILL_VALUE
@@ -204,6 +204,24 @@ program main
         call average_density
 #endif
 
+        call mpp_update_domains(u(:,:,:,taun),v(:,:,:,taun),domain,gridtype=CGRID_SW)
+        call mpp_update_domains(u(:,:,:,taum),v(:,:,:,taum),domain,gridtype=CGRID_SW)
+        call mpp_update_domains(h(:,:,:,taum),domain)
+        call mpp_update_domains(h(:,:,:,taun),domain)
+        call mpp_update_domains(t(:,:,:,1,taun),domain)
+        call mpp_update_domains(t(:,:,:,2,taun),domain)
+        call mpp_update_domains(t(:,:,:,1,taum),domain)
+        call mpp_update_domains(t(:,:,:,2,taum),domain)
+
+        call mpp_update_domains(temp(:,:,:,1),domain)
+        call mpp_update_domains(temp(:,:,:,2),domain)
+        call mpp_update_domains(salt(:,:,:,1),domain)
+        call mpp_update_domains(salt(:,:,:,2),domain)
+        call mpp_update_domains(uvel(:,:,:,1),domain)
+        call mpp_update_domains(uvel(:,:,:,2),domain)
+        call mpp_update_domains(vvel(:,:,:,1),domain)
+        call mpp_update_domains(vvel(:,:,:,2),domain)
+
         do i=isc,iec
             do j=jsc,jec
                 do k=1,km-1
@@ -258,6 +276,7 @@ program main
         endif
 #endif
 
+           
         do i=isc,iec
             do j=jsc,jec
                 do k=1,km-1
@@ -320,8 +339,10 @@ program main
 !c
 !cc interchange time-index for leap-frog scheme.
 !c 
-        write(*,*) temp(imt/2, jmt/2 + 20, 1, 1), h(imt/2, jmt/2 + 20, 1, taun), &
-                   loop, SHCoeff(imt/2, jmt/2 + 20, 5)
+        if (isc<=imt/2.and.iec>=imt/2.and.jsc<=jmt/2.and.jec>=jmt/2) then
+        write(*,*) temp(imt/2, jmt/2 , 1, 1), h(imt/2, jmt/2 , 1, taun), &
+                   loop, SHCoeff(imt/2, jmt/2 , 5)
+        endif
 
         call send_data_diag(time)
 
@@ -780,8 +801,8 @@ program main
         call field_size(temp_clim_file, 'temp', dimz)
 
         do nt = 1, lm-1
-            call read_data(temp_clim_file, 'temp', temp_read(:,:,:,nt), timelevel=nt)
-            call read_data(salt_clim_file, 'salt', salt_read(:,:,:,nt), timelevel=nt)
+            call read_data(temp_clim_file, 'temp', temp_read(:,:,:,nt), timelevel=nt, domain=domain)
+            call read_data(salt_clim_file, 'salt', salt_read(:,:,:,nt), timelevel=nt, domain=domain)
         enddo
 
         temp_read(:,:,:,lm) = temp_read(:,:,:,1)
