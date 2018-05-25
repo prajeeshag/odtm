@@ -21,8 +21,8 @@ c entrain from layer below to layer above if mass receds he(k)
 c
 	
 	do k=1,km-1
-	do i=2,imt-1
-	do j=2,jmt-1
+	do i=1,imt
+	do j=1,jmt
 	
 	if (he(k) .gt. h(i,j,k,taun) )  then
 	 we(i,j,k) =  rkmh(i,j) *( he(k) - h(i,j,k,taun) )**2
@@ -41,8 +41,8 @@ c
 c detrain from layer above to below if mass exceeds hd(k)
 c
 	do k=1,km-1
-        do i=2,imt-1
-        do j=2,jmt-1
+        do i=1,imt
+        do j=1,jmt
 
         if (hd(k) .lt. h(i,j,k,taun) )  then
          wd(i,j,k) =  wd(i,j,k) - rkmh(i,j)*(hd(k)-h(i,j,k,taun))**2

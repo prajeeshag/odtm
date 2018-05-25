@@ -12,9 +12,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only : salt_read, SHCoeff, SMCoeff, temp_read, month
             use size_mod, only : diag_ext1, diag_ext2, diag_ext3
             use size_mod, only : diag_ext4, diag_ext5, diag_ext6
-            use size_mod, only : rmld_misc, mld_mld
+            use size_mod, only : rmld_misc, mld_mld, imt, jmt
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt, dtts
-            use param_mod, only : imt, jmt
 
             use interp_extrap_mod, only : interp_extrap_we_profile
             use heat_flux_mod, only : heat_flux

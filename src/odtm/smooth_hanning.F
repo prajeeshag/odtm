@@ -10,7 +10,7 @@ c
 c	subroutine to smooth out un-wanted noise in the solutions
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod, only : dxu, dxv, dyu, dyv, dz, h, i, j, k, rkmh, rkmhh
+        use size_mod, only : dxu, dxv, dyu, dyv, dz, h, i, j, k, rkmh
         use size_mod, only : rkmu, rkmv, t, taun1, u, v
         implicit none
         
@@ -82,16 +82,16 @@ c=======================================================================
 	
 	if ( idim3 .eq. 3 .and. idim5 .eq. 5) then
 
-        rdiv1 =   (rkmhH(im,j) + rkmhH(ip,j) +
-     &             rkmhH(i,jm) + rkmhH(i,jp))
-        rdiv2 =   (rkmhH(im,jm) + rkmhH(ip,jm) +
-     &             rkmhH(im,jp) + rkmhH(ip,jp))
+        rdiv1 =   (rkmh(im,j) + rkmh(ip,j) +
+     &             rkmh(i,jm) + rkmh(i,jp))
+        rdiv2 =   (rkmh(im,jm) + rkmh(ip,jm) +
+     &             rkmh(im,jp) + rkmh(ip,jp))
         rH = 0.25 * h(i,j,k,taun1)  + 
      &       0.5* (h(im,j,k,taun1) + h(ip,j,k,taun1) +
      &               h(i,jm,k,taun1) + h(i,jp,k,taun1))/max(1.0,rdiv1)+
      &       0.25* (h(im,jm,k,taun1) + h(ip,jm,k,taun1) +
      &                h(im,jp,k,taun1) + h(ip,jp,k,taun1))/max(1.0,rdiv2)
-        h(i,j,k,taun1-2) = rH * rkmhH(i,j)
+        h(i,j,k,taun1-2) = rH * rkmh(i,j)
 
         
 

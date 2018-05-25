@@ -10,9 +10,9 @@
         ! implimenting fully non-linear advection
 
         use size_mod, only : i, j, k, taun, u, v, h, rkmu, rkmv, rdx, rdy, dxu, dxv
-        use size_mod, only : dyu, dyv
+        use size_mod, only : dyu, dyv, theta
         use param_mod, only : advec_uu, advec_uv, advec_vu, advec_vv, dphi
-        use param_mod, only : dthe, polar_u, polar_v, re, theta
+        use param_mod, only : dthe, polar_u, polar_v, re
 
         implicit none
 

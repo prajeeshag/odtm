@@ -14,10 +14,10 @@
 
         use size_mod, only : taum, taun, taup, taus, tracedubdxmld, tracedvbdymld
         use size_mod, only : loop, imt, jmt, km, i, j, k, rkmh, t, u, rkmu, v
-        use size_mod, only : rkmv, h, nn, tmask, smask, umask, vmask, temp
+        use size_mod, only : rkmv, h, nn, temp, rkmu, rkmv
         use size_mod, only : salt, uvel, vvel, rdx, dxu, rdy, dyu, dyv
-        use size_mod, only : temp_read, salt_read, month 
-        use param_mod, only : day2sec, dphi, dt, dthe, sec2day, theta
+        use size_mod, only : temp_read, salt_read, month, theta
+        use param_mod, only : day2sec, dphi, dt, dthe, sec2day
 
         implicit none
 
@@ -54,10 +54,10 @@
         tracedubdxmld(:,:) = 0.0
         tracedvbdymld(:,:) = 0.0
         
-        taum = 1
-        taun = 2
-        taup = 3
-        taus = 4
+        !taum = 1
+        !taun = 2
+        !taup = 3
+        !taus = 4
 
         alpha_rgm = 1.0  *      mod(loop,2)
         alpha_rgt = 1.0  * (1 - mod(loop,2))
@@ -156,20 +156,6 @@
         jp = j+1
 
 
-        do ii=im,ip
-        do jj=jm,jp
-        tmask(ii,jj) = 1.0
-        smask(ii,jj) = 1.0
-        umask(ii,jj) = 1.0
-        vmask(ii,jj) = 1.0
-        if(temp(ii,jj,kk,1).eq. 0.0)tmask(ii,jj) = 0.0
-        if(salt(ii,jj,kk,1).eq. 0.0)smask(ii,jj) = 0.0
-        if(uvel(ii,jj,kk,1).eq. 0.0)umask(ii,jj) = 0.0
-        if(vvel(ii,jj,kk,1).eq. 0.0)vmask(ii,jj) = 0.0
-        enddo
-        enddo
-        
-
         rtemp1 = sum_2ptr_mld (1,ip,j,i,j,kk,nt) /
      &               sum_2ptr_mld (11,ip,j,i,j,kk,nt)
         rtemp2 = sum_2ptr_mld (1,im,j,i,j,kk,nt) /
@@ -208,17 +194,17 @@ c         rmld_misc(i,kk,j) = tracedubdxmld(kk,3)
 #include "cparam.h"
 
          temp(i,j,kk,1) = temp(i,j,kk,2) - (tracedubdxmld(kk,1)
-     &   + tracedvbdymld(kk,1)) * dt* beta_mldt * tmask(i,j)
-     &   + diffuse_temp * diffuse_MY * dt * tmask(i,j)
+     &   + tracedvbdymld(kk,1)) * dt* beta_mldt * rkmh(i,j)
+     &   + diffuse_temp * diffuse_MY * dt * rkmh(i,j)
      &   -  (temp(i,j,kk,2) -  temp_read(i,j,kk,month)) * dt * sec2day * 0.0
          salt(i,j,kk,1) = salt(i,j,kk,2) - (tracedubdxmld(kk,2)
-     &   + tracedvbdymld(kk,2)) *dt* beta_mldt * smask(i,j)
-     &   + diffuse_salt * diffuse_MY * dt * smask(i,j)
+     &   + tracedvbdymld(kk,2)) *dt* beta_mldt * rkmh(i,j)
+     &   + diffuse_salt * diffuse_MY * dt * rkmh(i,j)
      &   -  (salt(i,j,kk,2) -  salt_read(i,j,kk,month)) * dt * sec2day * 0.0
          uvel(i,j,kk,1) = uvel(i,j,kk,2) - (tracedubdxmld(kk,3)
-     &   + tracedvbdymld(kk,3)) *dt* beta_mldm  * umask(i,j)
+     &   + tracedvbdymld(kk,3)) *dt* beta_mldm  * rkmu(i,j)
          vvel(i,j,kk,1) = vvel(i,j,kk,2) - (tracedubdxmld(kk,4)
-     &   + tracedvbdymld(kk,4)) *dt* beta_mldm  * vmask(i,j)
+     &   + tracedvbdymld(kk,4)) *dt* beta_mldm  * rkmv(i,j)
 
 
         enddo
@@ -234,7 +220,7 @@ c         rmld_misc(i,kk,j) = tracedubdxmld(kk,3)
 
 
          function sum_2ptr_mld (index, i1,j1, i2,j2,kk,nt)
-                use size_mod, only: temp, salt, uvel, vvel, tmask, umask, smask, vmask
+                use size_mod, only: temp, salt, uvel, vvel, rkmh, rkmv, rkmu 
         implicit none
 
         real :: sum_2ptr_mld
@@ -264,19 +250,19 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
         endif
 
         if (index .eq. 11 .and. nt .eq. 1) then
-        sum_2ptr_mld = (tmask(i1,j1) + tmask(i2,j2))
+        sum_2ptr_mld = (rkmh(i1,j1) + rkmh(i2,j2))
         sum_2ptr_mld = max(1.0,sum_2ptr_mld)
         endif
         if (index .eq. 11 .and. nt .eq. 2) then
-        sum_2ptr_mld = (smask(i1,j1) + smask(i2,j2))
+        sum_2ptr_mld = (rkmh(i1,j1) + rkmh(i2,j2))
         sum_2ptr_mld = max(1.0,sum_2ptr_mld)
         endif
         if (index .eq. 11 .and. nt .eq. 3) then
-        sum_2ptr_mld = (umask(i1,j1) + umask(i2,j2))
+        sum_2ptr_mld = (rkmu(i1,j1) + rkmu(i2,j2))
         sum_2ptr_mld = max(1.0,sum_2ptr_mld)
         endif
         if (index .eq. 11 .and. nt .eq. 4) then
-        sum_2ptr_mld = (vmask(i1,j1) + vmask(i2,j2))
+        sum_2ptr_mld = (rkmv(i1,j1) + rkmv(i2,j2))
         sum_2ptr_mld = max(1.0,sum_2ptr_mld)
         endif
 

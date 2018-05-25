@@ -18,9 +18,9 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : dxu, dyu, gdx, gdy, h, i, j, k, loop, month, rdx
         use size_mod, only : rdy, rkmh, salt_read, t, taum, taum1, taun, taun1
-        use size_mod, only : taup1, temp_read, dyv, taup, kclim
+        use size_mod, only : taup1, temp_read, dyv, taup, kclim, theta, nn
         use param_mod, only : day2sec, diffuse_h, diffuse_my, diffuse_tr, dphi
-        use param_mod, only : dthe, dtts, nn, theta, dt
+        use param_mod, only : dthe, dtts, dt
 
         use interp_extrap_initial_mod, only : interp_extrap_initial 
 

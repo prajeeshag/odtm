@@ -14,7 +14,6 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only : eta, h, loop, salt, t, temp, u, uvel, v
             use size_mod, only : vvel, we_baro, we_mld, we_prof, taun, km
-            use size_mod, only : imt, jmt
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt
         implicit none
         integer, intent(in) :: ii, jj, kk, kmax, tau_index 
@@ -45,10 +44,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         saltout = 0.0
         uvelout = 0.0
         vvelout = 0.0
-
-           ! if (ii==imt/2.and.jj==jmt/2.and.tau_index==2) then
-           !     print *, 'interp_extrap.F :', hstart, hend, kk, tau_index, kmax, 1+hstart/5, hend/5 
-           ! endif
 
         do kkk = 1+hstart/5, hend/5
         icount = icount + 1
@@ -98,9 +93,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         
 
  102    continue
-           ! if (ii==imt/2.and.jj==jmt/2) then
-           !     print *, 'interp_extrap.F  2 :', tempout
-           ! endif
         return
         end subroutine
 

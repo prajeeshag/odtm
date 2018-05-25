@@ -17,9 +17,9 @@ c
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod, only : imt, jmt, i, j, k, gdx, gdy, rdx, rdy, u, v, h, taum
+        use size_mod, only : i, j, k, gdx, gdy, rdx, rdy, u, v, h, taum, theta
         use param_mod, only : diffuse, diffuse_uu, diffuse_vv, dphi, dthe
-        use param_mod, only : re, theta
+        use param_mod, only : re
         implicit none
 	real r2cos2theta, r2
 	real rtemp1, rtemp2, rtemp3, rtemp4, rtemp5, rtemp6

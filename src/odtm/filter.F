@@ -6,7 +6,7 @@ c	an implimentation of Asselin-Robert Filter
 c	
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : eta, h, i, j, rkmh, rkmu, rkmv, t, u, v, k
-        use size_mod, only : loop, rkmhH, taum, taun, taup, imt, jmt, km, nn
+        use size_mod, only : loop, taum, taun, taup, imt, jmt, km, nn
         use param_mod, only : alpha, dt
         use smooth_hanning_mod, only : smooth
         implicit none
@@ -137,7 +137,6 @@ c
 	
 	do ii=1,imt
 	do jj=1,jmt
-         rkmhH(ii,jj) = 1.0
 	do kk=1,km
          u(ii,jj,kk,4) = u(ii,jj,kk,2)
          v(ii,jj,kk,4) = v(ii,jj,kk,2)

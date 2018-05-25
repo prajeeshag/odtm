@@ -9,20 +9,24 @@ program main
     !c
     !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
+    use size_mod, only : isc, iec, jsc, jec
+    use size_mod, only : isd, ied, jsd, jed
     use size_mod, only : days, i, iday_start, itimer2
     use size_mod, only : itimermax, itimerrate, j, k, loop, loop_start, lpd
     use size_mod, only : lpm, month, month_start, month_wind
     use size_mod, only : taum, taun, taup, taus, time_switch, tracer_switch 
-    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, rkmt
-    use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn, lm
-    use size_mod, only : t, eta, u, v, temp, h, we, pvort, salt, dxu, dyv
+    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, rkmt, kclim
+    use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn, lm, gdxb, gdyb
+    use size_mod, only : t, eta, u, v, temp, h, we, pvort, salt, dxu, dyv, omask
     use size_mod, only : uvel, vvel, smcoeff, SHCoeff, diag_ext1, diag_ext2
     use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
     use size_mod, only : sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr
     use size_mod, only : taux_force, tauy_force, init_size, denss, rmld_misc
+    use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, rrkmt
+    use size_mod, only : temp_read, salt_read, mask
 
     use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_total
-    use param_mod, only : nmid, reflat, rnmid, sum_adv
+    use param_mod, only : nmid, rnmid, sum_adv, deg2rad
     
     use momentum_mod, only : momentum
     use tracer_mod, only : tracer
@@ -38,6 +42,7 @@ program main
 
     use mpp_domains_mod, only : domain2d, domain1d, mpp_define_layout, mpp_define_domains
     use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_domain_components, mpp_update_domains
+    use mpp_domains_mod, only : mpp_get_data_domain
     use diag_manager_mod, only : diag_manager_init, register_diag_field, register_static_field
     use diag_manager_mod, only : diag_axis_init, send_data, diag_manager_end
     use diag_data_mod, only : FILL_VALUE
@@ -55,6 +60,7 @@ program main
     integer :: domain_layout(2), halo=1, used
 
     integer :: id_lon, id_lat, id_sst, id_depth_mld, id_depth, id_sss, id_airt
+    integer :: id_lonb, id_latb
     integer :: id_h, id_eta, id_u, id_v, id_tx, id_ty, id_temp, id_salt
     integer :: id_we, id_dens, id_pvort, id_mask, id_dxu, id_dyv
     integer :: id_temp_mld, id_salt_mld, id_u_mld, id_v_mld, id_diag, id_sh, id_sm
@@ -65,9 +71,9 @@ program main
 
     type(restart_file_type) :: restart_odtm
 
-    real :: tmp2(imt,jmt), tmp3(imt,jmt,km), tmp3m(imt,jmt,kmaxMYM), rdepth(km)
+    real :: rdepth(km)
 
-    logical :: lmask(imt,jmt), lmask3(imt,jmt,km), lmask3m(imt,jmt,kmaxMYM)
+    logical, allocatable :: lmask(:,:), lmask3(:,:,:), lmask3m(:,:,:)
     logical :: override
     character (len=32) :: timestamp
     integer :: restart_interval(6) = 0
@@ -77,10 +83,10 @@ program main
     call init_odtm()
 
     !c Initial time-index values
-    taum = 1
-    taun = 2
-    taup = 3
-    taus = 4
+    !taum = 1
+    !taun = 2
+    !taup = 3
+    !taus = 4
 
     !c       do the integration
     days = 365 !365*30
@@ -203,7 +209,6 @@ program main
                 do j=1,jmt-1
                     if (rkmh(i,j) .ne. 0.0) then
                         nmid = (jmt/2)+1
-                        rnmid = (j-nmid)*dyd+0.25 + reflat
                         call clinic
                     endif
                 enddo
@@ -257,7 +262,6 @@ program main
             do k=1,km-1
                 do j=2,jmt-1
                     nmid = (jmt/2)+1
-                    rnmid = (j-nmid)*dyd+0.25 + reflat
     
 #ifdef atmosphere
                     call atmos
@@ -351,20 +355,16 @@ program main
         !c        taun = taup                  !c
         !cc       taup = ktaum                 !c
         !ccccccccccccccccccccccccccccccccccccccccccccc
-        do i=1,imt
-            do j=1,jmt
-                do k=1,km
-                    if ( u(i, j, k, taun) .ne. u(i, j, k, taun) &
-                        .or. u(i, j, k, taun) .lt. -10.0 .or. &
-                        u(i, j, k, taun) .gt. 10.0 ) then
-                        
-                        call diag_manager_end(time)
-                        stop 'stop=>blow-up'
-        
-                    endif
-                enddo
-            enddo
-        enddo
+        if (sum(u(:,:,:,taun))/=sum(u(:,:,:,taun)) &
+            .or. any(abs(u(:,:,:,taun)) > 10.) & 
+            .or. sum(t(:,:,:,1,taun))/=sum(t(:,:,:,1,taun))) then
+
+            call save_restart(restart_odtm, 'crash')
+            call diag_manager_end(time)
+            call mpp_error(FATAL, 'stop=>blow-up')
+
+        endif
+
     enddo
     
     write (*,*)
@@ -386,6 +386,9 @@ program main
         rewind(unit)
         read(unit,nml=main_nml) 
          
+        unit = open_file(file='RESTART/._tmp_',action='write')
+        call close_file(unit,'delete')
+
         call mpp_init()
         call fms_init()
         call set_calendar_type(NOLEAP)
@@ -399,40 +402,39 @@ program main
         time_restart = increment_date(time, restart_interval(1), restart_interval(2), &
         restart_interval(3), restart_interval(4), restart_interval(5), restart_interval(6) )
 
-        call diag_manager_init()
-
-        call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
-
-        call mpp_define_domains((/1,imt,1,jmt/), domain_layout, domain, xhalo=halo, yhalo=halo )
-
-        call data_override_init(Ocean_domain_in=domain)
-        
-        call initial_declaration
-
         call init_grid()
 
-        !call initial_condition
+        call diag_manager_init()
 
-        call polar_coord
+        call data_override_init(Ocean_domain_in=domain)
+
     
-
+        allocate ( lmask(isc:iec,jsc:jec) ) 
+        allocate ( lmask3(isc:iec,jsc:jec,km) )
+        allocate ( lmask3m(isc:iec,jsc:jec,kmaxMYM) )
 
         lmask=.false.; lmask3 = .false.; lmask3m = .false.
 
-        lmask(2:imt-1,2:jmt-1)=rkmh(2:imt-1,2:jmt-1)>0
+        lmask(isc:iec,jsc:jec)=omask(isc:iec,jsc:jec)
 
-        do ii = 1,km
-            lmask3(2:imt-1, 2:jmt-1, ii) = rkmh(2:imt-1,2:jmt-1)>0
+        do ii = 1, km
+            lmask3(isc:iec, jsc:jec, ii) = omask(isc:iec,jsc:jec)
         enddo
 
         do ii = 1,kmaxMYM
-            lmask3m(2:imt-1, 2:jmt-1, ii) = rkmh(2:imt-1,2:jmt-1)>0
+            lmask3m(isc:iec,jsc:jec, ii) = omask(isc:iec,jsc:jec) 
         enddo
 
         id_lon = diag_axis_init('lon', gdx(1:imt), 'degrees_east', cart_name='X', &
             long_name='longitude', domain2=domain)
 
         id_lat = diag_axis_init('lat', gdy(1:jmt), 'degrees_north', cart_name='Y', &
+            long_name='latitude', domain2=domain) 
+
+        id_lonb = diag_axis_init('lonb', gdxb(1:imt+1), 'degrees_east', cart_name='X', &
+            long_name='longitude', domain2=domain)
+
+        id_latb = diag_axis_init('latb', gdyb(1:jmt+1), 'degrees_north', cart_name='Y', &
             long_name='latitude', domain2=domain) 
 
         id_depth_mld = diag_axis_init('depth_mld', (/(real(ii)*5.0,ii=1,kmaxMYM)/), 'meters', &
@@ -521,7 +523,6 @@ program main
 
         id_dyv = register_static_field('odtm', 'dyv', (/id_lon,id_lat/), long_name='?', units='?', &
                     missing_value=FILL_VALUE)
-         
 
         id_temp_mld = register_diag_field('odtm', 'temp_mld', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
                  long_name='Temperature', units='deg-C',missing_value=FILL_VALUE)
@@ -562,15 +563,9 @@ program main
         id_st_m = register_diag_field('odtm', 'st_m', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
                  long_name='?', units='?',missing_value=FILL_VALUE)
 
-        tmp2 = 0.
-        where(lmask) tmp2 = 1.
-
-        used = send_data(id_mask, rkmt, time)
-        used = send_data(id_dxu, dxu, time, mask=lmask)
-        used = send_data(id_dyv, dyv, time, mask=lmask)
-
-        unit = open_file(file='RESTART/._tmp_',action='write')
-        call close_file(unit,'delete')
+        used = send_data(id_mask, rkmt(isc:iec,jsc:jec), time)
+        used = send_data(id_dxu, dxu(isc:iec,jsc:jec), time)
+        used = send_data(id_dyv, dyv(isc:iec,jsc:jec), time)
 
     end subroutine init_odtm
 
@@ -633,77 +628,74 @@ program main
 
     subroutine init_grid
 
-        use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, rrkmt
-        use size_mod, only : temp_read, salt_read, mask
-
-        use param_mod, only : deg2rad
-    
         !c initialze model grid.
     
         implicit none
     
-        real :: tempin(201), saltin(201)
         integer :: ii, jj, kk, kmax, l, ll, nt
-        integer :: dimz(4), nlon, nlat
-        real :: saltout, tempout
+        integer :: dimz(4)
         real, allocatable :: tmp2(:,:)
         integer :: id_restart
+        real :: tempin(kclim), saltin(kclim)
+        real :: saltout, tempout
         character (len=32) :: grid_file='INPUT/grid_spec.nc'
         character (len=32) :: temp_clim_file='INPUT/temp_clim.nc'
         character (len=32) :: salt_clim_file='INPUT/salt_clim.nc'
         character (len=32) :: restart_file='odtm_restart.nc'
-  
-        taum = 1
-        taun = 2
-        taup = 3
-        taus = 4
 
+  
         if (.not.field_exist(grid_file, "geolon_t"))  &
             call mpp_error(FATAL,'geolon_t not present in '//trim(grid_file))
 
         if (.not.field_exist(grid_file, "geolat_t"))  &
             call mpp_error(FATAL,'geolat_t not present in '//trim(grid_file))
 
+        if (.not.field_exist(grid_file, "geolon_vert_t"))  &
+            call mpp_error(FATAL,'geolon_vert_t not present in '//trim(grid_file))
+
+        if (.not.field_exist(grid_file, "geolat_vert_t"))  &
+            call mpp_error(FATAL,'geolat_vert_t not present in '//trim(grid_file))
+
         if (.not.field_exist(grid_file, "rkmt"))  &
             call mpp_error(FATAL,'rkmt not present in '//trim(grid_file))
-
        
         call field_size(grid_file, "geolon_t", dimz)
         
-        nlon = dimz(1); nlat = dimz(2)
+        imt = dimz(1); jmt = dimz(2)
         
-        allocate(tmp2(nlon,nlat))
+        allocate(tmp2(imt+1,jmt+1))
         
-        call read_data(grid_file, 'geolon_t', tmp2, no_domain=.true.)
+        call read_data(grid_file, 'geolon_t', tmp2(1:imt,1:jmt), no_domain=.true.)
    
-        gdx = 0. ; gdy = 0.
-        gdx(1:nlon) = tmp2(:,1)
+        gdx = 0.
+        gdx(1:imt) = tmp2(1:imt,1)
 
-        call read_data(grid_file, 'geolat_t', tmp2, no_domain=.true.)
+        call read_data(grid_file, 'geolat_t', tmp2(1:imt,1:jmt), no_domain=.true.)
     
-        gdy(1:nlat) = tmp2(1,:)
+        gdy = 0.
+        gdy(1:jmt) = tmp2(1,1:jmt)
 
-        do ii=1,imt-1
-           rdx(ii) = (gdx(ii+1) - gdx(ii))*deg2rad
+        call read_data(grid_file, 'geolon_vert_t', tmp2, no_domain=.true.)
+   
+        gdxb = 0.
+        gdxb(1:imt+1) = tmp2(1:imt+1,1)
+
+        call read_data(grid_file, 'geolat_vert_t', tmp2, no_domain=.true.)
+    
+        gdyb = 0.
+        gdy(1:jmt+1) = tmp2(1,1:jmt+1)
+
+        do ii=1,imt
+           rdx(ii) = (gdxb(ii+1) - gdxb(ii))*deg2rad
         enddo
 
-        rdx(0) = gdx(1)*deg2rad
-        rdx(imt) = rdx(imt-1)*deg2rad
-        rdx(imt+1) = rdx(imt)*deg2rad
-    
-        do ii=1,jmt-1
-         rdy(ii) = (gdy(ii+1) - gdy(ii))*deg2rad
+        do ii=1,jmt
+           rdy(ii) = (gdyb(ii+1) - gdy(ii))*deg2rad
         enddo
-
-        rdy(0) = gdy(1)*deg2rad
-        rdy(jmt) = gdy(jmt-1)*deg2rad
-        rdy(jmt+1) = gdy(jmt)*deg2rad
-
-        call read_data(grid_file, 'rkmt', rkmt, no_domain=.true.)
-
 
         deallocate(tmp2)
 
+        call read_data(grid_file, 'rkmt', rkmt(1:imt,1:jmt), no_domain=.true.)
 
         ! since a C grid is being used, u,v, h are defined at 3 different points, hence
         ! each has a dfferent mask.    u--------h
@@ -712,50 +704,41 @@ program main
         !                                       |
         !                                       v
 
-        rkmu(:,:) = 1.0
-        rkmv(:,:) = 1.0
-        rkmh(:,:) = 1.0
- 
-        do ii=1,imt
-            do jj=1,jmt-1 !Prajeesh 
-                if (rkmt(ii,jj) .eq. 0.0 .and. rkmt(ii,jj+1) .eq. 0.0) &
-                        rkmu(ii,jj) = 0.0
-            enddo
-        enddo
-    
-        do ii=1,imt-1
-            do jj=1,jmt-1 !Prajeesh 
-                if (rkmt(ii,jj) .eq. 0.0 .and. rkmt(ii+1,jj) .eq. 0.0) &
-                        rkmv(ii,jj) = 0.0
-            enddo
-        enddo
-    
-        do ii=1,imt-1
-            do jj=1,jmt-1
-                if (rkmu(ii,jj) .eq. 0.0 .and. rkmu(ii+1,jj) .eq. 0.0 .and. &
-                    rkmv(ii,jj) .eq. 0.0 .and. rkmv(ii,jj+1) .eq. 0.0) &
-                         rkmh(ii,jj) = 0.0
-            enddo
-        enddo
+        omask(:,:) = .false.
+        where(rkmt(1:imt,1:jmt) > 0.5) omask(1:imt,1:jmt) = .true.
+        
+        rkmu(:,:) = 0.
+        rkmv(:,:) = 0.
+        rkmh(:,:) = 0.
+        mask(:,:) = 1.
+         
+        where(omask(1:imt,1:jmt)) rkmh(1:imt,1:jmt) = 1.
 
-        do ii=1,imt
+        do ii=2,imt
             do jj=1,jmt
-                if (rkmt(ii,jj) .eq. 0.0) mask (ii,jj) = 1.0
-                if (rkmt(ii,jj) .eq. 1.0) mask (ii,jj) = 0.0
+                if (omask(ii,jj) .and. omask(ii-1,jj)) rkmu(ii,jj) = 1.0
             enddo
         enddo
+    
+        do ii=1,imt
+            do jj=2,jmt
+                if (omask(ii,jj) .and. omask(ii,jj-1)) rkmv(ii,jj) = 1.0
+            enddo
+        enddo
+    
+        rrkmt(1:imt,1:jmt) = rkmt(1:imt,1:jmt)
 
-        rrkmt(:,:) = rkmt(:,:)
+        call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
 
-        if (.not. field_exist(temp_clim_file, 'temp')) &
-            call mpp_error(FATAL, 'field temp not found in '//trim(temp_clim_file))
+        call mpp_define_domains((/1,imt,1,jmt/), domain_layout, domain, xhalo=halo, yhalo=halo )
 
-        if (.not. field_exist(salt_clim_file, 'salt')) &
-            call mpp_error(FATAL, 'field salt not found in '//trim(salt_clim_file))
+        call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
 
-        call field_size(temp_clim_file, 'temp', dimz)
+        call mpp_get_compute_domain(domain, isd, ied, jsd, jed)
 
         call init_size()
+
+        call polar_coord
 
         id_restart = register_restart_field(restart_odtm, restart_file, 'u', u(:,:,:,1), u(:,:,:,2))
         id_restart = register_restart_field(restart_odtm, restart_file, 'v', v(:,:,:,1), v(:,:,:,2))
@@ -771,8 +754,8 @@ program main
         
         do kk=1,km
             h(:,:,kk,taum)=dz(kk)
-            h(:,:,kk,taun)=h(:,:,kk,taum) 
-            h(:,:,kk,taup)=h(:,:,kk,taum) 
+            h(:,:,kk,taun)=dz(kk)
+            h(:,:,kk,taup)=dz(kk)
         enddo
 
         we(:,:,:) = 0.0
@@ -785,10 +768,19 @@ program main
         t(:,:,:,:,taun) = 10.0
        
  
+        if (.not. field_exist(temp_clim_file, 'temp')) &
+            call mpp_error(FATAL, 'field temp not found in '//trim(temp_clim_file))
+
+        if (.not. field_exist(salt_clim_file, 'salt')) &
+            call mpp_error(FATAL, 'field salt not found in '//trim(salt_clim_file))
+
+        call field_size(temp_clim_file, 'temp', dimz)
+
         do nt = 1, lm-1
             call read_data(temp_clim_file, 'temp', temp_read(:,:,:,nt), timelevel=nt)
             call read_data(salt_clim_file, 'salt', salt_read(:,:,:,nt), timelevel=nt)
         enddo
+
         temp_read(:,:,:,lm) = temp_read(:,:,:,1)
         salt_read(:,:,:,lm) = salt_read(:,:,:,1)
 
@@ -801,18 +793,18 @@ program main
             call mpp_error(NOTE,'Model starting from initial state')
             do i=1,imt
                 do j=1,jmt
-                    do k=1,201
+                    do k=1,kclim
                         tempin(k) = temp_read(i,j,k,1)  
                         saltin(k) = salt_read(i,j,k,1) 
                     enddo
-                    do k=1,51
+                    do k=1,kmaxMYM
                         temp(i,j,k,1) = temp_read(i,j,k,1)
                         salt(i,j,k,1) = salt_read(i,j,k,1)
                         temp(i,j,k,2) = temp_read(i,j,k,1)
                         salt(i,j,k,2) = salt_read(i,j,k,1)
                     enddo
 
-                    kmax = 201
+                    kmax = kclim
                     do k=1,km-1   
                         call interp_extrap_initial (i,j,k,kmax,tempin, &
                             saltin,tempout,saltout)

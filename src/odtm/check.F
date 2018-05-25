@@ -7,9 +7,9 @@ c
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod, only : k, dz, rho, he, days
+        use size_mod, only : k, dz, rho, he, days, imt, jmt, km, theta
         use param_mod, only : deg2rad, diffuse, diffuse_th, dt, dx, dx2, dxd
-        use param_mod, only : dy, dy2, g, imt, jmt, km, re, theta
+        use param_mod, only : dy, dy2, g, re
         implicit none
         
         real :: amin, rsumk, rtemp1, rtemp2, rmode_speed, rtemp3

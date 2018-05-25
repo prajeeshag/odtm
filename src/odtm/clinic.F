@@ -8,9 +8,9 @@ c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : dxu, dyu, dz, dz_max, gdx, gdy, h, i, j, loop
         use size_mod, only : rdx, rkmh, rdy, taum1, taun1, taup1, u, v, wd
-        use size_mod, only : we, we_mld, dyv, k, taum, taun, taup
+        use size_mod, only : we, we_mld, dyv, k, taum, taun, taup, theta
         use param_mod, only : day2sec, diffuse_h, diffuse_th, dphi, dt, dthe
-        use param_mod, only : dtts, pi, re, theta, tropdubdx, tropdvbdy
+        use param_mod, only : dtts, pi, re, tropdubdx, tropdvbdy
 
         use advec_mod, only : sum_2pt
         implicit none

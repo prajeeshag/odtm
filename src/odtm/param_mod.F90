@@ -1,6 +1,6 @@
 module param_mod
     !   parameter initialization for model
-    use size_mod, only : imt, jmt, km, NPP, nn, lm
+    use size_mod, only : lm
 
     implicit none
 
@@ -17,25 +17,6 @@ module param_mod
 
     integer :: loop_ind
 
-  !  character(len=20) :: stamp_time(12) = (/ &
-  !                  '01-JAN-1995 00:00:00', &
-  !                  '01-FEB-1995 00:00:00', &
-  !                  '01-MAR-1995 00:00:00', &
-  !                  '01-APR-1995 00:00:00', &
-  !                  '01-MAY-1995 00:00:00', &
-  !                  '01-JUN-1995 00:00:00', &
-  !                  '01-JUL-1995 00:00:00', &
-  !                  '01-AUG-1995 00:00:00', &
-  !                  '01-SEP-1995 00:00:00', &
-  !                  '01-OCT-1995 00:00:00', &
-  !                  '01-NOV-1995 00:00:00', &
-  !                  '01-DEC-1995 00:00:00'/)
-
-  !  character(len=21) :: stamp_day_daily(365)
-  !  character(len=21) :: stamp_time_daily(365)
-
-  !  integer :: number_of_snap
-
     !c  time stamps for netcdf snapshots.
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
     real :: dpm(lm) = (/ 31.0, 28.0, 31.0, 30.0, 31.0, 30.0, 31.0, &
@@ -51,7 +32,6 @@ module param_mod
     real, parameter :: dxd= 1.0/2.0
     real, parameter :: dyd= 1.0/2.0
     real, parameter :: reflat_start = -15.0
-    real, parameter :: reflat = -0.25 - (- reflat_start - (jmt*dyd + reflat_start))/2.0 
 
     real, parameter :: dx=dxd*deg2meter
     real, parameter :: dy=dyd*deg2meter
@@ -74,7 +54,6 @@ module param_mod
     real, parameter :: te = day2sec*1
     real, parameter :: td = day2sec*30
 
-	real :: phi(imt), theta(jmt)
 	real :: polar_u, polar_v
 
 end module param_mod
