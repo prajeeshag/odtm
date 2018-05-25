@@ -106,18 +106,23 @@
         saltout_taup = saltout_taupC
         saltout_taum = saltout_taumC
 
+        uvelout_taup = 0. !Prajeesh 
+        uvelout_taum = 0.
+        if (i > 1) then
         uvelout_taup = (uvelout_taupC + uvelout_taupL)/
      &                 max(1.0, rkmh(i,j) + rkmh(im,j) )
         uvelout_taum = (uvelout_taumC + uvelout_taumL)/
      &                 max(1.0, rkmh(i,j) + rkmh(im,j) )
+        endif
+       
+        vvelout_taup = 0. !Prajeesh 
+        vvelout_taum = 0. 
+        if (j > 1) then
         vvelout_taup = (vvelout_taupC + vvelout_taupB)/
      &                 max(1.0, rkmh(i,j) + rkmh(i,jm) )
         vvelout_taum = (vvelout_taumC + vvelout_taumB)/ 
      &                 max(1.0, rkmh(i,j) + rkmh(i,jm) )
-        
-
-
-
+        endif
         
 
 ! upadting RG model
