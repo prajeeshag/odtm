@@ -17,7 +17,7 @@
         use size_mod, only : loop, km, i, j, k, rkmh, t, u, rkmu, v
         use size_mod, only : rkmv, h, nn, temp, rkmu, rkmv
         use size_mod, only : salt, uvel, vvel, rdx, rdxh, rdy, rdyh
-        use size_mod, only : temp_read, salt_read, month, theta
+        use size_mod, only : temp_read, salt_read, month, theta, kmaxMYM
         use param_mod, only : day2sec, dt, sec2day
 
         implicit none
@@ -67,7 +67,7 @@
 
 #include "cparam.h"  ! <== This file overrides above parameter setup
 
-            kmax  = 51
+            kmax  = kmaxMYM
 
         do i=isc,iec
         do j=jsc,jec
@@ -106,23 +106,18 @@
         saltout_taup = saltout_taupC
         saltout_taum = saltout_taumC
 
-        uvelout_taup = 0. !Prajeesh 
-        uvelout_taum = 0.
-        if (i > 1) then
+       
         uvelout_taup = (uvelout_taupC + uvelout_taupL)/
      &                 max(1.0, rkmh(i,j) + rkmh(im,j) )
         uvelout_taum = (uvelout_taumC + uvelout_taumL)/
      &                 max(1.0, rkmh(i,j) + rkmh(im,j) )
-        endif
        
-        vvelout_taup = 0. !Prajeesh 
-        vvelout_taum = 0. 
-        if (j > 1) then
+      
         vvelout_taup = (vvelout_taupC + vvelout_taupB)/
      &                 max(1.0, rkmh(i,j) + rkmh(i,jm) )
         vvelout_taum = (vvelout_taumC + vvelout_taumB)/ 
      &                 max(1.0, rkmh(i,j) + rkmh(i,jm) )
-        endif
+     
         
 
 ! upadting RG model
@@ -159,51 +154,48 @@
 
         rtemp1 = sum_2ptr_mld (1,ip,j,i,j,kk,nt) /
      &               sum_2ptr_mld (11,ip,j,i,j,kk,nt)
+
         rtemp2 = sum_2ptr_mld (1,im,j,i,j,kk,nt) /
      &               sum_2ptr_mld (11,im,j,i,j,kk,nt)
 
         tracedubdxmld(kk,nt) = (rtemp1 - rtemp2)*
-     &         (sum_2pt_mld (1,ip,j,i,j,k)/
+     &         ( sum_2pt_mld (1,ip,j,i,j,k)/
      &          sum_2pt_mld (11,ip,j,i,j,k) ) * rdxh(i,j)
-!     &         ( (dxu(i,j)+dxu(ip,j))/2  )
-
-
-
-c        if (i .eq. 47 .and. j .eq. 28) then
-c        write(*,*)   tracedvbdymld(kk,nt), nt, kk
-c        endif
 
         rtemp3 = sum_2ptr_mld (1,i,j,i,jp,kk,nt) /
      &         sum_2ptr_mld (11,i,j,i,jp,kk,nt)
+
         rtemp4 = sum_2ptr_mld (1,i,j,i,jm,kk,nt) /
      &         sum_2ptr_mld (11,i,j,i,jm,kk,nt)
+
         tracedvbdymld(kk,nt) =(rtemp3-rtemp4 )* 
-     &        (sum_2pt_mld (2,i,jp,i,j,k)/
+     &        ( sum_2pt_mld (2,i,jp,i,j,k)/
      &        sum_2pt_mld (12,i,jp,i,j,k) ) * rdyh(i,j)
 
         enddo
-
-c         rmld_misc(i,kk,j) = tracedubdxmld(kk,3)
 
         call tsuv_diffuse (i,j,kk,diffuse_temp,diffuse_salt)
 
 #include "cparam.h"
 
-         temp(i,j,kk,1) = temp(i,j,kk,2) - (tracedubdxmld(kk,1)
+         temp(i,j,kk,1) = temp(i,j,kk,2) 
+     &   - (tracedubdxmld(kk,1)
      &   + tracedvbdymld(kk,1)) * dt* beta_mldt * rkmh(i,j)
      &   + diffuse_temp * diffuse_MY * dt * rkmh(i,j)
      &   -  (temp(i,j,kk,2) -  temp_read(i,j,kk,month)) * dt * sec2day * 0.0
-         salt(i,j,kk,1) = salt(i,j,kk,2) - (tracedubdxmld(kk,2)
+         salt(i,j,kk,1) = salt(i,j,kk,2) 
+     &   - (tracedubdxmld(kk,2)
      &   + tracedvbdymld(kk,2)) *dt* beta_mldt * rkmh(i,j)
      &   + diffuse_salt * diffuse_MY * dt * rkmh(i,j)
      &   -  (salt(i,j,kk,2) -  salt_read(i,j,kk,month)) * dt * sec2day * 0.0
          uvel(i,j,kk,1) = uvel(i,j,kk,2) - (tracedubdxmld(kk,3)
-     &   + tracedvbdymld(kk,3)) *dt* beta_mldm  * rkmu(i,j)
+     &   + tracedvbdymld(kk,3)) *dt* beta_mldm  * rkmh(i,j)
          vvel(i,j,kk,1) = vvel(i,j,kk,2) - (tracedubdxmld(kk,4)
-     &   + tracedvbdymld(kk,4)) *dt* beta_mldm  * rkmv(i,j)
+     &   + tracedvbdymld(kk,4)) *dt* beta_mldm  * rkmh(i,j)
 
 
         enddo
+
  101    continue
 
         enddo
@@ -266,19 +258,17 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
 
 
 	function sum_2pt_mld (index, i1,j1, i2,j2, kk)
-           use size_mod, only: u, uvel, v, vvel, taun, rkmu, rkmv
+           use size_mod, only: u, v, taun, rkmu, rkmv
         implicit none
         real :: sum_2pt_mld
         integer, intent(in) :: index, i1,j1, i2,j2, kk
 	
 	if (index .eq. 1) then
-	sum_2pt_mld = (u(i1,j1,kk,taun) + u(i2,j2,kk,taun))*1.0 + 
-     & 	(uvel(i1,j1,kk,taun) + uvel(i2,j2,kk,taun)) * 0.0
+	sum_2pt_mld = (u(i1,j1,kk,taun) + u(i2,j2,kk,taun))*1.0
 	endif
 
 	if (index .eq. 2) then
-	sum_2pt_mld = (v(i1,j1,kk,taun) + v(i2,j2,kk,taun))*1.0 +
-     & 	(vvel(i1,j1,kk,taun) + vvel(i2,j2,kk,taun))* 0.0
+	sum_2pt_mld = (v(i1,j1,kk,taun) + v(i2,j2,kk,taun))*1.0
 	endif
 
 	if (index .eq. 11) then

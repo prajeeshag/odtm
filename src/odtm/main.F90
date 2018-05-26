@@ -37,6 +37,7 @@ program main
     
     use mpp_mod, only : mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init
     use mpp_mod, only : mpp_exit, mpp_max, mpp_sum, mpp_sync, mpp_root_pe
+    use mpp_mod, only: mpp_clock_id, mpp_clock_begin, mpp_clock_end
     use fms_mod,  only : field_exist, field_size, read_data, fms_init, fms_end
     use fms_io_mod, only : register_restart_field, restart_file_type, save_restart, restore_state
     use fms_io_mod, only : open_namelist_file, open_file, close_file, file_exist
@@ -68,6 +69,8 @@ program main
     integer :: id_mld, id_tke, id_rif, id_mlen, id_st_h, id_st_m, id_pme
     integer :: id_sphm, id_uwnd, id_vwnd, id_ssw, id_cld, id_chl, id_rvr
 
+    integer :: init_clk, main_clk, clinic_clk, mld_clk, filter_clk, couple_clk
+
     type(domain2d) :: domain
 
     type(restart_file_type) :: restart_odtm
@@ -82,9 +85,22 @@ program main
     
     namelist /main_nml/ restart_interval, layout, days, start_date
 
+    call mpp_init()
+    call fms_init()
+
+    init_clk = mpp_clock_id('Initialization')
+    main_clk = mpp_clock_id('Main Loop')
+    clinic_clk = mpp_clock_id('Clinic')
+    mld_clk = mpp_clock_id('MLD')
+    filter_clk = mpp_clock_id('Filter')
+    couple_clk = mpp_clock_id('Couple')
+
     days = 1
 
+    call mpp_clock_begin(init_clk)
     call init_odtm()
+    call mpp_clock_end(init_clk)
+
 
     !c       do the integration
 
@@ -112,7 +128,9 @@ program main
     call system_clock(itimer2,itimerrate,itimermax) 
     time_switch = 1
     !cccccccccccc timer.F cccccccc
-    
+   
+    call mpp_clock_begin(main_clk)
+ 
     do loop = loop_start, (loop_total+loop_start)
 
         loop_day = loop*dt/day2sec
@@ -222,6 +240,8 @@ program main
         call mpp_update_domains(vvel(:,:,:,1),domain)
         call mpp_update_domains(vvel(:,:,:,2),domain)
 
+        call mpp_clock_begin(clinic_clk)
+
         do i=isc,iec
             do j=jsc,jec
                 do k=1,km-1
@@ -232,6 +252,8 @@ program main
                 enddo
             enddo
         enddo
+    
+        call mpp_clock_end(clinic_clk)
 
         day_night = cos(loop*(2*3.14/(day2sec/dt))) + 1.0
         
@@ -271,12 +293,12 @@ program main
             deltax(k) = (rsumu(k) + rsumv(k))/rsumh(k)/rsumx
         enddo
 
-        if ( mod (loop,loop_total/365./100.) .eq. 0) then
-            write(*,*) rsumu(1) , rsumv(1) , deltax(1)
-        endif
+        !if ( mod (loop,loop_total/365./100.) .eq. 0) then
+        !    write(*,*) rsumu(1) , rsumv(1) , deltax(1)
+        !endif
 #endif
 
-           
+          
         do i=isc,iec
             do j=jsc,jec
                 do k=1,km-1
@@ -310,13 +332,17 @@ program main
         enddo
 
 
+        call mpp_clock_begin(mld_clk)
         call mixed_layer_physics
+        call mpp_clock_end(mld_clk)
 
         call balance_pme
 
+        call mpp_clock_begin(couple_clk)
         if ( mod(loop,1) .eq. 0) then
             call couple_rgmld
         endif
+        call mpp_clock_end(couple_clk)
 
 #ifdef open_NS
         call openb
@@ -328,8 +354,9 @@ program main
 #ifdef particle_trajectory
         call ptraj
 #endif
-    
+        call mpp_clock_begin(filter_clk) 
         call filter
+        call mpp_clock_end(filter_clk) 
     
 #ifdef inversion
         if ( mod(loop_day+1,1) .eq. 0) then
@@ -391,9 +418,10 @@ program main
         endif
 
     enddo
+
+    call mpp_clock_end(main_clk)
     
-    write (*,*)
-    write (*,*)'Integration finished'
+    call mpp_error(NOTE,'Integration finished')
 
     call save_restart(restart_odtm) 
     
@@ -414,8 +442,6 @@ program main
         unit = open_file(file='RESTART/._tmp_',action='write')
         call close_file(unit,'delete')
 
-        call mpp_init()
-        call fms_init()
         call set_calendar_type(NOLEAP)
 
         time_step = set_time(seconds=int(dt))
@@ -778,15 +804,19 @@ program main
     
         call polar_coord
 
-        id_restart = register_restart_field(restart_odtm, restart_file, 'u', u(:,:,:,1), u(:,:,:,2))
-        id_restart = register_restart_field(restart_odtm, restart_file, 'v', v(:,:,:,1), v(:,:,:,2))
-        id_restart = register_restart_field(restart_odtm, restart_file, 't', t(:,:,:,1,1), t(:,:,:,1,2), mandatory=.true.)
-        id_restart = register_restart_field(restart_odtm, restart_file, 's', t(:,:,:,2,1), t(:,:,:,2,2), mandatory=.true.)
-        id_restart = register_restart_field(restart_odtm, restart_file, 'h', h(:,:,:,1), h(:,:,:,2))
-        id_restart = register_restart_field(restart_odtm, restart_file, 'temp', temp(:,:,:,1), temp(:,:,:,2), mandatory=.true.)
-        id_restart = register_restart_field(restart_odtm, restart_file, 'salt', salt(:,:,:,1), salt(:,:,:,2), mandatory=.true.)
-        id_restart = register_restart_field(restart_odtm, restart_file, 'uvel', uvel(:,:,:,1), uvel(:,:,:,2))
-        id_restart = register_restart_field(restart_odtm, restart_file, 'vvel', vvel(:,:,:,1), vvel(:,:,:,2))
+        id_restart = register_restart_field(restart_odtm, restart_file, 'u', u(:,:,:,1), u(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'v', v(:,:,:,1), v(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 't', t(:,:,:,1,1), t(:,:,:,1,2), &
+                     mandatory=.true.,domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 's', t(:,:,:,2,1), t(:,:,:,2,2), &
+                     mandatory=.true.,domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'h', h(:,:,:,1), h(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'temp', temp(:,:,:,1), temp(:,:,:,2), &
+                     mandatory=.true.,domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'salt', salt(:,:,:,1), salt(:,:,:,2), &
+                     mandatory=.true.,domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'uvel', uvel(:,:,:,1), uvel(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'vvel', vvel(:,:,:,1), vvel(:,:,:,2),domain=domain)
 
         we_upwel(:,:,:) = 0.0
         
@@ -796,15 +826,20 @@ program main
             h(:,:,kk,taup)=dz(kk)
         enddo
 
-        we(:,:,:) = 0.0
-        wd(:,:,:) = 0.0
         u(:,:,:,:) = 0.0
         v(:,:,:,:) = 0.0
+
+        we(:,:,:) = 0.0
+        wd(:,:,:) = 0.0
         eta(:,:,:,:) = 0.0
 
-        t(:,:,:,:,taum) = 10.0
-        t(:,:,:,:,taun) = 10.0
+        t(:,:,:,:,:) = 0.0
+        t(:,:,:,:,:) = 0.0
        
+        uvel(:,:,:,:) = 0.0
+        vvel(:,:,:,:) = 0.0
+        temp(:,:,:,:) = 0.0
+        salt(:,:,:,:) = 0.0
  
         if (.not. field_exist(temp_clim_file, 'temp')) &
             call mpp_error(FATAL, 'field temp not found in '//trim(temp_clim_file))
@@ -822,15 +857,13 @@ program main
         temp_read(:,:,:,lm) = temp_read(:,:,:,1)
         salt_read(:,:,:,lm) = salt_read(:,:,:,1)
 
-        uvel(:,:,:,:) = 0.0
-        vvel(:,:,:,:) = 0.0
-
         if (file_exist('INPUT/'//trim(restart_file))) then
             call restore_state(restart_odtm)
         else
             call mpp_error(NOTE,'Model starting from initial state')
             do i=isc,iec
                 do j=jsc,jec
+                    if (rkmh(i,j)/=1.) cycle 
                     do k=1,kclim
                         tempin(k) = temp_read(i,j,k,1)  
                         saltin(k) = salt_read(i,j,k,1) 
@@ -841,7 +874,6 @@ program main
                         temp(i,j,k,2) = temp_read(i,j,k,1)
                         salt(i,j,k,2) = salt_read(i,j,k,1)
                     enddo
-
                     kmax = kclim
                     do k=1,km-1   
                         call interp_extrap_initial (i,j,k,kmax,tempin, &
@@ -851,15 +883,18 @@ program main
                         t(i,j,k,1,taum) = tempout
                         t(i,j,k,2,taum) = saltout
                     enddo
+
                     t(i,j,km,1,taun) = 8.0
                     t(i,j,km,2,taun) = 35
                     t(i,j,km,1,taum) = 8.0
                     t(i,j,km,2,taum) = 35.0
+
                 enddo
             enddo
-        endif
- 
-        call save_restart(restart_odtm,'initial') 
+        endif 
+
+        !call save_restart(restart_odtm,'initial') 
+
     end subroutine init_grid
 
 end program main

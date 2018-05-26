@@ -57,13 +57,13 @@ INCL = -I$(NETCDF)/include
 
 CPPFLAGS= $(OPTIONS_TOTAL) $(INCL) -Duse_libMPI -Duse_netCDF
 
-FFLAGS= $(OPTIONS_TOTAL) -Duse_libMPI -Duse_netCDF $(INCL) -extend-source 132 -O3 -align all -fltconsistency -stack_temps -safe_cray_ptr -ftz -i_dynamic -assume byterecl -override_limits -i4 -r8 #-check all -fpe0 #-DOVERLOAD_R4
+FFLAGS= $(OPTIONS_TOTAL) -Duse_libMPI -Duse_netCDF $(INCL) -g -traceback -extend-source 132 -O0 -align all -fltconsistency -stack_temps -safe_cray_ptr -ftz -i_dynamic -assume byterecl -override_limits -i4 -r8 -check all -fpe0 #-DOVERLOAD_R4
 
 CFLAGS = -D__IFC
 
 LDFLAGS= -L$(NETCDF)/lib -lnetcdff -lnetcdf
 
-FC = mpiifort -mkl -align commons 
+FC = mpiifort -mkl -align commons -save-temps
 CC   = mpiicc
 LD   = mpiifort
 

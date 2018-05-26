@@ -113,9 +113,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         else
         zero_out_tradv = 1.0
         endif
-
-c        pvort(i,k,j) = zero_out_tradv
-
+        
 	     rtemp1 = rdx(i) * rad2deg
          rtemp2 = rdy(j) * rad2deg
 
