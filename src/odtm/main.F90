@@ -35,7 +35,7 @@ program main
     use interp_extrap_initial_mod, only : interp_extrap_initial
     
     use mpp_mod, only : mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init
-    use mpp_mod, only : mpp_exit, mpp_max, mpp_sum
+    use mpp_mod, only : mpp_exit, mpp_max, mpp_sum, mpp_sync, mpp_root_pe
     use fms_mod,  only : field_exist, field_size, read_data, fms_init, fms_end
     use fms_io_mod, only : register_restart_field, restart_file_type, save_restart, restore_state
     use fms_io_mod, only : open_namelist_file, open_file, close_file, file_exist
@@ -72,24 +72,21 @@ program main
     type(restart_file_type) :: restart_odtm
 
     real :: rdepth(km)
-
+    real :: sumall, umax
     logical, allocatable :: lmask(:,:), lmask3(:,:,:), lmask3m(:,:,:)
     logical :: override
     character (len=32) :: timestamp
-    integer :: restart_interval(6) = 0
+    integer :: restart_interval(6) = 0, layout(2)
+    integer :: start_date(6) = 0
     
-    namelist /main_nml/ restart_interval
+    namelist /main_nml/ restart_interval, layout, days, start_date
+
+    days = 1
 
     call init_odtm()
 
-    !c Initial time-index values
-    !taum = 1
-    !taun = 2
-    !taup = 3
-    !taus = 4
-
     !c       do the integration
-    days = 365 !365*30
+
     month_start = 1
     loop_start = 1
     month = month_start
@@ -100,7 +97,7 @@ program main
     iday_wind = 1
     iday_start = iday_month !c-1
     
-    call check
+    if (mpp_root_pe()) call check
     
 #ifdef trace
     tracer_switch = 1
@@ -204,8 +201,10 @@ program main
         call average_density
 #endif
 
-        call mpp_update_domains(u(:,:,:,taun),v(:,:,:,taun),domain,gridtype=CGRID_SW)
-        call mpp_update_domains(u(:,:,:,taum),v(:,:,:,taum),domain,gridtype=CGRID_SW)
+        call mpp_update_domains(u(:,:,:,taun),domain)
+        call mpp_update_domains(u(:,:,:,taum),domain)
+        call mpp_update_domains(v(:,:,:,taun),domain)
+        call mpp_update_domains(v(:,:,:,taum),domain)
         call mpp_update_domains(h(:,:,:,taum),domain)
         call mpp_update_domains(h(:,:,:,taun),domain)
         call mpp_update_domains(t(:,:,:,1,taun),domain)
@@ -376,14 +375,18 @@ program main
         !c        taun = taup                  !c
         !cc       taup = ktaum                 !c
         !ccccccccccccccccccccccccccccccccccccccccccccc
-        if (sum(u(:,:,:,taun))/=sum(u(:,:,:,taun)) &
-            .or. any(abs(u(:,:,:,taun)) > 10.) & 
-            .or. sum(t(:,:,:,1,taun))/=sum(t(:,:,:,1,taun))) then
 
+        sumall = sum(u(isc:iec,jsc:jec,:,taun) + &
+                         t(isc:iec,jsc:jec,:,1,taun))
+        call mpp_sum(sumall)
+        umax = maxval(abs(u(isc:iec,jsc:jec,:,taun)))
+        call mpp_max(umax)
+        if ( umax > 10. .or. sumall/=sumall ) then
             call save_restart(restart_odtm, 'crash')
             call diag_manager_end(time)
+            call mpp_error(WARNING, 'stop=>blow-up')
+            call mpp_sync()
             call mpp_error(FATAL, 'stop=>blow-up')
-
         endif
 
     enddo
@@ -416,7 +419,11 @@ program main
 
         time_step = set_time(seconds=int(dt))
 
-        time = set_date(1995, 1, 1, 0, 0, 0)
+        if (sum(start_date)<=0) &
+          call mpp_error(FATAL, 'start_date not given or not proper in input.nml')
+
+        time = set_date(start_date(1), start_date(2), start_date(3), &
+                        start_date(4), start_date(5), start_date(6))
       
         if (all(restart_interval==0)) restart_interval(1) = 10
  
@@ -683,8 +690,12 @@ program main
         call field_size(grid_file, "geolon_t", dimz)
         
         imt = dimz(1); jmt = dimz(2)
-        
-        call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
+       
+        if (sum(layout)<=0) then 
+            call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
+        else
+            domain_layout = layout
+        endif
 
         call mpp_define_domains((/1,imt,1,jmt/), domain_layout, domain, xhalo=halo, yhalo=halo )
 
@@ -748,16 +759,16 @@ program main
         rkmh(:,:) = 0.
         mask(:,:) = 1.
          
-        where(omask(1:imt,1:jmt)) rkmh(1:imt,1:jmt) = 1.
+        where(omask(isd:ied,jsd:jed)) rkmh(isd:ied,jsd:jed) = 1.
 
-        do ii=2,imt
-            do jj=1,jmt
+        do ii=isd, ied
+            do jj=jsd, jed
                 if (omask(ii,jj) .and. omask(ii-1,jj)) rkmu(ii,jj) = 1.0
             enddo
         enddo
     
-        do ii=1,imt
-            do jj=2,jmt
+        do ii=isd, ied
+            do jj=jsd, jed
                 if (omask(ii,jj) .and. omask(ii,jj-1)) rkmv(ii,jj) = 1.0
             enddo
         enddo

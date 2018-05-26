@@ -26,8 +26,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	real rtemp7, rtemp8, rtemp9, rtemp10, rtemp11
 	real rtemp12, rtemp13, rtemp14, rtemp15, rtemp16
 	real rtemp17, rtemp18, rtemp20, rtemp21, rtemp22
-        integer :: ip, im, jp, jm, ip2, im2, jp2, jm2
-        real :: Ahx, Ahy, rH1, rH2, rH3, rH4
+        integer :: ip, im, jp, jm
+        real :: Ahx, Ahy, rH1, rH2, rH3
 
 	 r2cos2theta = Re*Re*cos(theta(j))*cos(theta(j))
 	 r2cos2theta = 1.0/r2cos2theta
@@ -36,16 +36,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	
 	 ip = i + 1
 	 im = i - 1
-        if (im<1) im = 1 !Prajeesh  
 	 jp = j + 1
 	 jm = j - 1
-        if (jm<1) jm = 1 !Prajeesh  
-	 ip2 = i + 2
-	 im2 = i - 2
-        if (im2<1) im2 = 1 !Prajeesh  
-	 jp2 = j + 2
-	 jm2 = j - 2
-        if (jm2<1) jm2 = 1 !Prajeesh  
         
 c =========================== diffuse_uu ============================
 	 rtemp1 = (gdx(i+1) - gdx(i))
@@ -60,7 +52,6 @@ c =========================== diffuse_uu ============================
 	 rtemp1 = (u(i+1,j,k,taum) - u(i,j,k,taum))/dphi
 	 dphi = (rdx(i-1) + rdx(i))/2.0
 	 rH3 = sum_2ptd (3,im,j,i,j) /sum_2ptd (31,im,j,i,j)
-	 rH4 = sum_2ptd (3,im2,j,im,j) /sum_2ptd (31,im2,j,im,j)
 	 rtemp2 = (u(i,j,k,taum) - u(i-1,j,k,taum))/dphi
 	 dphi = rdx(i)
 	 rtemp3 = (rtemp1 - rtemp2)*Ahx*rH2/dphi  ! giving Ah here
@@ -72,7 +63,6 @@ c =========================== diffuse_uu ============================
 	 rtemp5 = (u(i,j+1,k,taum) - u(i,j,k,taum))/dthe
 	 dthe = (rdy(j-1) + rdy(j))/2.0
 	 rH3 = sum_2ptd (3,i,j,im,j) /sum_2ptd (31,i,j,im,j)
-	 rH4 = sum_2ptd (31,i,jm,im,jm) /sum_2ptd (31,i,jm,im,jm)
 	 rtemp6 = (u(i,j,k,taum) - u(i,j-1,k,taum))/dthe
 	 dthe = rdy(j)
 	 rtemp7 = (rtemp5 - rtemp6)*Ahy*rH2/dthe ! taking Ah here
@@ -107,7 +97,6 @@ c ==================  diffuse_vv ==========================================
          rtemp1 = (v(i+1,j,k,taum) - v(i,j,k,taum))/dphi
          dphi = (rdx(i-1) + rdx(i))/2.0
          rH3 = sum_2ptd(3,i,j,i,jm) /sum_2ptd(31,i,j,i,jm) 
-         rH4 = sum_2ptd(3,im,j,im,jm) /sum_2ptd(31,im,j,im,jm)
          rtemp2 = (v(i,j,k,taum) - v(i-1,j,k,taum))/dphi
          dphi = rdx(i)
          rtemp3 = (rtemp1 - rtemp2)*Ahx*rH2/dphi  ! giving Ah here
@@ -119,7 +108,6 @@ c ==================  diffuse_vv ==========================================
          rtemp5 = (v(i,j+1,k,taum) - v(i,j,k,taum))/dthe
          dthe = (rdy(j-1) + rdy(j))/2.0
          rH3 = sum_2ptd (3,i,j,i,jm) /sum_2ptd (31,i,j,i,jm)
-         rH4 = sum_2ptd (3,i,jm,i,jm2) /sum_2ptd (31,i,jm,i,jm2)
          rtemp6 = (v(i,j,k,taum) - v(i,j-1,k,taum))/dthe
          dthe = rdy(j)
          rtemp7 = (rtemp5 - rtemp6)*Ahy*rH2/dthe ! taking Ah here

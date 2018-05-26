@@ -28,8 +28,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
 c define coriolis parameter f=2*omega*sin(theta)
 c
-	do i=1,imt
-	do j=1,jmt
+	do i=isc, iec
+	do j=jsc, jec
 	 fcor(i,j) = 2.0*omega*sin(theta(j))
 	enddo
 	enddo

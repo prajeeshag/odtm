@@ -111,8 +111,12 @@ module size_mod
         allocate ( h(isd:ied,jsd:jed,km,4) )
         allocate ( temp(isd:ied,jsd:jed,kmaxMYM,2), salt(isd:ied,jsd:jed,kmaxMYM,2) )
         allocate ( uvel(isd:ied,jsd:jed,kmaxMYM,2), vvel(isd:ied,jsd:jed,kmaxMYM,2) ) 
+        allocate ( rkmh(isd:ied,jsd:jed))
+        allocate ( rkmu(isd:ied,jsd:jed), rkmv(isd:ied,jsd:jed) )
+
 
         ! on compute domain
+        allocate ( fcor(isc:iec,jsc:jec) )
         allocate ( diag_ext1(isc:iec,jsc:jec,kmaxMYM), diag_ext2(isc:iec,jsc:jec,kmaxMYM) )
         allocate ( diag_ext3(isc:iec,jsc:jec,kmaxMYM), diag_ext4(isc:iec,jsc:jec,kmaxMYM) )
         allocate ( diag_ext5(isc:iec,jsc:jec,kmaxMYM), diag_ext6(isc:iec,jsc:jec,kmaxMYM) )
@@ -137,7 +141,6 @@ module size_mod
         allocate ( rvr(isc:iec,jsc:jec) )
         allocate ( sphm(isc:iec,jsc:jec), airt(isc:iec,jsc:jec) )
         allocate ( uwnd(isc:iec,jsc:jec), vwnd(isc:iec,jsc:jec) )
-        allocate ( fcor(isc:iec,jsc:jec) )
 
 
         ! only on vertical
@@ -166,8 +169,7 @@ module size_mod
         allocate ( rdxh(0:imt+1,0:jmt+1), rdyh(0:imt+1,0:jmt+1) )
         allocate ( omask(imt,jmt) )
         allocate ( mask(imt,jmt) )
-        allocate ( rkmt(imt,jmt), rkmh(0:imt+1,0:jmt+1) )
-        allocate ( rkmu(0:imt+1,0:jmt+1), rkmv(0:imt+1,0:jmt+1) )
+        allocate ( rkmt(imt,jmt) ) 
 
         dz(1) = 50.0     ! layer-1
         dz(2) = 25.0     ! layer-2

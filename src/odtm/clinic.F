@@ -26,10 +26,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	
 	ip = i + 1
 	im = i - 1
-        if (im<1) im=1 !Prajeesh 
 	jp = j + 1
 	jm = j - 1
-        if (jm<1) jm=1 !Prajeesh    
 
 	tropdubdx = 0.0
 	tropdvbdy = 0.0
@@ -40,7 +38,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	rtemp2 = u(i,j,k,taun)*  sum_2pt (3,im,j,i,j) /
      &                           sum_2pt (31,im,j,i,j)
 	rtemp2 = rtemp2 
-	dphi = (rdx(i+1)+rdx(i))/2.0
+	dphi = (rdx(ip)+rdx(i))/2.0
 
 	tropdubdx = (rtemp1 - rtemp2)*rdxh(i,j)
 
@@ -75,13 +73,13 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	rthetamone = (theta(j-1)+theta(j) )*0.5
 	rtemp1 = Re*Re*cos(theta(j))*cos(theta(j)) 
 	rtemp1 = 1.0/rtemp1
-	 if (rkmh(i+1,j) .eq. 0.0) rmask_right = 0.0
+	 if (rkmh(ip,j) .eq. 0.0) rmask_right = 0.0
 	 if (rkmh(im,j) .eq. 0.0) rmask_left = 0.0 !Prajeesh   
 	 if (rkmh(i,j+1) .eq. 0.0) rmask_top = 0.0
 	 if (rkmh(i,jm) .eq. 0.0) rmask_bot = 0.0 !Prajeesh 
  
-	dphi = (rdx(i+1)+rdx(i))/2.0
-	rtemp2 = rmask_right*(h(i+1,j,k,taum) - h(i,j,k,taum) )/dphi
+	dphi = (rdx(ip)+rdx(i))/2.0
+	rtemp2 = rmask_right*(h(ip,j,k,taum) - h(i,j,k,taum) )/dphi
 	dphi = (rdx(i)+rdx(i-1))/2.0
 	rtemp3 = rmask_left*(h(i,j,k,taum) - h(im,j,k,taum) )/dphi
 	dphi = rdx(i)
@@ -113,7 +111,7 @@ c	 dtts = dtts*(j/20.0)
 c	 diffuse_th = diffuse_th*20/(j*1.0)
 c         endif
 	
-	rtemp1 = (gdx(i+1) - gdx(i))
+	rtemp1 = (gdx(ip) - gdx(i))
         rtemp2 = (gdy(j+1) - gdy(j))
         
 c        if (rkmt(i,j) * rkmh(i,j) * rkmu(i,j) * rkmv(i,j) .eq. 0.0) then
@@ -141,7 +139,7 @@ c        endif
 	 call couple
 #endif
         
-        if ( h(i,j,k,taup) .gt. dz_max(k)) then
+        if ( h(i,j,k,taup) .gt. dz_max(k)) then !Prajeesh What is this???
         do ii=im,ip
         do jj=jm,jp
          h(ii,jj,k,taup) =  h(ii,jj,k,taup) - (10**(-1.5))*  h(ii,jj,k,taun)*
@@ -153,5 +151,6 @@ c        endif
         NaN_check  = isnan(h(i,j,k,taup))
         
         if (NaN_check .eqv. .true.) h(i,j,k,taup) = dz(k)*rkmh(i,j)
+
 	return
 	end
