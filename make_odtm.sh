@@ -7,6 +7,16 @@ export srcdir=$(pwd)
 
 thisdir=$(pwd)
 
+while getopts 'd:' flag; do
+    case "${flag}" in
+    d) debug='.debug' ;;
+    e) enddate="$OPTARG" ;;
+    n) npes="$OPTARG" ;;
+    p) pjobid="$OPTARG" ;;
+    *) error "Unexpected option ${flag}" ;;
+    esac
+done
+
 EXE="odtm.exe"
 
 execdir="$thisdir/exec"

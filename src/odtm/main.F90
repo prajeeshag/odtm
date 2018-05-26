@@ -10,7 +10,7 @@ program main
     !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
     use size_mod, only : isc, iec, jsc, jec
-    use size_mod, only : isd, ied, jsd, jed
+    use size_mod, only : isd, ied, jsd, jed, halo
     use size_mod, only : days, i, iday_start, itimer2
     use size_mod, only : itimermax, itimerrate, j, k, loop, loop_start, lpd
     use size_mod, only : lpm, month, month_start, month_wind
@@ -33,6 +33,7 @@ program main
     use couple_mod, only : couple_rgmld
     use presgrad_mod, only : pressure_integral
     use interp_extrap_initial_mod, only : interp_extrap_initial
+    use filter_mod, only : filter
     
     use mpp_mod, only : mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init
     use mpp_mod, only : mpp_exit, mpp_max, mpp_sum, mpp_sync, mpp_root_pe
@@ -57,7 +58,7 @@ program main
     real :: age_time, day_night, rlct, depth_mld
     type(time_type) :: time, time_step, time_restart
 
-    integer :: domain_layout(2), halo=1, used
+    integer :: domain_layout(2), used
 
     integer :: id_lon, id_lat, id_sst, id_depth_mld, id_depth, id_sss, id_airt
     integer :: id_lonb, id_latb
@@ -762,6 +763,7 @@ program main
         where(omask(isd:ied,jsd:jed)) rkmh(isd:ied,jsd:jed) = 1.
 
         do ii=isd, ied
+            if (ii<1) cycle
             do jj=jsd, jed
                 if (omask(ii,jj) .and. omask(ii-1,jj)) rkmu(ii,jj) = 1.0
             enddo
@@ -769,6 +771,7 @@ program main
     
         do ii=isd, ied
             do jj=jsd, jed
+                if (jj<1) cycle
                 if (omask(ii,jj) .and. omask(ii,jj-1)) rkmv(ii,jj) = 1.0
             enddo
         enddo

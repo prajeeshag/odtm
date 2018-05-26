@@ -9,10 +9,9 @@ module size_mod
   integer, parameter :: NPP=225, nn=2, kmaxMYM=51, kclim=201
   integer, parameter :: taum = 1, taun = 2, taup = 3, taus = 4
   
-  integer :: imt, jmt
+  integer :: imt, jmt, halo=1
   integer :: isc, iec, jsc, jec
   integer :: isd, ied, jsd, jed
-
   integer :: i,j,k
   integer :: iday_wind, iday_start, iday_start_snap
   integer :: itimer2, itimer3, itimerrate, itimermax
@@ -90,6 +89,7 @@ module size_mod
 
   real, pointer, dimension(:,:) :: sphm => null(), airt => null()
   real, pointer, dimension(:,:) :: uwnd => null(), vwnd => null(), fcor => null()
+  real, pointer, dimension(:,:) :: fcoru => null(), fcorv => null()
 
   real, pointer, dimension(:) :: he => null(), hd => null()
   real, pointer, dimension(:) :: dz => null(), dz_max => null(), dz_min => null(), zdz => null()
@@ -104,6 +104,12 @@ module size_mod
     subroutine init_size()
 
         real :: rsum
+        integer :: isg, ieg, jsg, jeg
+
+        isg = 1 - halo
+        ieg = imt + halo
+        jsg = 1 - halo
+        jeg = jmt + halo
  
         ! on data domain 
         allocate ( u(isd:ied,jsd:jed,km,4), v(isd:ied,jsd:jed,km,4) )
@@ -117,6 +123,8 @@ module size_mod
 
         ! on compute domain
         allocate ( fcor(isc:iec,jsc:jec) )
+        allocate ( fcoru(isc:iec,jsc:jec) )
+        allocate ( fcorv(isc:iec,jsc:jec) )
         allocate ( diag_ext1(isc:iec,jsc:jec,kmaxMYM), diag_ext2(isc:iec,jsc:jec,kmaxMYM) )
         allocate ( diag_ext3(isc:iec,jsc:jec,kmaxMYM), diag_ext4(isc:iec,jsc:jec,kmaxMYM) )
         allocate ( diag_ext5(isc:iec,jsc:jec,kmaxMYM), diag_ext6(isc:iec,jsc:jec,kmaxMYM) )
@@ -164,10 +172,10 @@ module size_mod
         allocate ( dxh(imt,jmt), dyh(imt,jmt) )
         allocate ( dah(imt,jmt) )
 
-        allocate ( rdxu(0:imt+1,0:jmt+1), rdyu(0:imt+1,0:jmt+1) )
-        allocate ( rdxv(0:imt+1,0:jmt+1), rdyv(0:imt+1,0:jmt+1) )
-        allocate ( rdxh(0:imt+1,0:jmt+1), rdyh(0:imt+1,0:jmt+1) )
-        allocate ( omask(imt,jmt) )
+        allocate ( rdxu(isg:ieg,jsg:jeg), rdyu(isg:ieg,jsg:jeg) )
+        allocate ( rdxv(isg:ieg,jsg:jeg), rdyv(isg:ieg,jsg:jeg) )
+        allocate ( rdxh(isg:ieg,jsg:jeg), rdyh(isg:ieg,jsg:jeg) )
+        allocate ( omask(isg:ieg,jsg:jeg) )
         allocate ( mask(imt,jmt) )
         allocate ( rkmt(imt,jmt) ) 
 

@@ -9,7 +9,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : imt, jmt, i, j, k, gdx, gdy, fcor, gdxb, gdyb
         use size_mod, only : dxu, dyu, dxv, dyv, dxh, dyh, dah
         use size_mod, only : rdxu,rdyu, rdxv, rdyv, rdxh, rdyh
-        use size_mod, only : phi, theta, tan_theta
+        use size_mod, only : phi, theta, tan_theta, fcoru, fcorv
+        use size_mod, only : isc, iec, jsc, jec
         use param_mod, only : deg2rad, omega, pi, re, deg2meter
         implicit none
 
@@ -29,9 +30,11 @@ c
 c define coriolis parameter f=2*omega*sin(theta)
 c
 	do i=isc, iec
-	do j=jsc, jec
-	 fcor(i,j) = 2.0*omega*sin(theta(j))
-	enddo
+	    do j=jsc, jec
+	        fcor(i,j) = 2.0*omega*sin(theta(j))
+            fcoru(i,j) = 2.0*omega*sin(gdy(j)*deg2rad)
+            fcorv(i,j) = 2.0*omega*sin(gdyb(j)*deg2rad) 
+	    enddo
 	enddo
 	
       dxu(:,:) = 0.
