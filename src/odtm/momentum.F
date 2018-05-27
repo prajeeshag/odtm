@@ -133,11 +133,11 @@ c 183    continue
 	
 	
 	
-#ifdef restrt
-	if ( loop .eq. 1) dtts = dtts
-#else
-	if ( loop .eq. 1) dtts = dt
-#endif
+!#ifdef restrt
+!	if ( loop .eq. 1) dtts = dtts
+!#else
+!	if ( loop .eq. 1) dtts = dt
+!#endif
 	
 c	 if (rkmh(i,j) .ne. 0.0) then
 c	  write(*,*) diffuse_uu, diffuse_vv, loop
@@ -204,10 +204,7 @@ c	 endif
 	rH1 = max(1.0, rH1)
 	u(i,j,k,taup) = u(i,j,k,taup)/rH1
 	
-c	u(i,j,k,taup) = u(i,j,k,taup) *
-c     & rkmt(i,j)*rkmt(ip,j)*rkmt(ip,jp)*rkmt(i,jp)
-	
-	if (u(i,j,k,taup) .ne. u(i,j,k,taup)) then
+	if (u(i,j,k,taup) .ne. u(i,j,k,taup)) then !Prajeesh isnan check
 	 u(i,j,k,taup) = 0.0
 	endif
 
@@ -364,7 +361,7 @@ c     & rkmt(i,j)*rkmt(ip,j)*rkmt(ip,jp)*rkmt(i,jp)
         implicit none
             integer, intent(in) :: ind_drag
             real :: relax_on_off, alpha_rgm, alpha_rgt, beta_mldm
-            real :: beta_mldt, gama, zero_out_tradv, rdrag, relax_South
+            real :: beta_mldt, gama, rdrag, relax_South
             real :: widS, relax_East, widE
 
 #include "cparam.h"

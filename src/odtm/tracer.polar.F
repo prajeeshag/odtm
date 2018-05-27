@@ -1,7 +1,12 @@
-	
         module tracer_mod
+
         use advec_mod, only : sum_2pt
         implicit none
+
+        logical, public :: rgm_zero_tracer_adv = .true.
+        logical :: relax_tracer = .false.
+
+
         private
         
         public :: tracer
@@ -45,9 +50,26 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	jp = j + 1
 	jm = j - 1
 
+        zero_out_tradv = 1.0
+
+        if (rgm_zero_tracer_adv) then
+            hstart = 0
+            kmax = kmaxMYM
+            do irepeat = 1,k-1
+                hstart = hstart + h(i,j,irepeat,taun)
+            enddo
+
+            hend = h(i,j,k,taun) + hstart
+
+            if (hend .le. 5.0*kmax) then 
+                zero_out_tradv = 0.0
+            endif
+        endif
+
 	tracedubdx = 0.0
 	tracedvbdy = 0.0
 	
+        if (zero_out_tradv == 1.0) then
 	rtemp1 = sum_2ptr (1,ip,j,i,j,nt) /
      &                           sum_2ptr (11,ip,j,i,j,nt)
 	rtemp2 = sum_2ptr (1,im,j,i,j,nt) /
@@ -64,14 +86,9 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	tracedvbdy = ( rtemp3 - rtemp4 )* (sum_2pt (2,i,jp,i,j)/
      &                              sum_2pt (21,i,jp,i,j) ) * rdyh(i,j) 
 
+        endif
 
 
-	
-#ifdef restrt
-        if ( loop .eq. 1) dtts = dtts
-#else
-        if ( loop .eq. 1) dtts = dt
-#endif
 
 	rtemp1 = rkmh(ip,j)*(t(ip,j,k,nt,taum) - t(i,j,k,nt,taum) )*rdxu(ip,j)
 	rtemp2 = rkmh(im,j)*(t(i,j,k,nt,taum) - t(im,j,k,nt,taum) )*rdxu(i,j)
@@ -84,35 +101,30 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	diffuse_h = rtemp3 + rtemp6
 
         kmax = kclim
+        
+        relax_tr(:) = 0.
+
+        if (relax_tracer) then
         do kk=1,kmax
          tempin(kk) = temp_read(i,j,kk,month)
          saltin(kk) = salt_read(i,j,kk,month)
          enddo
+
         call interp_extrap_initial (i,j,k,kmax,tempin,
      &   saltin,tempout,saltout)
-
 
         relax_tr(1) = (tempout - t(i,j,k,1,taun))/
      &      (30.0*day2sec)
         relax_tr(2) = (saltout - t(i,j,k,2,taun))/
      &      (30.0*day2sec)
 
-        hstart = 0
-        kmax = kmaxMYM
-        do irepeat = 1,k-1
-        hstart = hstart + h(i,j,irepeat,taun)
-        enddo
-        hend = h(i,j,k,taun) + hstart
+        endif
+
 ! upadting MYM 
 
         relax_on_off = 1.0
 #include "cparam.h"  ! <== This file overrides above parameter setup
         
-        if (hend .le. 5.0*kmax) then 
-        zero_out_tradv = 0.0
-        else
-        zero_out_tradv = 1.0
-        endif
         
 	     rtemp1 = rdx(i) * rad2deg
          rtemp2 = rdy(j) * rad2deg

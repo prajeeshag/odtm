@@ -37,7 +37,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real :: rvisible_extinct, cldin, uwndin, vwndin, speed, airt_in, sphm_in
         real :: sst_in, qs, ql, qb, rAlpha1, rL2, qnet_in, pme_in, rLATin
         real :: rLATMax, rvr_runoff, relax_South, relax_East, relax_on_off
-        real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt, gama, zero_out_tradv
+        real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt, gama
         real :: rdrag, widS, widE
         !! Here is the start of Mixed Layer Model
 
@@ -58,7 +58,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         ii = i
         jj = j
         call interp_extrap_we_profile (ii, jj, kmax)
-c        pvort(i,km,j) = we_baro
+
          do kk = 1,kmax
          ! print *, 'test=', temp(i,kk,j,1), rkmh(i,j)
          tempin(kk) = temp(i,j,kk,1) *rkmh(i,j)
@@ -141,15 +141,6 @@ c         enddo
      &    diag1, diag2, diag3, diag4, diag5, diag6,ii,jj)
           
        
-!        do kk=1,kmax
-!        if (i .eq. 44 .and. j .eq. 31) write(*,*) tempin(1), saltin(1), 
-!     &    uvelin(1), vvelin(1), tauxin, tauyin, qnet_in, sswin(1), pme_in,
-!     &    rLATin, dt, SM(1), SH(1), we_profin(1), we_baro, icval, YQ(1), 
-!     &    entr_flux(1),
-!     &    speed, pme_eps, rvr_runoff
-
-!        enddo
-
          do kk = 1,kmax
 !         rmld_misc(i,kk,j) = entr_flux(kk)
          temp(i,j,kk,2) = tempin(kk) * rkmh(i,j)

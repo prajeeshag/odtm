@@ -42,7 +42,7 @@ module param_mod
     real :: dthe=dyd*deg2rad
 
     real, parameter :: dt= 1800 !600
-    real :: dtts=2.0*dt
+    real, parameter :: dtts=2.0*dt
     real, parameter :: day2sec=86400.0
     real, parameter :: sec2day = 1/day2sec
     real, parameter :: alpha = 0.1

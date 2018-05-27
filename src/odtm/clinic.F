@@ -58,11 +58,11 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
 	
-#ifdef restrt
-        if ( loop .eq. 1) dtts = dtts
-#else
-        if ( loop .eq. 1) dtts = dt
-#endif
+!#ifdef restrt
+!        if ( loop .eq. 1) dtts = dtts
+!#else
+!        if ( loop .eq. 1) dtts = dt
+!#endif
 
 	rmask_right = 1.0
 	rmask_left = 1.0
@@ -103,23 +103,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	 rexp = ((i-x0)/5.0)**2 + ((j-y0)/5.0)**2
 	 rsig = 2.0*pi*loop/((day2sec*365/dt))
 	 rsig1 = sin(rsig)
-c	 rexp1 = dz + A0*exp(-rexp)*rsig1
-	
 	 dtts_back = dtts
-c         if (j .lt. 20) then
-c	 dtts = dtts*(j/20.0)
-c	 diffuse_th = diffuse_th*20/(j*1.0)
-c         endif
-	
-	rtemp1 = (gdx(ip) - gdx(i))
-        rtemp2 = (gdy(j+1) - gdy(j))
         
-c        if (rkmt(i,j) * rkmh(i,j) * rkmu(i,j) * rkmv(i,j) .eq. 0.0) then
-c        rtemp = 0.0
-c        else
-c        rtemp = 0.0
-c        endif
-
         we_mld(i,j,k) = (tropdubdx + tropdvbdy) + we(i,j,k) 
 
         h(i,j,k,taup) = h(i,j,k,taum)*rkmh(i,j) + (
@@ -150,7 +135,7 @@ c        endif
 
         NaN_check  = isnan(h(i,j,k,taup))
         
-        if (NaN_check .eqv. .true.) h(i,j,k,taup) = dz(k)*rkmh(i,j)
+        !if (NaN_check .eqv. .true.) h(i,j,k,taup) = dz(k)*rkmh(i,j)
 
 	return
 	end

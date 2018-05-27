@@ -20,13 +20,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         real, intent(out) :: tempout, saltout
         real, intent(out) ::  uvelout, vvelout
-        real rsum1, rsum2, rsum3, rsum4
-        integer hstart, hend
+        real :: rsum1, rsum2, rsum3, rsum4
+        integer :: hstart, hend
         
         real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt
         integer :: icount, irepeat, kkk
         real :: rdiv, rdrag, relax_East, relax_South, relax_on_off, rsum, widE, widS
-        real :: zero_out_tradv
 
         hstart = 0
         do irepeat = 1,kk-1
@@ -66,8 +65,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ! to handle a portion of layer having reduced gravity, we assume a dummy
 ! rg layer with constant values same as RG, and this take the average,
 ! thereby assuming a mixed layer in the complete RG layer 
+
         if (hstart .gt. kmax*5.0) goto 102
+
         if (kkk .gt. kmax) then
+
+            
         tempout = (t(ii,jj,kk,1,tau_index)*
      &    (h(ii,jj,kk,taun)-icount*5.0) + 
      &   rsum1*5.0 )/max(1.0, (h(ii,jj,kk,taun)) )
@@ -104,7 +107,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real :: gama, alpha_rgm, alpha_rgt, beta_mldm, beta_mldt
         integer :: icount, irepeat, kkk
         real :: rdiv, rdrag, relax_East, relax_South, relax_on_off, rsum, widE, widS
-        real :: zero_out_tradv
 
         gama = 1.0
 

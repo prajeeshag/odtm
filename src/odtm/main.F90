@@ -29,7 +29,7 @@ program main
     use param_mod, only : nmid, rnmid, sum_adv, deg2rad
     
     use momentum_mod, only : momentum
-    use tracer_mod, only : tracer
+    use tracer_mod, only : tracer, rgm_zero_tracer_adv
     use couple_mod, only : couple_rgmld
     use presgrad_mod, only : pressure_integral
     use interp_extrap_initial_mod, only : interp_extrap_initial
@@ -51,7 +51,7 @@ program main
     use data_override_mod, only : data_override_init, data_override
     use time_manager_mod, only : set_calendar_type, NO_CALENDAR, JULIAN, NOLEAP, date_to_string
     use time_manager_mod, only : time_type, set_time, set_date, operator(+), assignment(=)
-    use time_manager_mod, only : print_time, set_ticks_per_second, increment_date, operator(>=)
+    use time_manager_mod, only : print_date, print_time, set_ticks_per_second, increment_date, operator(>=)
 
     implicit none
 
@@ -64,7 +64,7 @@ program main
     integer :: id_lon, id_lat, id_sst, id_depth_mld, id_depth, id_sss, id_airt
     integer :: id_lonb, id_latb
     integer :: id_h, id_eta, id_u, id_v, id_tx, id_ty, id_temp, id_salt
-    integer :: id_we, id_dens, id_pvort, id_mask, id_dxu, id_dyv
+    integer :: id_we, id_dens, id_pvort, id_mask, id_dxu, id_dyv, id_rkmh, id_rkmu, id_rkmv
     integer :: id_temp_mld, id_salt_mld, id_u_mld, id_v_mld, id_diag, id_sh, id_sm
     integer :: id_mld, id_tke, id_rif, id_mlen, id_st_h, id_st_m, id_pme
     integer :: id_sphm, id_uwnd, id_vwnd, id_ssw, id_cld, id_chl, id_rvr
@@ -83,7 +83,8 @@ program main
     integer :: restart_interval(6) = 0, layout(2)
     integer :: start_date(6) = 0
     
-    namelist /main_nml/ restart_interval, layout, days, start_date
+    namelist /main_nml/ restart_interval, layout, days, start_date, &
+                        rgm_zero_tracer_adv
 
     call mpp_init()
     call fms_init()
@@ -124,14 +125,9 @@ program main
 
     loop_total = int(days*day2sec/dt)
     
-    !cccccccccccc timer.F cccccccc
-    call system_clock(itimer2,itimerrate,itimermax) 
-    time_switch = 1
-    !cccccccccccc timer.F cccccccc
-   
     call mpp_clock_begin(main_clk)
  
-    do loop = loop_start, (loop_total+loop_start)
+    do loop = loop_start, loop_total
 
         loop_day = loop*dt/day2sec
 
@@ -141,6 +137,7 @@ program main
             month = month + 1
             month_wind = month_wind + 1
             lpm = lpm + dpm(month)*day2sec/dt
+
 #ifdef monthly_climatology
             if ( month .eq. 13) then 
                 month = 1
@@ -149,20 +146,6 @@ program main
 #endif
             if ( month .eq. 13) month = 1
         endif
-#endif
-    
-#ifdef daily_wind
-        if ( loop .gt. lpd) then 
-            day = day + 1
-            iday_wind = iday_wind + 1
-            lpd = lpd + day2sec/dt
-        endif
-
-        month_wind = iday_wind
-
-#ifdef prescribe_S_boundary
-        call read_boundary (iday_wind)
-#endif
 #endif
     
         sum_adv=0.0
@@ -207,25 +190,16 @@ program main
 
         call data_override('OCN','tauy_force',tauy_force,time,override)
 
-#if defined smagorinsky_laplacian
-        call smagorinsky_coeff
-    
-        call smagorinsky
-#endif
-    
 #ifdef entrain
         call entrain_detrain
-#endif
-#ifdef thermodynamic_forcing
-        call average_density
 #endif
 
         call mpp_update_domains(u(:,:,:,taun),domain)
         call mpp_update_domains(u(:,:,:,taum),domain)
         call mpp_update_domains(v(:,:,:,taun),domain)
         call mpp_update_domains(v(:,:,:,taum),domain)
-        call mpp_update_domains(h(:,:,:,taum),domain)
         call mpp_update_domains(h(:,:,:,taun),domain)
+        call mpp_update_domains(h(:,:,:,taum),domain)
         call mpp_update_domains(t(:,:,:,1,taun),domain)
         call mpp_update_domains(t(:,:,:,2,taun),domain)
         call mpp_update_domains(t(:,:,:,1,taum),domain)
@@ -252,61 +226,18 @@ program main
                 enddo
             enddo
         enddo
+
+        call mpp_update_domains(h(:,:,:,taup),domain)
     
         call mpp_clock_end(clinic_clk)
 
         day_night = cos(loop*(2*3.14/(day2sec/dt))) + 1.0
         
-#ifdef open_NS
-        call openb
-#endif
-#ifdef open_EW
-        call openb
-#endif
-    
-#ifdef prescribeflow
-        do k=1,km
-            deltax(k) = 0.0
-            rsumu(k) = 0.0
-            do j=jsc,jec
-                rsumu(k) = rsumu(k) + u(1,j,k,taun)*h(1,j,k,taun)*dy
-            enddo
-        enddo
-
-        do k=1,km
-            rsumv(k) = 0.0
-            rsumh(k) = 0.0
-            rsumx = 0.0
-            rsumy = 0.0
-            do i=isc, iec
-                rsumv(k) = rsumv(k) + v(i,1,k,taun)*h(i,1,k,taun)*dx
-                rsumh(k) = rsumh(k) + h(i,1,k,taun)*dx
-                rsumx  = rsumx + rkmt(i,1)
-            enddo
-        enddo
-
-        do j=jsc,jec
-            rsumy  = rsumy + rkmt(1,j)
-        enddo
-
-        do k=1,km
-            deltax(k) = (rsumu(k) + rsumv(k))/rsumh(k)/rsumx
-        enddo
-
-        !if ( mod (loop,loop_total/365./100.) .eq. 0) then
-        !    write(*,*) rsumu(1) , rsumv(1) , deltax(1)
-        !endif
-#endif
-
-          
         do i=isc,iec
             do j=jsc,jec
                 do k=1,km-1
                     nmid = (jmt/2)+1
     
-#ifdef atmosphere
-                    call atmos
-#endif
                     call stability_check ()
 
                     call pressure_integral ()
@@ -319,60 +250,47 @@ program main
 #ifdef trace
                     call tracer 
 #endif
-#ifdef age_tracer
-                    call age
-#endif
-    
-#ifdef density 
-                    call layer_density
-#endif
-
                 enddo
             enddo
         enddo
 
 
         call mpp_clock_begin(mld_clk)
-        call mixed_layer_physics
+        !call mixed_layer_physics
+        !call mpp_update_domains(temp(:,:,:,2),domain)
+        !call mpp_update_domains(salt(:,:,:,2),domain)
+        !call mpp_update_domains(uvel(:,:,:,2),domain)
+        !call mpp_update_domains(vvel(:,:,:,2),domain)
+        !call mpp_update_domains(uvel(:,:,:,1),domain)
+        !call mpp_update_domains(vvel(:,:,:,1),domain)
+        !call mpp_update_domains(u(:,:,:,2),domain)
+        !call mpp_update_domains(v(:,:,:,2),domain)
+        !call mpp_update_domains(u(:,:,:,1),domain)
+        !call mpp_update_domains(v(:,:,:,1),domain)
+        !call mpp_update_domains(h(:,:,:,taun),domain)
         call mpp_clock_end(mld_clk)
 
         call balance_pme
 
         call mpp_clock_begin(couple_clk)
+
         if ( mod(loop,1) .eq. 0) then
-            call couple_rgmld
+        !    call couple_rgmld
         endif
+
         call mpp_clock_end(couple_clk)
 
-#ifdef open_NS
-        call openb
-#endif
-#ifdef open_EW
-        call openb
-#endif
-    
-#ifdef particle_trajectory
-        call ptraj
-#endif
         call mpp_clock_begin(filter_clk) 
         call filter
         call mpp_clock_end(filter_clk) 
     
-#ifdef inversion
-        if ( mod(loop_day+1,1) .eq. 0) then
-            call inverse_model
-        endif
-#endif
-!c
-!cc interchange time-index for leap-frog scheme.
-!c 
         if (isc<=imt/2.and.iec>=imt/2.and.jsc<=jmt/2.and.jec>=jmt/2) then
         write(*,*) temp(imt/2, jmt/2 , 1, 1), h(imt/2, jmt/2 , 1, taun), &
                    loop, SHCoeff(imt/2, jmt/2 , 5)
         endif
 
+        call print_date(time)
         call send_data_diag(time)
-
 
         time = time + time_step
     
@@ -386,23 +304,6 @@ program main
            call save_restart(restart_odtm,timestamp) 
 
         endif
-
-        !cccccccccccccccccccccccccccccccccccccccccccc
-        !c rotate the timestep once to achieve      c
-        !c leap-frog time difference.               c
-        !cccccccccccccccccccccccccccccccccccccccccccc
-        !c                 taum                     c
-        !c                v   ^                     c
-        !c               v o o ^                    c
-        !c              v ( | ) ^                   c
-        !c             v (  ~  ) ^                  c
-        !c            v   _ . _   ^                 c
-        !c         taup > > > > > taun              c
-        !c        ktaum= taum                  c
-        !c        taum = taun                  c
-        !c        taun = taup                  !c
-        !cc       taup = ktaum                 !c
-        !ccccccccccccccccccccccccccccccccccccccccccccc
 
         sumall = sum(u(isc:iec,jsc:jec,:,taun) + &
                          t(isc:iec,jsc:jec,:,1,taun))
@@ -570,6 +471,15 @@ program main
         id_pvort = register_diag_field('odtm', 'pvort', (/id_lon,id_lat,id_depth/), init_time=Time, &
                  long_name='?', units='?',missing_value=FILL_VALUE)
 
+        id_rkmh = register_diag_field('odtm', 'rkmh', (/id_lon,id_lat,id_depth/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_rkmu = register_diag_field('odtm', 'rkmu', (/id_lon,id_lat,id_depth/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_rkmv = register_diag_field('odtm', 'rkmv', (/id_lon,id_lat,id_depth/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
         id_mask = register_static_field('odtm', 'mask', (/id_lon,id_lat/), long_name='?', units='?', &
                     missing_value=FILL_VALUE )
 
@@ -631,6 +541,12 @@ program main
         integer :: used
 
        
+        used = send_data(id_rkmh,rkmh(isc:iec,jsc:jec), time)
+
+        used = send_data(id_rkmu,rkmu(isc:iec,jsc:jec), time)
+
+        used = send_data(id_rkmv,rkmv(isc:iec,jsc:jec), time)
+
         used = send_data(id_sst,t(isc:iec,jsc:jec,1,1,taun), time, mask=lmask)
 
         used = send_data(id_sss,t(isc:iec,jsc:jec,1,2,taun), time, mask=lmask)

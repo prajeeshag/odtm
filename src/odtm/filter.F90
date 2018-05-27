@@ -98,12 +98,12 @@ module filter_mod
     
 #ifdef apply_spatial_filter
     
-        call smooth_hanning(u(:,:,1:km-1,taum),rkmu)
-        call smooth_hanning(u(:,:,1:km-1,taun),rkmu)
-        call smooth_hanning(v(:,:,1:km-1,taum),rkmv)
-        call smooth_hanning(v(:,:,1:km-1,taun),rkmv)
-        call smooth_hanning(h(:,:,1:km-1,taum),rkmh)
-        call smooth_hanning(h(:,:,1:km-1,taun),rkmh)
+       ! call smooth_hanning(u(:,:,1:km-1,taum),rkmu)
+       ! call smooth_hanning(u(:,:,1:km-1,taun),rkmu)
+       ! call smooth_hanning(v(:,:,1:km-1,taum),rkmv)
+       ! call smooth_hanning(v(:,:,1:km-1,taun),rkmv)
+       ! call smooth_hanning(h(:,:,1:km-1,taum),rkmh)
+       ! call smooth_hanning(h(:,:,1:km-1,taun),rkmh)
     
 #endif
     

@@ -1,5 +1,6 @@
         module couple_mod
         use interp_extrap_mod, only : interp_extrap
+        use mpp_mod, only : mpp_pe
         implicit none
 
         private
@@ -46,7 +47,7 @@
         real :: alpha_rgt, beta_mldt
 
         real :: diffuse_temp, diffuse_salt, rtheta_vu, rtheta_vd
-        real :: relax_on_off, gama, diffuse_MY, diffuse_tr, zero_out_tradv
+        real :: relax_on_off, gama, diffuse_MY, diffuse_tr
         real :: relax_south, widS, relax_East, widE, rdrag
         real :: rtemp1, rtemp2, rtemp3, rtemp4
         integer :: hstart, hend, ii, jj, kk, tau_index
@@ -106,7 +107,6 @@
         saltout_taup = saltout_taupC
         saltout_taum = saltout_taumC
 
-       
         uvelout_taup = (uvelout_taupC + uvelout_taupL)/
      &                 max(1.0, rkmh(i,j) + rkmh(im,j) )
         uvelout_taum = (uvelout_taumC + uvelout_taumL)/
@@ -115,9 +115,9 @@
       
         vvelout_taup = (vvelout_taupC + vvelout_taupB)/
      &                 max(1.0, rkmh(i,j) + rkmh(i,jm) )
-        vvelout_taum = (vvelout_taumC + vvelout_taumB)/ 
+        vvelout_taum = (vvelout_taumC + vvelout_taumB)/
      &                 max(1.0, rkmh(i,j) + rkmh(i,jm) )
-     
+       
         
 
 ! upadting RG model
@@ -128,10 +128,10 @@
      &   alpha_rgt*(tempout_taup - tempout_taum)) * rkmh(i,j)
         t(i,j,k,2,taup) =  (t(i,j,k,2,taup) + 
      &   alpha_rgt*(saltout_taup - saltout_taum)) * rkmh(i,j)
-        u(i,j,k,taup) =  (u(i,j,k,taup) +
-     &   alpha_rgm*(uvelout_taup - uvelout_taum )) * rkmu(i,j)
-        v(i,j,k,taup) =  (v(i,j,k,taup) +
-     &   alpha_rgm*(vvelout_taup - vvelout_taum )) * rkmv(i,j)
+        u(i,j,k,taup) =  (u(i,j,k,taup)) ! Prajeesh needs review
+!     &   + alpha_rgm*(uvelout_taup - uvelout_taum )) * rkmu(i,j) !Prajeesh: !     repro
+        v(i,j,k,taup) =  (v(i,j,k,taup)) !Prajeesh  needs review
+!     &   + alpha_rgm*(vvelout_taup - vvelout_taum )) * rkmv(i,j)
 
 ! T_taup = (1-beta_mld)T_taup + beta_mld (Tbar_taup - Tbar_taun)
 
