@@ -169,12 +169,22 @@ module size_mod
         allocate ( gdx(imt), gdy(jmt) )
         allocate ( gdxb(imt+1), gdyb(jmt+1) )
         allocate ( rdx(imt), rdy(jmt) )
-        allocate ( dxu(imt,jmt), dyu(imt,jmt) )
-        allocate ( dxv(imt,jmt), dyv(imt,jmt) )
-        allocate ( dxh(imt,jmt), dyh(imt,jmt) )
-        allocate ( dah(imt,jmt) )
-        allocate ( dau(imt,jmt) )
-        allocate ( dav(imt,jmt) )
+
+!        allocate ( dxu(imt,jmt), dyu(imt,jmt) )
+!        allocate ( dxv(imt,jmt), dyv(imt,jmt) )
+!        allocate ( dxh(imt,jmt), dyh(imt,jmt) )
+!
+!        allocate ( dah(imt,jmt) )
+!        allocate ( dau(imt,jmt) )
+!        allocate ( dav(imt,jmt) )
+
+        allocate ( dxu(isd:ied,jsd:jed), dyu(isd:ied,jsd:jed) )
+        allocate ( dxv(isd:ied,jsd:jed), dyv(isd:ied,jsd:jed) )
+        allocate ( dxh(isd:ied,jsd:jed), dyh(isd:ied,jsd:jed) )
+
+        allocate ( dah(isd:ied,jsd:jed) )
+        allocate ( dau(isd:ied,jsd:jed) )
+        allocate ( dav(isd:ied,jsd:jed) )
 
         allocate ( rdxu(isg:ieg,jsg:jeg), rdyu(isg:ieg,jsg:jeg) )
         allocate ( rdxv(isg:ieg,jsg:jeg), rdyv(isg:ieg,jsg:jeg) )

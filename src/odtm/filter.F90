@@ -5,6 +5,8 @@ module filter_mod
     use size_mod, only : isd, ied, jsd, jed
     use param_mod, only : alpha, dt, day2sec
     use mpp_domains_mod, only : domain2d, mpp_update_domains
+    use mpp_mod, only : mpp_error, NOTE, WARNING, FATAL, mpp_sum
+
     implicit none
     
     contains
@@ -19,12 +21,36 @@ module filter_mod
         implicit none
         type(domain2d) :: domain
         integer :: nt, idim5, idim4, idim3, idim2, idim1, ii, jj, kk, iii
-        integer :: imte, imts, jjj, jmte, jmts, linear_switch
+        integer :: imte, imts, jjj, jmte, jmts, ncount
         real :: t_switch, vel_lim(km)
-        logical :: lmask(isd:ied,jsd:jed,km-1)
+        logical :: lmask(isd:ied,jsd:jed,km-1), linear_switch
 
         vel_lim(1:km) = 1.   
  
+#ifdef apply_spatial_filter
+        
+        linear_switch = mod(loop,int(day2sec/dt)*10)==0
+
+        lmask = .true.
+        if (.not.linear_switch) then
+            lmask = .false.
+            do kk = 1, km-1 
+                lmask(isc:iec,jsc:jec,kk) = abs(u(isc:iec,jsc:jec,kk,taup)) > vel_lim(kk) &
+                                        .or.abs(v(isc:iec,jsc:jec,kk,taup)) > vel_lim(kk)
+            enddo
+            ncount = count(lmask)
+            call mpp_sum(ncount)
+        endif
+
+        if (linear_switch .or. ncount > 0) then
+            call mpp_error(NOTE,'Doing spatial filtering for u and v.')
+            call mpp_update_domains(u(:,:,1:km-1,taup),domain)
+            call mpp_update_domains(v(:,:,1:km-1,taup),domain)
+            call smooth_hanning(u(:,:,1:km-1,taup),dmask=rkmu,mask=lmask,area=dau)
+            call smooth_hanning(v(:,:,1:km-1,taup),dmask=rkmv,mask=lmask,area=dav)
+        endif
+#endif
+    
         do i=isc, iec
             do j=jsc, jec
                 do k=1,km-1
@@ -100,48 +126,6 @@ module filter_mod
         enddo
 #endif
     
-    
-#ifdef apply_spatial_filter
-        
-        linear_switch = mod(loop,int(day2sec/dt)*10)
-
-!        lmask = .true.
-!        if (linear_switch==0) then
-!            lmask = .false.
-!            do kk = 1, km-1 
-!                lmask(isc:iec,jsc:jec,kk) = abs(u(isc:iec,jsc:jec,kk,taum)) > vel_lim(kk) &
-!                                        .or.abs(v(isc:iec,jsc:jec,kk,taum)) > vel_lim(kk)
-!            enddo
-!        endif
-!
-!        if (linear_switch==1 .or. count(lmask) > 0) then
-!            call mpp_update_domains(u(:,:,1:km-1,taum),domain)
-!            call mpp_update_domains(v(:,:,1:km-1,taum),domain)
-!            call smooth_hanning(u(:,:,1:km-1,taum),dmask=rkmu,mask=lmask,area=dau)
-!            call smooth_hanning(v(:,:,1:km-1,taum),dmask=rkmv,mask=lmask,area=dav)
-!        endif
-!
-!        lmask = .true.
-!        if (linear_switch==0) then
-!            lmask = .false.
-!            do kk = 1, km-1 
-!                lmask(isc:iec,jsc:jec,kk) = abs(u(isc:iec,jsc:jec,kk,taun)) > vel_lim(kk) &
-!                                        .or.abs(v(isc:iec,jsc:jec,kk,taun)) > vel_lim(kk)
-!            enddo
-!        endif
-!
-!        if (linear_switch==1 .or. count(lmask) > 0) then
-!            call mpp_update_domains(u(:,:,1:km-1,taun),domain)
-!            call mpp_update_domains(v(:,:,1:km-1,taun),domain)
-!            call smooth_hanning(u(:,:,1:km-1,taun),dmask=rkmu,mask=lmask,area=dau)
-!            call smooth_hanning(v(:,:,1:km-1,taun),dmask=rkmv,mask=lmask,area=dav)
-!        endif
-
-        !call smooth_hanning(h(:,:,1:km-1,taum),dmask=rkmh,mask=lmask)
-        !call smooth_hanning(h(:,:,1:km-1,taun),dmask=rkmh,mask=lmask)
-    
-#endif
-    
         return
     end subroutine filter
 
@@ -165,6 +149,8 @@ module filter_mod
         lmask = .true.
         if (present(mask)) lmask = mask
 
+        if (all(.not.lmask)) return
+        
         do k = ks, ke
             fld1(:,:,k) = fld(:,:,k) * dmask(:,:)
         enddo

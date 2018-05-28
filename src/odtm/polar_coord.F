@@ -11,6 +11,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : rdxu,rdyu, rdxv, rdyv, rdxh, rdyh
         use size_mod, only : phi, theta, tan_theta, fcoru, fcorv
         use size_mod, only : isc, iec, jsc, jec, dau, dav
+        use size_mod, only : isd, ied, jsd, jed
         use param_mod, only : deg2rad, omega, pi, re, deg2meter
         implicit none
 
@@ -50,9 +51,13 @@ c
       rdyv(:,:) = 0.
       rdxh(:,:) = 0.
       rdyh(:,:) = 0.
+
+      dah(:,:) = 0.
+      dau(:,:) = 0.
+      dav(:,:) = 0.
     
-	do i=1,imt
-	    do j=1,jmt
+	do i=isd,ied
+	    do j=jsd, jed
 	        ip = i + 1
 	        im = i - 1 
 	        jp = j + 1
