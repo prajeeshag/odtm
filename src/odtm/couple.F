@@ -1,5 +1,7 @@
         module couple_mod
         use interp_extrap_mod, only : interp_extrap
+        use mpp_mod, only : mpp_pe
+
         implicit none
 
         private
@@ -12,12 +14,13 @@
 
         ! linear interpolation for wind forcing
 
+        use size_mod, only : isc, iec, jsc, jec
         use size_mod, only : taum, taun, taup, taus, tracedubdxmld, tracedvbdymld
-        use size_mod, only : loop, imt, jmt, km, i, j, k, rkmh, t, u, rkmu, v
-        use size_mod, only : rkmv, h, nn, tmask, smask, umask, vmask, temp
-        use size_mod, only : salt, uvel, vvel, rdx, dxu, rdy, dyu, dyv
-        use size_mod, only : temp_read, salt_read, month 
-        use param_mod, only : day2sec, dphi, dt, dthe, sec2day, theta
+        use size_mod, only : loop, km, i, j, k, rkmh, t, u, rkmu, v
+        use size_mod, only : rkmv, h, nn, temp, rkmu, rkmv
+        use size_mod, only : salt, uvel, vvel, rdx, rdxh, rdy, rdyh
+        use size_mod, only : temp_read, salt_read, month, theta, kmaxMYM
+        use param_mod, only : day2sec, dt, sec2day
 
         implicit none
 
@@ -45,7 +48,7 @@
         real :: alpha_rgt, beta_mldt
 
         real :: diffuse_temp, diffuse_salt, rtheta_vu, rtheta_vd
-        real :: relax_on_off, gama, diffuse_MY, diffuse_tr, zero_out_tradv
+        real :: relax_on_off, gama, diffuse_MY, diffuse_tr
         real :: relax_south, widS, relax_East, widE, rdrag
         real :: rtemp1, rtemp2, rtemp3, rtemp4
         integer :: hstart, hend, ii, jj, kk, tau_index
@@ -54,10 +57,10 @@
         tracedubdxmld(:,:) = 0.0
         tracedvbdymld(:,:) = 0.0
         
-        taum = 1
-        taun = 2
-        taup = 3
-        taus = 4
+        !taum = 1
+        !taun = 2
+        !taup = 3
+        !taus = 4
 
         alpha_rgm = 1.0  *      mod(loop,2)
         alpha_rgt = 1.0  * (1 - mod(loop,2))
@@ -66,10 +69,10 @@
 
 #include "cparam.h"  ! <== This file overrides above parameter setup
 
-            kmax  = 51
+            kmax  = kmaxMYM
 
-        do i=2,imt-1
-        do j=2,jmt-1
+        do i=isc,iec
+        do j=jsc,jec
         do k=1,km-1
 
         im = i-1
@@ -109,33 +112,27 @@
      &                 max(1.0, rkmh(i,j) + rkmh(im,j) )
         uvelout_taum = (uvelout_taumC + uvelout_taumL)/
      &                 max(1.0, rkmh(i,j) + rkmh(im,j) )
+       
+      
         vvelout_taup = (vvelout_taupC + vvelout_taupB)/
      &                 max(1.0, rkmh(i,j) + rkmh(i,jm) )
-        vvelout_taum = (vvelout_taumC + vvelout_taumB)/ 
+        vvelout_taum = (vvelout_taumC + vvelout_taumB)/
      &                 max(1.0, rkmh(i,j) + rkmh(i,jm) )
-        
-
-
-
+       
         
 
 ! upadting RG model
 ! Tbar = (1-alpha_rg)T + alpha_rg (T_taup - T_taun)
 
 
-        t(i,j,k,1,taup) =  (t(i,j,k,1,taup) + 
-     &   alpha_rgt*(tempout_taup - tempout_taum)) * rkmh(i,j)
-!            if (i==imt/2.and.j==jmt/2) then
-!                print *, 'couple.F :', alpha_rgt, tempout_taup,  tempout_taum, rkmh(i,j)  
-!            endif
-        t(i,j,k,2,taup) =  (t(i,j,k,2,taup) + 
-     &   alpha_rgt*(saltout_taup - saltout_taum)) * rkmh(i,j)
-        u(i,j,k,taup) =  (u(i,j,k,taup) +
-     &   alpha_rgm*(uvelout_taup - uvelout_taum )) * rkmu(i,j)
-        v(i,j,k,taup) =  (v(i,j,k,taup) +
-     &   alpha_rgm*(vvelout_taup - vvelout_taum )) * rkmv(i,j)
-
-
+        t(i,j,k,1,taup) =  (t(i,j,k,1,taup)
+     &  + alpha_rgt*(tempout_taup - tempout_taum)) * rkmh(i,j)
+        t(i,j,k,2,taup) =  (t(i,j,k,2,taup)  
+     &  + alpha_rgt*(saltout_taup - saltout_taum)) * rkmh(i,j)
+        u(i,j,k,taup) =  (u(i,j,k,taup)
+     &   + alpha_rgm*(uvelout_taup - uvelout_taum )) * rkmu(i,j)
+        v(i,j,k,taup) =  (v(i,j,k,taup)
+     &   + alpha_rgm*(vvelout_taup - vvelout_taum )) * rkmv(i,j)
 
 ! T_taup = (1-beta_mld)T_taup + beta_mld (Tbar_taup - Tbar_taun)
 
@@ -156,85 +153,72 @@
         jp = j+1
 
 
-        do ii=im,ip
-        do jj=jm,jp
-        tmask(ii,jj) = 1.0
-        smask(ii,jj) = 1.0
-        umask(ii,jj) = 1.0
-        vmask(ii,jj) = 1.0
-        if(temp(ii,jj,kk,1).eq. 0.0)tmask(ii,jj) = 0.0
-        if(salt(ii,jj,kk,1).eq. 0.0)smask(ii,jj) = 0.0
-        if(uvel(ii,jj,kk,1).eq. 0.0)umask(ii,jj) = 0.0
-        if(vvel(ii,jj,kk,1).eq. 0.0)vmask(ii,jj) = 0.0
-        enddo
-        enddo
-        
-
         rtemp1 = sum_2ptr_mld (1,ip,j,i,j,kk,nt) /
      &               sum_2ptr_mld (11,ip,j,i,j,kk,nt)
+
         rtemp2 = sum_2ptr_mld (1,im,j,i,j,kk,nt) /
      &               sum_2ptr_mld (11,im,j,i,j,kk,nt)
-        dphi = (rdx(i+1)+rdx(i))/2.0
 
         tracedubdxmld(kk,nt) = (rtemp1 - rtemp2)*
-     &         (sum_2pt_mld (1,ip,j,i,j,k)/
-     &          sum_2pt_mld (11,ip,j,i,j,k) ) /
-     &         ( (dxu(i,j)+dxu(ip,j))/2  )
-
-
-        rtheta_vu = cos((theta(j)+theta(j+1))*0.5)
-        rtheta_vd = cos((theta(j)+theta(j-1))*0.5)
-        dthe = (rdy(j) + rdy(j+1))/2.0
-
-c        if (i .eq. 47 .and. j .eq. 28) then
-c        write(*,*)   tracedvbdymld(kk,nt), nt, kk
-c        endif
+     &         ( sum_2pt_mld (1,ip,j,i,j,k)/
+     &          sum_2pt_mld (11,ip,j,i,j,k) ) * rdxh(i,j)
 
         rtemp3 = sum_2ptr_mld (1,i,j,i,jp,kk,nt) /
      &         sum_2ptr_mld (11,i,j,i,jp,kk,nt)
+
         rtemp4 = sum_2ptr_mld (1,i,j,i,jm,kk,nt) /
      &         sum_2ptr_mld (11,i,j,i,jm,kk,nt)
+
         tracedvbdymld(kk,nt) =(rtemp3-rtemp4 )* 
-     &        (sum_2pt_mld (2,i,jp,i,j,k)/
-     &        sum_2pt_mld (12,i,jp,i,j,k) ) /
-     &        ( (dyv(i,jp)+dyv(i,j))/2 )
+     &        ( sum_2pt_mld (2,i,jp,i,j,k)/
+     &        sum_2pt_mld (12,i,jp,i,j,k) ) * rdyh(i,j)
 
         enddo
-
-c         rmld_misc(i,kk,j) = tracedubdxmld(kk,3)
 
         call tsuv_diffuse (i,j,kk,diffuse_temp,diffuse_salt)
 
 #include "cparam.h"
 
-         temp(i,j,kk,1) = temp(i,j,kk,2) - (tracedubdxmld(kk,1)
-     &   + tracedvbdymld(kk,1)) * dt* beta_mldt * tmask(i,j)
-     &   + diffuse_temp * diffuse_MY * dt * tmask(i,j)
+         temp(i,j,kk,2) = temp(i,j,kk,2) 
+     &   - (tracedubdxmld(kk,1)
+     &   + tracedvbdymld(kk,1)) * dt* beta_mldt * rkmh(i,j)
+     &   + diffuse_temp * diffuse_MY * dt * rkmh(i,j)
      &   -  (temp(i,j,kk,2) -  temp_read(i,j,kk,month)) * dt * sec2day * 0.0
-         salt(i,j,kk,1) = salt(i,j,kk,2) - (tracedubdxmld(kk,2)
-     &   + tracedvbdymld(kk,2)) *dt* beta_mldt * smask(i,j)
-     &   + diffuse_salt * diffuse_MY * dt * smask(i,j)
+
+         salt(i,j,kk,2) = salt(i,j,kk,2) 
+     &   - (tracedubdxmld(kk,2)
+     &   + tracedvbdymld(kk,2)) *dt* beta_mldt * rkmh(i,j)
+     &   + diffuse_salt * diffuse_MY * dt * rkmh(i,j)
      &   -  (salt(i,j,kk,2) -  salt_read(i,j,kk,month)) * dt * sec2day * 0.0
-         uvel(i,j,kk,1) = uvel(i,j,kk,2) - (tracedubdxmld(kk,3)
-     &   + tracedvbdymld(kk,3)) *dt* beta_mldm  * umask(i,j)
-         vvel(i,j,kk,1) = vvel(i,j,kk,2) - (tracedubdxmld(kk,4)
-     &   + tracedvbdymld(kk,4)) *dt* beta_mldm  * vmask(i,j)
+
+         uvel(i,j,kk,2) = uvel(i,j,kk,2) 
+     &   - (tracedubdxmld(kk,3)
+     &   + tracedvbdymld(kk,3)) *dt* beta_mldm  * rkmh(i,j)
+
+         vvel(i,j,kk,2) = vvel(i,j,kk,2)
+     &   - (tracedubdxmld(kk,4)
+     &   + tracedvbdymld(kk,4)) *dt* beta_mldm  * rkmh(i,j)
 
 
         enddo
+
  101    continue
 
         enddo
         enddo
         enddo
 
+        temp(isc:iec,jsc:jec,1:kmaxMYM,1) = temp(isc:iec,jsc:jec,1:kmaxMYM,2)
+        salt(isc:iec,jsc:jec,1:kmaxMYM,1) = salt(isc:iec,jsc:jec,1:kmaxMYM,2)
+        uvel(isc:iec,jsc:jec,1:kmaxMYM,1) = uvel(isc:iec,jsc:jec,1:kmaxMYM,2)
+        vvel(isc:iec,jsc:jec,1:kmaxMYM,1) = vvel(isc:iec,jsc:jec,1:kmaxMYM,2)
 
         return
         end subroutine couple_rgmld 
 
 
          function sum_2ptr_mld (index, i1,j1, i2,j2,kk,nt)
-                use size_mod, only: temp, salt, uvel, vvel, tmask, umask, smask, vmask
+                use size_mod, only: temp, salt, uvel, vvel, rkmh, rkmv, rkmu 
         implicit none
 
         real :: sum_2ptr_mld
@@ -258,25 +242,22 @@ c         rmld_misc(i,kk,j) = tracedubdxmld(kk,3)
 
         sum_2ptr_mld = (rtemp1 + rtemp2)
 
-c        if (rtemp1 .eq. 0.0 .and. rtemp2 .ne. 0.0) sum_2ptr_mld = 0.0
-c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
-        
         endif
 
         if (index .eq. 11 .and. nt .eq. 1) then
-        sum_2ptr_mld = (tmask(i1,j1) + tmask(i2,j2))
+        sum_2ptr_mld = (rkmh(i1,j1) + rkmh(i2,j2))
         sum_2ptr_mld = max(1.0,sum_2ptr_mld)
         endif
         if (index .eq. 11 .and. nt .eq. 2) then
-        sum_2ptr_mld = (smask(i1,j1) + smask(i2,j2))
+        sum_2ptr_mld = (rkmh(i1,j1) + rkmh(i2,j2))
         sum_2ptr_mld = max(1.0,sum_2ptr_mld)
         endif
         if (index .eq. 11 .and. nt .eq. 3) then
-        sum_2ptr_mld = (umask(i1,j1) + umask(i2,j2))
+        sum_2ptr_mld = (rkmu(i1,j1) + rkmu(i2,j2))
         sum_2ptr_mld = max(1.0,sum_2ptr_mld)
         endif
         if (index .eq. 11 .and. nt .eq. 4) then
-        sum_2ptr_mld = (vmask(i1,j1) + vmask(i2,j2))
+        sum_2ptr_mld = (rkmv(i1,j1) + rkmv(i2,j2))
         sum_2ptr_mld = max(1.0,sum_2ptr_mld)
         endif
 
@@ -284,19 +265,17 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
 
 
 	function sum_2pt_mld (index, i1,j1, i2,j2, kk)
-           use size_mod, only: u, uvel, v, vvel, taun, rkmu, rkmv
+           use size_mod, only: u, v, taun, rkmu, rkmv
         implicit none
         real :: sum_2pt_mld
         integer, intent(in) :: index, i1,j1, i2,j2, kk
 	
 	if (index .eq. 1) then
-	sum_2pt_mld = (u(i1,j1,kk,taun) + u(i2,j2,kk,taun))*1.0 + 
-     & 	(uvel(i1,j1,kk,taun) + uvel(i2,j2,kk,taun)) * 0.0
+	sum_2pt_mld = (u(i1,j1,kk,taun) + u(i2,j2,kk,taun))*1.0
 	endif
 
 	if (index .eq. 2) then
-	sum_2pt_mld = (v(i1,j1,kk,taun) + v(i2,j2,kk,taun))*1.0 +
-     & 	(vvel(i1,j1,kk,taun) + vvel(i2,j2,kk,taun))* 0.0
+	sum_2pt_mld = (v(i1,j1,kk,taun) + v(i2,j2,kk,taun))*1.0
 	endif
 
 	if (index .eq. 11) then
@@ -312,8 +291,7 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
 	end function sum_2pt_mld
 
         subroutine tsuv_diffuse (ii,jj,kk, diffuse_temp, diffuse_salt)
-            use size_mod, only : temp, dxu, rkmh, rdy, dyv, salt
-            use param_mod, only : dthe
+            use size_mod, only : temp, rdxu, rkmh, rdy, rdyv, salt, rdxh, rdyh
         implicit none
 
         integer :: ii, jj, kk
@@ -328,38 +306,34 @@ c        if (rtemp2 .eq. 0.0 .and. rtemp1 .ne. 0.0) sum_2ptr_mld = 0.0
         jjm = jj-1
 
         rtemp1 = rkmh(iip,jj)*
-     &    (temp(iip,jj,kk,2) - temp(ii,jj,kk,2) )/dxu(iip,jj)
+     &    (temp(iip,jj,kk,1) - temp(ii,jj,kk,1) )*rdxu(iip,jj)
         rtemp2 = rkmh(iim,jj)*
-     &    (temp(ii,jj,kk,2) - temp(iim,jj,kk,2) )/dxu(ii,jj)
-        rtemp3 = (rtemp1 - rtemp2)/((dxu(iip,jj)+dxu(ii,jj))*0.5)
+     &    (temp(ii,jj,kk,1) - temp(iim,jj,kk,1) )*rdxu(ii,jj)
+        rtemp3 = (rtemp1 - rtemp1)*rdxh(ii,jj)
 
-        rtemp4 = rkmh(ii,jjp)*
-     &   (temp(ii,jjp,kk,2) - temp(ii,jj,kk,2))/dyv(ii,jjp)
-        dthe = (rdy(jj-1) + rdy(jj))/2.0
-        rtemp5 = rkmh(ii,jjm)*
-     &   (temp(ii,jj,kk,2) - temp(ii,jjm,kk,2))/dyv(ii,jj)
-        rtemp6 = (rtemp4 - rtemp5)/((dyv(ii,jjp)+dyv(ii,jj))*0.5)  !
+        rtemp4 = rkmh(ii,jjp)* (temp(ii,jjp,kk,1) - temp(ii,jj,kk,1))*rdyv(ii,jjp)
+        rtemp5 = rkmh(ii,jjm)* (temp(ii,jj,kk,1) - temp(ii,jjm,kk,1))*rdyv(ii,jj)
+        rtemp6 = (rtemp4 - rtemp5)*rdyh(ii,jj)  !
 
 
         diffuse_temp = rtemp3 + rtemp6
-        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diiffuse_temp = 0.0 !Prajeesh 
+        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diffuse_temp = 0.0 !Prajeesh 
 
 
         rtemp1 = rkmh(iip,jj)*
-     &    (salt(iip,jj,kk,2) - salt(ii,jj,kk,2) )/dxu(iip,jj)
+     &    (salt(iip,jj,kk,1) - salt(ii,jj,kk,1) )*rdxu(iip,jj)
         rtemp2 = rkmh(iim,jj)*
-     &    (salt(ii,jj,kk,2) - salt(iim,jj,kk,2) )/dxu(ii,jj)
-        rtemp3 = (rtemp1 - rtemp2)/((dxu(iip,jj)+dxu(ii,jj))*0.5)
+     &    (salt(ii,jj,kk,1) - salt(iim,jj,kk,1) )*rdxu(ii,jj)
+        rtemp3 = (rtemp1 - rtemp1)*rdxh(ii,jj)
 
         rtemp4 = rkmh(ii,jjp)*
-     &   (salt(ii,jjp,kk,2) - salt(ii,jj,kk,2))/dyv(ii,jjp)
-        dthe = (rdy(jj-1) + rdy(jj))/2.0
+     &   (salt(ii,jjp,kk,1) - salt(ii,jj,kk,1))*rdyv(ii,jjp)
         rtemp5 = rkmh(ii,jjm)*
-     &   (salt(ii,jj,kk,2) - salt(ii,jjm,kk,2))/dyv(ii,jj)
-        rtemp6 = (rtemp4 - rtemp5)/((dyv(ii,jjp)+dyv(ii,jj))*0.5)  !
+     &   (salt(ii,jj,kk,1) - salt(ii,jjm,kk,1))*rdyv(ii,jj)
+        rtemp6 = (rtemp4 - rtemp5)*rdyh(ii,jj)
 
         diffuse_salt = rtemp3 + rtemp6
-        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diiffuse_salt = 0.0 !Prajeesh 
+        if (rtemp3 .eq. 0.0 .or. rtemp6 .eq. 0.0) diffuse_salt = 0.0 !Prajeesh 
 
         return
         end subroutine tsuv_diffuse

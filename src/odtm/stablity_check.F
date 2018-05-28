@@ -39,7 +39,6 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         do kk=2,km
         if ( rho_local(kk)*rkmh(i,j) .lt. rho_local(kk-1)*rkmh(i,j)) then
-        
         t(i,j,kk,1,taun) = (
      &   (t(i,j,kk,1,taun)*h(i,j,kk,taun) + 
      &    t(i,j,kk-1,1,taun)*h(i,j,kk-1,taun))/
@@ -89,7 +88,6 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         enddo
 
  126    continue
-
 
         return
         end subroutine

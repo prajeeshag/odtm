@@ -14,20 +14,18 @@ c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             use size_mod, only : eta, h, loop, salt, t, temp, u, uvel, v
             use size_mod, only : vvel, we_baro, we_mld, we_prof, taun, km
-            use size_mod, only : imt, jmt
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt
         implicit none
         integer, intent(in) :: ii, jj, kk, kmax, tau_index 
 
         real, intent(out) :: tempout, saltout
         real, intent(out) ::  uvelout, vvelout
-        real rsum1, rsum2, rsum3, rsum4
-        integer hstart, hend
+        real :: rsum1, rsum2, rsum3, rsum4
+        integer :: hstart, hend
         
         real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt
         integer :: icount, irepeat, kkk
         real :: rdiv, rdrag, relax_East, relax_South, relax_on_off, rsum, widE, widS
-        real :: zero_out_tradv
 
         hstart = 0
         do irepeat = 1,kk-1
@@ -46,10 +44,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         uvelout = 0.0
         vvelout = 0.0
 
-           ! if (ii==imt/2.and.jj==jmt/2.and.tau_index==2) then
-           !     print *, 'interp_extrap.F :', hstart, hend, kk, tau_index, kmax, 1+hstart/5, hend/5 
-           ! endif
-
         do kkk = 1+hstart/5, hend/5
         icount = icount + 1
 
@@ -59,9 +53,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         rsum3 = rsum3 + uvel(ii,jj,kkk,tau_index)
         rsum4 = rsum4 + vvel(ii,jj,kkk,tau_index)
         enddo
-
-
-
 
         tempout = rsum1/max(1,icount)
         saltout = rsum2/max(1,icount)
@@ -74,8 +65,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ! to handle a portion of layer having reduced gravity, we assume a dummy
 ! rg layer with constant values same as RG, and this take the average,
 ! thereby assuming a mixed layer in the complete RG layer 
+
         if (hstart .gt. kmax*5.0) goto 102
+
         if (kkk .gt. kmax) then
+
+            
         tempout = (t(ii,jj,kk,1,tau_index)*
      &    (h(ii,jj,kk,taun)-icount*5.0) + 
      &   rsum1*5.0 )/max(1.0, (h(ii,jj,kk,taun)) )
@@ -92,15 +87,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      &    (h(ii,jj,kk,taun)-icount*5.0) + 
      &   rsum4*5.0 )/max(1.0, (h(ii,jj,kk,taun)) )
 
-        
         endif
 
         
 
  102    continue
-           ! if (ii==imt/2.and.jj==jmt/2) then
-           !     print *, 'interp_extrap.F  2 :', tempout
-           ! endif
         return
         end subroutine
 
@@ -116,13 +107,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real :: gama, alpha_rgm, alpha_rgt, beta_mldm, beta_mldt
         integer :: icount, irepeat, kkk
         real :: rdiv, rdrag, relax_East, relax_South, relax_on_off, rsum, widE, widS
-        real :: zero_out_tradv
 
         gama = 1.0
 
 #include "cparam.h"  ! <== This file overrides above parameter setup
 
-        we_mld(ii,jj,0) = (eta(ii,jj,1,taun)-eta(ii,jj,1,taum))/dt  ! surface boundary condition
+        !we_mld(ii,jj,0) = (eta(ii,jj,1,taun)-eta(ii,jj,1,taum))/dt  ! surface boundary condition
         we_prof(:) = 0.0
 
         do kk=1,km-1

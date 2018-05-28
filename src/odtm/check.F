@@ -7,101 +7,13 @@ c
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod, only : k, dz, rho, he, days
+        use size_mod, only : k, dz, rho, he, days, imt, jmt, km, theta
         use param_mod, only : deg2rad, diffuse, diffuse_th, dt, dx, dx2, dxd
-        use param_mod, only : dy, dy2, g, imt, jmt, km, re, theta
+        use param_mod, only : dy, dy2, g, re
         implicit none
         
         real :: amin, rsumk, rtemp1, rtemp2, rmode_speed, rtemp3
         integer :: kk
-#if !defined restrt && !defined monthly_climatology && !defined daily_wind
-	write (*,*)
-	write (*,*)' Error: one of the following option must be ',
-     &  'enabled =>   restrt or monthly_climatology'
-c	 stop  '==>check.F'
-#endif
-
-#if defined restrt && monthly_climatology
-	 write (*,*)
-	 write (*,*)
-	 write(*,*)' Model is starting from a restart file and',
-     &  ' using monthly climatology forcing'
-	 write (*,*)
-#endif
-
-#if defined monthly_climatology && !defined restrt
-	 write(*,*) 
-	 write(*,*) 
-	 write(*,*)' Model is starting with monthly climatology forcing'
-	 write(*,*) 
-#endif
-
-#if defined restrt && !defined monthly_climatology
-	 write(*,*) 
-	 write(*,*) 
-	 write(*,*)' Model is starting from a restart file'
-	 write(*,*) 
-#endif
-#if defined monthly_wind && defined daily_wind
-	 write(*,*)
-	 write(*,*)
-	 write(*,*)' only one option is possible:'  
-	 write(*,*)' Dmonthly_wind or Ddaily_wind'
-	 write(*,*)
-#endif
-
-#if defined trace && !defined trestrt
-	 write(*,*)
-	 write(*,*)
-	 write(*,*)'Tracer is Initializing in a pre-defined domain'
-	 write(*,*)'see initial.F for the details'
-	 write(*,*)
-#endif
-
-#if defined trestrt && !defined trace
-	 write(*,*)
-	 write(*,*)'option -> trace <- is not enabled'
-	 write(*,*)'option -> trestrt <- cannot operate without,
-     & option -> trace <-'
-	 write(*,*)
-	 stop '=> check.F'
-#endif
-
-	
-#ifdef trestrt
-	open (11, file='restart.swm',form='unformatted',
-     &   access='sequential')
-	read (11) lon, lat, dxd, dyd, dt, diffuse, diffuse_th,
-     &  diffuse_ah, tracer_switch
-	close (11)
-	if (tracer_switch .eq. 1) then
-	 write(*,*)'Tracer is restarting from the restart file'
-	else
-	 write(*,*)'restart.swm  does not contain tracer values.'
-	 write(*,*)'This restart file is only for option -> restrt <-.'
-	 write(*,*)'This restart file cannot use with a combination of' 
-	 write(*,*)'option -> restrt <- and option -> trestrt <-'
-	 write(*,*)
-	 write(*,*) lon, lat, dxd, dyd, dt, diffuse, diffuse_th,
-     &  diffuse_ah, tracer_switch
-	 stop '==> check.F'
-	endif
-#endif
-
-#if defined restrt && !defined trace && !defined trestrt
-	 open (11, file='restart.swm',form='unformatted',
-     &   access='sequential')
-        read (11) lon, lat, dxd, dyd, dt, diffuse, diffuse_th,
-     &  diffuse_ah, tracer_switch
-        close (11)
-	 if (tracer_switch .eq. 1) then
-	 write(*,*)'restart.swm contains tracer values. This restart'
-	 write(*,*)'file can use only with options -> trestrt <-.'
-	 write(*,*)
-	 stop '=> check.F'
-	endif
-#endif
-
 
 c
 c checking viscocity limits ===== A = (dx)^3.beta
@@ -173,5 +85,4 @@ c	 stop '=>check.F'
  26	format (a40,i4,a4,i4)
 
 	return
-	stop
 	end

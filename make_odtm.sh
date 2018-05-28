@@ -7,12 +7,25 @@ export srcdir=$(pwd)
 
 thisdir=$(pwd)
 
+debug=""
+npes=1
+while getopts 'dj:' flag; do
+    case "${flag}" in
+    d) debug=".debug" ;;
+    j) npes=$OPTARG ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+opts=$@
+
 EXE="odtm.exe"
 
 execdir="$thisdir/exec"
 mkmf="$thisdir/bin/mkmf"
 
-mkmftemplate="$thisdir/bin/mkmf.template"
+mkmftemplate="$thisdir/bin/mkmf.template$debug"
 
 FMS_UTILS=$thisdir/src/fms_shared
 
@@ -49,5 +62,5 @@ cd $execdir/odtm
 
 $mkmf -f -p $EXE -t $mkmftemplate -o "-I$execdir/lib_fms" -l "$execdir/lib_fms/lib_fms.a" $paths
 
-make $@
+make -j $npes $opts
 

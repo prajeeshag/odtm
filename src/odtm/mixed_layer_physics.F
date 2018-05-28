@@ -6,15 +6,15 @@ c       subroutine to parameterise mixing
 c
 c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-            use size_mod, only : airt, chl, cld, dzmym, gdy, i, j, pme, pme_corr
+            use size_mod, only : airt, chl, cld, dzmym, gdy, pme, pme_corr
             use size_mod, only : rkmh, rvr, salt, sphm, ssw, temp, uvel, uwnd
             use size_mod, only : vvel, vwnd, we_baro, we_prof, zdepth, loop
             use size_mod, only : salt_read, SHCoeff, SMCoeff, temp_read, month
             use size_mod, only : diag_ext1, diag_ext2, diag_ext3
             use size_mod, only : diag_ext4, diag_ext5, diag_ext6
-            use size_mod, only : rmld_misc, mld_mld
+            use size_mod, only : rmld_misc, mld_mld, imt, jmt
+            use size_mod, only : isc, iec, jsc, jec
             use param_mod, only : day2sec, diffuse_my, diffuse_tr, dt, dtts
-            use param_mod, only : imt, jmt
 
             use interp_extrap_mod, only : interp_extrap_we_profile
             use heat_flux_mod, only : heat_flux
@@ -31,19 +31,19 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real diag4(51), diag5(51), diag6(51)
         real tx, ty, Lv, pme_eps
         integer tau_index
-      
+        integer :: i, j, k      
         integer :: kmax, kkk, ii, jj, kk, icval
         real :: albedo, sfx, rAlpha2, rL1, rchla, rPAR, rinfraRed, rvisible
         real :: rvisible_extinct, cldin, uwndin, vwndin, speed, airt_in, sphm_in
         real :: sst_in, qs, ql, qb, rAlpha1, rL2, qnet_in, pme_in, rLATin
         real :: rLATMax, rvr_runoff, relax_South, relax_East, relax_on_off
-        real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt, gama, zero_out_tradv
+        real :: alpha_rgm, alpha_rgt, beta_mldm, beta_mldt, gama
         real :: rdrag, widS, widE
         !! Here is the start of Mixed Layer Model
 
 
-         do i=1,imt
-         do j=1,jmt
+         do i=isc, iec
+         do j=jsc, jec
 
          kmax = 51
          dzmym(1) = 5.0
@@ -58,7 +58,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         ii = i
         jj = j
         call interp_extrap_we_profile (ii, jj, kmax)
-c        pvort(i,km,j) = we_baro
+
+         we_profin(:) = 0.
          do kk = 1,kmax
          ! print *, 'test=', temp(i,kk,j,1), rkmh(i,j)
          tempin(kk) = temp(i,j,kk,1) *rkmh(i,j)
@@ -80,12 +81,6 @@ c        pvort(i,km,j) = we_baro
         rL2        = 0.42
         rchla      = max(0.02,chl(i,j)) !0.02  ! mg/m3
         rPAR = 0.45
-!        rsum = 0.0
-!        ncount = 0
-!         do kkk=2,kk
-c         rsum = rsum + sswin(kkk-1)
-c         ncount = ncount + 1
-c         enddo
         rinfraRed =
      & sfx * rPAR * ( rAlpha1 * exp(-1.0d0 * (kk-1) * 5.0 * rL1)+
      &                 rAlpha2 * exp(-1.0d0 * (kk-1) * 5.0 * rL2) )
@@ -140,22 +135,13 @@ c         enddo
      &    speed, pme_eps, rvr_runoff,
      &    diag1, diag2, diag3, diag4, diag5, diag6,ii,jj)
           
-       
-!        do kk=1,kmax
-!        if (i .eq. 44 .and. j .eq. 31) write(*,*) tempin(1), saltin(1), 
-!     &    uvelin(1), vvelin(1), tauxin, tauyin, qnet_in, sswin(1), pme_in,
-!     &    rLATin, dt, SM(1), SH(1), we_profin(1), we_baro, icval, YQ(1), 
-!     &    entr_flux(1),
-!     &    speed, pme_eps, rvr_runoff
-
-!        enddo
-
          do kk = 1,kmax
 !         rmld_misc(i,kk,j) = entr_flux(kk)
          temp(i,j,kk,2) = tempin(kk) * rkmh(i,j)
          salt(i,j,kk,2) = saltin(kk) * rkmh(i,j)
          uvel(i,j,kk,2) = uvelin(kk) * rkmh(i,j)
          vvel(i,j,kk,2) = vvelin(kk) * rkmh(i,j)
+
          relax_South = 0.0
          relax_East = 0.0
 #include "cparam.h"
@@ -179,7 +165,7 @@ c         if (j .le. widS) pvort(i,2,j) = (widS+1-j)/widS
 c         if (i .ge. imt-widE+1) pvort(i,1,j) = (imt-i)/widE
 c         if (i .ge. imt-widE+1) pvort(i,2,j) = (widE+i-imt)/widE
          endif
-         enddo
+        enddo
 
         if ( mod(loop,100000) .eq. 0) then
          do kk = 3,kmax-2
@@ -197,10 +183,12 @@ c         if (i .ge. imt-widE+1) pvort(i,2,j) = (widE+i-imt)/widE
      &    +4.0*vvelin(kk+1) - vvelin(kk+2) ) * rkmh(i,j)
          enddo
          endif
+
          do kk = 1,kmax
          SMCoeff(i,j,kk) = entr_flux(kk) * rkmh(i,j)
          SHCoeff(i,j,kk) = SH(kk) * rkmh(i,j)
          enddo
+
 #ifdef snap_mld_extended
          do kk = 1,kmax
          diag_ext1(i,j,kk) = diag1(kk) * rkmh(i,j)
@@ -219,9 +207,6 @@ c          call mld_consistency (kmax,ii,jj)
 
         enddo
         enddo
-c            write(*,*) SHCoeff(imt/2-10:imt/2+10,1,jmt/2+20)
-c            write(*,*) rmld_misc(imt/2:imt/2,12,jmt/2+20)
-
         return
         end
 !! Here is the end of Mixed Layer Model

@@ -9,42 +9,49 @@ program main
     !c
     !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
+    use size_mod, only : isc, iec, jsc, jec
+    use size_mod, only : isd, ied, jsd, jed, halo
     use size_mod, only : days, i, iday_start, itimer2
     use size_mod, only : itimermax, itimerrate, j, k, loop, loop_start, lpd
     use size_mod, only : lpm, month, month_start, month_wind
     use size_mod, only : taum, taun, taup, taus, time_switch, tracer_switch 
-    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, rkmt
-    use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn, lm
-    use size_mod, only : t, eta, u, v, temp, h, we, pvort, salt, dxu, dyv
+    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, rkmt, kclim
+    use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn, lm, gdxb, gdyb
+    use size_mod, only : t, eta, u, v, temp, h, we, pvort, salt, dxu, dyv, omask
     use size_mod, only : uvel, vvel, smcoeff, SHCoeff, diag_ext1, diag_ext2
     use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
     use size_mod, only : sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr
     use size_mod, only : taux_force, tauy_force, init_size, denss, rmld_misc
+    use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, pme_corr
+    use size_mod, only : temp_read, salt_read, mask
 
     use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_total
-    use param_mod, only : nmid, reflat, rnmid, sum_adv
+    use param_mod, only : nmid, rnmid, sum_adv, deg2rad
     
     use momentum_mod, only : momentum
-    use tracer_mod, only : tracer
+    use tracer_mod, only : tracer, rgm_zero_tracer_adv
     use couple_mod, only : couple_rgmld
     use presgrad_mod, only : pressure_integral
     use interp_extrap_initial_mod, only : interp_extrap_initial
+    use filter_mod, only : filter
     
     use mpp_mod, only : mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init
-    use mpp_mod, only : mpp_exit, mpp_max, mpp_sum
+    use mpp_mod, only : mpp_exit, mpp_max, mpp_sum, mpp_sync, mpp_root_pe
+    use mpp_mod, only: mpp_clock_id, mpp_clock_begin, mpp_clock_end
     use fms_mod,  only : field_exist, field_size, read_data, fms_init, fms_end
     use fms_io_mod, only : register_restart_field, restart_file_type, save_restart, restore_state
     use fms_io_mod, only : open_namelist_file, open_file, close_file, file_exist
 
     use mpp_domains_mod, only : domain2d, domain1d, mpp_define_layout, mpp_define_domains
     use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_domain_components, mpp_update_domains
+    use mpp_domains_mod, only : mpp_get_data_domain, CGRID_SW, BITWISE_EXACT_SUM, mpp_global_sum
     use diag_manager_mod, only : diag_manager_init, register_diag_field, register_static_field
     use diag_manager_mod, only : diag_axis_init, send_data, diag_manager_end
     use diag_data_mod, only : FILL_VALUE
     use data_override_mod, only : data_override_init, data_override
     use time_manager_mod, only : set_calendar_type, NO_CALENDAR, JULIAN, NOLEAP, date_to_string
     use time_manager_mod, only : time_type, set_time, set_date, operator(+), assignment(=)
-    use time_manager_mod, only : print_time, set_ticks_per_second, increment_date, operator(>=)
+    use time_manager_mod, only : print_date, print_time, set_ticks_per_second, increment_date, operator(>=)
 
     implicit none
 
@@ -52,38 +59,52 @@ program main
     real :: age_time, day_night, rlct, depth_mld
     type(time_type) :: time, time_step, time_restart
 
-    integer :: domain_layout(2), halo=1, used
+    integer :: domain_layout(2), used
 
     integer :: id_lon, id_lat, id_sst, id_depth_mld, id_depth, id_sss, id_airt
+    integer :: id_lonb, id_latb
     integer :: id_h, id_eta, id_u, id_v, id_tx, id_ty, id_temp, id_salt
-    integer :: id_we, id_dens, id_pvort, id_mask, id_dxu, id_dyv
+    integer :: id_we, id_dens, id_pvort, id_mask, id_dxu, id_dyv, id_rkmh, id_rkmu, id_rkmv
     integer :: id_temp_mld, id_salt_mld, id_u_mld, id_v_mld, id_diag, id_sh, id_sm
     integer :: id_mld, id_tke, id_rif, id_mlen, id_st_h, id_st_m, id_pme
     integer :: id_sphm, id_uwnd, id_vwnd, id_ssw, id_cld, id_chl, id_rvr
+
+    integer :: init_clk, main_clk, clinic_clk, mld_clk, filter_clk, couple_clk
 
     type(domain2d) :: domain
 
     type(restart_file_type) :: restart_odtm
 
-    real :: tmp2(imt,jmt), tmp3(imt,jmt,km), tmp3m(imt,jmt,kmaxMYM), rdepth(km)
-
-    logical :: lmask(imt,jmt), lmask3(imt,jmt,km), lmask3m(imt,jmt,kmaxMYM)
+    real :: rdepth(km)
+    real :: sumall, umax
+    logical, allocatable :: lmask(:,:), lmask3(:,:,:), lmask3m(:,:,:)
     logical :: override
     character (len=32) :: timestamp
-    integer :: restart_interval(6) = 0
+    integer :: restart_interval(6) = 0, layout(2)
+    integer :: start_date(6) = 0
     
-    namelist /main_nml/ restart_interval
+    namelist /main_nml/ restart_interval, layout, days, start_date, &
+                        rgm_zero_tracer_adv
 
+    call mpp_init()
+    call fms_init()
+
+    init_clk = mpp_clock_id('Initialization')
+    main_clk = mpp_clock_id('Main Loop')
+    clinic_clk = mpp_clock_id('Clinic')
+    mld_clk = mpp_clock_id('MLD')
+    filter_clk = mpp_clock_id('Filter')
+    couple_clk = mpp_clock_id('Couple')
+
+    days = 1
+
+    call mpp_clock_begin(init_clk)
     call init_odtm()
+    call mpp_clock_end(init_clk)
 
-    !c Initial time-index values
-    taum = 1
-    taun = 2
-    taup = 3
-    taus = 4
 
     !c       do the integration
-    days = 365 !365*30
+
     month_start = 1
     loop_start = 1
     month = month_start
@@ -94,7 +115,7 @@ program main
     iday_wind = 1
     iday_start = iday_month !c-1
     
-    call check
+    if (mpp_root_pe()) call check
     
 #ifdef trace
     tracer_switch = 1
@@ -104,12 +125,9 @@ program main
 
     loop_total = int(days*day2sec/dt)
     
-    !cccccccccccc timer.F cccccccc
-    call system_clock(itimer2,itimerrate,itimermax) 
-    time_switch = 1
-    !cccccccccccc timer.F cccccccc
-    
-    do loop = loop_start, (loop_total+loop_start)
+    call mpp_clock_begin(main_clk)
+ 
+    do loop = loop_start, loop_total
 
         loop_day = loop*dt/day2sec
 
@@ -119,6 +137,7 @@ program main
             month = month + 1
             month_wind = month_wind + 1
             lpm = lpm + dpm(month)*day2sec/dt
+
 #ifdef monthly_climatology
             if ( month .eq. 13) then 
                 month = 1
@@ -127,20 +146,6 @@ program main
 #endif
             if ( month .eq. 13) month = 1
         endif
-#endif
-    
-#ifdef daily_wind
-        if ( loop .gt. lpd) then 
-            day = day + 1
-            iday_wind = iday_wind + 1
-            lpd = lpd + day2sec/dt
-        endif
-
-        month_wind = iday_wind
-
-#ifdef prescribe_S_boundary
-        call read_boundary (iday_wind)
-#endif
 #endif
     
         sum_adv=0.0
@@ -185,142 +190,94 @@ program main
 
         call data_override('OCN','tauy_force',tauy_force,time,override)
 
-#if defined smagorinsky_laplacian
-        call smagorinsky_coeff
-    
-        call smagorinsky
-#endif
-    
 #ifdef entrain
         call entrain_detrain
 #endif
-#ifdef thermodynamic_forcing
-        call average_density
-#endif
 
-        do i=1,imt-1
-            do k=1,km-1
-                do j=1,jmt-1
+        call mpp_update_domains(u(:,:,:,taun),domain)
+        call mpp_update_domains(u(:,:,:,taum),domain)
+        call mpp_update_domains(v(:,:,:,taun),domain)
+        call mpp_update_domains(v(:,:,:,taum),domain)
+        call mpp_update_domains(h(:,:,:,taun),domain)
+        call mpp_update_domains(h(:,:,:,taum),domain)
+        call mpp_update_domains(t(:,:,:,1,taun),domain)
+        call mpp_update_domains(t(:,:,:,2,taun),domain)
+        call mpp_update_domains(t(:,:,:,1,taum),domain)
+        call mpp_update_domains(t(:,:,:,2,taum),domain)
+
+        call mpp_update_domains(temp(:,:,:,1),domain)
+        call mpp_update_domains(temp(:,:,:,2),domain)
+        call mpp_update_domains(salt(:,:,:,1),domain)
+        call mpp_update_domains(salt(:,:,:,2),domain)
+        call mpp_update_domains(uvel(:,:,:,1),domain)
+        call mpp_update_domains(uvel(:,:,:,2),domain)
+        call mpp_update_domains(vvel(:,:,:,1),domain)
+        call mpp_update_domains(vvel(:,:,:,2),domain)
+
+        call mpp_clock_begin(clinic_clk)
+
+        do i=isc,iec
+            do j=jsc,jec
+                do k=1,km-1
                     if (rkmh(i,j) .ne. 0.0) then
                         nmid = (jmt/2)+1
-                        rnmid = (j-nmid)*dyd+0.25 + reflat
                         call clinic
                     endif
                 enddo
             enddo
         enddo
 
+        call mpp_update_domains(h(:,:,:,taup),domain)
+    
+        call mpp_clock_end(clinic_clk)
+
         day_night = cos(loop*(2*3.14/(day2sec/dt))) + 1.0
         
-#ifdef open_NS
-        call openb
-#endif
-#ifdef open_EW
-        call openb
-#endif
-    
-#ifdef prescribeflow
-        do k=1,km
-            deltax(k) = 0.0
-            rsumu(k) = 0.0
-            do j=1,jmt
-                rsumu(k) = rsumu(k) + u(1,j,k,taun)*h(1,j,k,taun)*dy
-            enddo
-        enddo
-
-        do k=1,km
-            rsumv(k) = 0.0
-            rsumh(k) = 0.0
-            rsumx = 0.0
-            rsumy = 0.0
-            do i=1,imt
-                rsumv(k) = rsumv(k) + v(i,1,k,taun)*h(i,1,k,taun)*dx
-                rsumh(k) = rsumh(k) + h(i,1,k,taun)*dx
-                rsumx  = rsumx + rkmt(i,1)
-            enddo
-        enddo
-
-        do j=1,jmt
-            rsumy  = rsumy + rkmt(1,j)
-        enddo
-
-        do k=1,km
-            deltax(k) = (rsumu(k) + rsumv(k))/rsumh(k)/rsumx
-        enddo
-
-        if ( mod (loop,loop_total/365./100.) .eq. 0) then
-            write(*,*) rsumu(1) , rsumv(1) , deltax(1)
-        endif
-#endif
-
-        do i=2,imt-1
-            do k=1,km-1
-                do j=2,jmt-1
+        do i=isc,iec
+            do j=jsc,jec
+                do k=1,km-1
                     nmid = (jmt/2)+1
-                    rnmid = (j-nmid)*dyd+0.25 + reflat
     
-#ifdef atmosphere
-                    call atmos
-#endif
                     call stability_check ()
 
                     call pressure_integral ()
     
                     rlct = rkmu(i,j) + rkmv(i,j)
                     if (rlct .ne. 0.0) then
-                        call momentum ()
+                        call momentum
                     endif
 
 #ifdef trace
                     call tracer 
 #endif
-#ifdef age_tracer
-                    call age
-#endif
-    
-#ifdef density 
-                    call layer_density
-#endif
-
                 enddo
             enddo
         enddo
 
 
+        call mpp_clock_begin(mld_clk)
         call mixed_layer_physics
+        call mpp_update_domains(uvel(:,:,:,2),domain)
+        call mpp_update_domains(vvel(:,:,:,2),domain)
+        call mpp_clock_end(mld_clk)
 
-        call balance_pme
+        call balance_pme()
 
-        if ( mod(loop,1) .eq. 0) then
-            call couple_rgmld
+        call mpp_clock_begin(couple_clk)
+        call couple_rgmld
+        call mpp_clock_end(couple_clk)
+
+        call mpp_clock_begin(filter_clk) 
+        call filter(domain)
+        call mpp_clock_end(filter_clk) 
+    
+        if (isc<=imt/2.and.iec>=imt/2.and.jsc<=jmt/2.and.jec>=jmt/2) then
+            write(*,*) temp(imt/2, jmt/2 , 1, 1), h(imt/2, jmt/2 , 1, taun), &
+                            loop, SHCoeff(imt/2, jmt/2 , 5)
         endif
 
-#ifdef open_NS
-        call openb
-#endif
-#ifdef open_EW
-        call openb
-#endif
-    
-#ifdef particle_trajectory
-        call ptraj
-#endif
-    
-        call filter
-    
-#ifdef inversion
-        if ( mod(loop_day+1,1) .eq. 0) then
-            call inverse_model
-        endif
-#endif
-!c
-!cc interchange time-index for leap-frog scheme.
-!c 
-        write(*,*) temp(imt/2, jmt/2 + 20, 1, 1), h(imt/2, jmt/2 + 20, 1, taun), &
-                   loop, SHCoeff(imt/2, jmt/2 + 20, 5)
-
+        call print_date(time)
         call send_data_diag(time)
-
 
         time = time + time_step
     
@@ -335,40 +292,28 @@ program main
 
         endif
 
-        !cccccccccccccccccccccccccccccccccccccccccccc
-        !c rotate the timestep once to achieve      c
-        !c leap-frog time difference.               c
-        !cccccccccccccccccccccccccccccccccccccccccccc
-        !c                 taum                     c
-        !c                v   ^                     c
-        !c               v o o ^                    c
-        !c              v ( | ) ^                   c
-        !c             v (  ~  ) ^                  c
-        !c            v   _ . _   ^                 c
-        !c         taup > > > > > taun              c
-        !c        ktaum= taum                  c
-        !c        taum = taun                  c
-        !c        taun = taup                  !c
-        !cc       taup = ktaum                 !c
-        !ccccccccccccccccccccccccccccccccccccccccccccc
-        do i=1,imt
-            do j=1,jmt
-                do k=1,km
-                    if ( u(i, j, k, taun) .ne. u(i, j, k, taun) &
-                        .or. u(i, j, k, taun) .lt. -10.0 .or. &
-                        u(i, j, k, taun) .gt. 10.0 ) then
-                        
-                        call diag_manager_end(time)
-                        stop 'stop=>blow-up'
-        
-                    endif
-                enddo
-            enddo
-        enddo
+        sumall = sum(u(isc:iec,jsc:jec,:,taun) + &
+                         t(isc:iec,jsc:jec,:,1,taun))
+
+        call mpp_sum(sumall)
+
+        umax = maxval(abs(u(isc:iec,jsc:jec,:,taun)))
+        call mpp_max(umax)
+
+        if ( umax > 10. .or. sumall/=sumall ) then
+            call save_restart(restart_odtm, 'crash')
+            call diag_manager_end(time)
+            print *, 'blow-up :', umax, sumall
+            call mpp_error(WARNING, 'stop=>blow-up')
+            call mpp_sync()
+            call mpp_error(FATAL, 'stop=>blow-up')
+        endif
+
     enddo
+
+    call mpp_clock_end(main_clk)
     
-    write (*,*)
-    write (*,*)'Integration finished'
+    call mpp_error(NOTE,'Integration finished')
 
     call save_restart(restart_odtm) 
     
@@ -386,53 +331,57 @@ program main
         rewind(unit)
         read(unit,nml=main_nml) 
          
-        call mpp_init()
-        call fms_init()
+        unit = open_file(file='RESTART/._tmp_',action='write')
+        call close_file(unit,'delete')
+
         call set_calendar_type(NOLEAP)
 
         time_step = set_time(seconds=int(dt))
 
-        time = set_date(1995, 1, 1, 0, 0, 0)
+        if (sum(start_date)<=0) &
+          call mpp_error(FATAL, 'start_date not given or not proper in input.nml')
+
+        time = set_date(start_date(1), start_date(2), start_date(3), &
+                        start_date(4), start_date(5), start_date(6))
       
         if (all(restart_interval==0)) restart_interval(1) = 10
  
         time_restart = increment_date(time, restart_interval(1), restart_interval(2), &
         restart_interval(3), restart_interval(4), restart_interval(5), restart_interval(6) )
 
-        call diag_manager_init()
-
-        call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
-
-        call mpp_define_domains((/1,imt,1,jmt/), domain_layout, domain, xhalo=halo, yhalo=halo )
-
-        call data_override_init(Ocean_domain_in=domain)
-        
-        call initial_declaration
-
         call init_grid()
 
-        !call initial_condition
+        call diag_manager_init()
 
-        call polar_coord
+        call data_override_init(Ocean_domain_in=domain)
+
     
-
+        allocate ( lmask(isc:iec,jsc:jec) ) 
+        allocate ( lmask3(isc:iec,jsc:jec,km) )
+        allocate ( lmask3m(isc:iec,jsc:jec,kmaxMYM) )
 
         lmask=.false.; lmask3 = .false.; lmask3m = .false.
 
-        lmask(2:imt-1,2:jmt-1)=rkmh(2:imt-1,2:jmt-1)>0
+        lmask(isc:iec,jsc:jec)=omask(isc:iec,jsc:jec)
 
-        do ii = 1,km
-            lmask3(2:imt-1, 2:jmt-1, ii) = rkmh(2:imt-1,2:jmt-1)>0
+        do ii = 1, km
+            lmask3(isc:iec, jsc:jec, ii) = omask(isc:iec,jsc:jec)
         enddo
 
         do ii = 1,kmaxMYM
-            lmask3m(2:imt-1, 2:jmt-1, ii) = rkmh(2:imt-1,2:jmt-1)>0
+            lmask3m(isc:iec,jsc:jec, ii) = omask(isc:iec,jsc:jec) 
         enddo
 
         id_lon = diag_axis_init('lon', gdx(1:imt), 'degrees_east', cart_name='X', &
             long_name='longitude', domain2=domain)
 
         id_lat = diag_axis_init('lat', gdy(1:jmt), 'degrees_north', cart_name='Y', &
+            long_name='latitude', domain2=domain) 
+
+        id_lonb = diag_axis_init('lonb', gdxb(1:imt+1), 'degrees_east', cart_name='X', &
+            long_name='longitude', domain2=domain)
+
+        id_latb = diag_axis_init('latb', gdyb(1:jmt+1), 'degrees_north', cart_name='Y', &
             long_name='latitude', domain2=domain) 
 
         id_depth_mld = diag_axis_init('depth_mld', (/(real(ii)*5.0,ii=1,kmaxMYM)/), 'meters', &
@@ -513,6 +462,15 @@ program main
         id_pvort = register_diag_field('odtm', 'pvort', (/id_lon,id_lat,id_depth/), init_time=Time, &
                  long_name='?', units='?',missing_value=FILL_VALUE)
 
+        id_rkmh = register_diag_field('odtm', 'rkmh', (/id_lon,id_lat,id_depth/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_rkmu = register_diag_field('odtm', 'rkmu', (/id_lon,id_lat,id_depth/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
+        id_rkmv = register_diag_field('odtm', 'rkmv', (/id_lon,id_lat,id_depth/), init_time=Time, &
+                 long_name='?', units='?',missing_value=FILL_VALUE)
+
         id_mask = register_static_field('odtm', 'mask', (/id_lon,id_lat/), long_name='?', units='?', &
                     missing_value=FILL_VALUE )
 
@@ -521,7 +479,6 @@ program main
 
         id_dyv = register_static_field('odtm', 'dyv', (/id_lon,id_lat/), long_name='?', units='?', &
                     missing_value=FILL_VALUE)
-         
 
         id_temp_mld = register_diag_field('odtm', 'temp_mld', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
                  long_name='Temperature', units='deg-C',missing_value=FILL_VALUE)
@@ -562,15 +519,9 @@ program main
         id_st_m = register_diag_field('odtm', 'st_m', (/id_lon,id_lat,id_depth_mld/), init_time=Time, &
                  long_name='?', units='?',missing_value=FILL_VALUE)
 
-        tmp2 = 0.
-        where(lmask) tmp2 = 1.
-
-        used = send_data(id_mask, rkmt, time)
-        used = send_data(id_dxu, dxu, time, mask=lmask)
-        used = send_data(id_dyv, dyv, time, mask=lmask)
-
-        unit = open_file(file='RESTART/._tmp_',action='write')
-        call close_file(unit,'delete')
+        used = send_data(id_mask, rkmh(isc:iec,jsc:jec), time)
+        used = send_data(id_dxu, dxu(isc:iec,jsc:jec), time)
+        used = send_data(id_dyv, dyv(isc:iec,jsc:jec), time)
 
     end subroutine init_odtm
 
@@ -581,21 +532,27 @@ program main
         integer :: used
 
        
-        used = send_data(id_sst,t(1:imt,1:jmt,1,1,taun), time, mask=lmask)
+        used = send_data(id_rkmh,rkmh(isc:iec,jsc:jec), time)
 
-        used = send_data(id_sss,t(1:imt,1:jmt,1,2,taun), time, mask=lmask)
+        used = send_data(id_rkmu,rkmu(isc:iec,jsc:jec), time)
 
-        used = send_data(id_temp,t(:,:,:,1,taun),time, mask=lmask3)
+        used = send_data(id_rkmv,rkmv(isc:iec,jsc:jec), time)
 
-        used = send_data(id_salt,t(:,:,:,2,taun),time, mask=lmask3)
+        used = send_data(id_sst,t(isc:iec,jsc:jec,1,1,taun), time, mask=lmask)
 
-        used = send_data(id_h,h(:,:,:,taun),time, mask=lmask3)
+        used = send_data(id_sss,t(isc:iec,jsc:jec,1,2,taun), time, mask=lmask)
 
-        used = send_data(id_eta, eta(:,:,1,1), time, mask=lmask)
+        used = send_data(id_temp,t(isc:iec,jsc:jec,:,1,taun),time, mask=lmask3)
 
-        used = send_data(id_u, u(:,:,:,taun), time, mask=lmask3)
+        used = send_data(id_salt,t(isc:iec,jsc:jec,:,2,taun),time, mask=lmask3)
 
-        used = send_data(id_v, v(:,:,:,taun), time, mask=lmask3)
+        used = send_data(id_h,h(isc:iec,jsc:jec,:,taun),time, mask=lmask3)
+
+        used = send_data(id_eta, eta(isc:iec,jsc:jec,1,1), time, mask=lmask)
+
+        used = send_data(id_u, u(isc:iec,jsc:jec,:,taun), time, mask=lmask3)
+
+        used = send_data(id_v, v(isc:iec,jsc:jec,:,taun), time, mask=lmask3)
 
         used = send_data(id_we, we, time, mask=lmask3)
 
@@ -603,13 +560,13 @@ program main
 
         used = send_data(id_pvort, pvort, time, mask=lmask3)
         
-        used = send_data(id_temp_mld,temp(:,:,:,1),time, mask=lmask3m)
+        used = send_data(id_temp_mld,temp(isc:iec,jsc:jec,:,1),time, mask=lmask3m)
 
-        used = send_data(id_salt_mld,salt(:,:,:,1),time, mask=lmask3m)
+        used = send_data(id_salt_mld,salt(isc:iec,jsc:jec,:,1),time, mask=lmask3m)
 
-        used = send_data(id_u_mld,uvel(:,:,:,taun),time, mask=lmask3m)
+        used = send_data(id_u_mld,uvel(isc:iec,jsc:jec,:,taun),time, mask=lmask3m)
 
-        used = send_data(id_v_mld,vvel(:,:,:,taun),time, mask=lmask3m)
+        used = send_data(id_v_mld,vvel(isc:iec,jsc:jec,:,taun),time, mask=lmask3m)
 
         used = send_data(id_diag,rmld_misc,time, mask=lmask3m)
 
@@ -633,77 +590,93 @@ program main
 
     subroutine init_grid
 
-        use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, rrkmt
-        use size_mod, only : temp_read, salt_read, mask
-
-        use param_mod, only : deg2rad
-    
         !c initialze model grid.
     
         implicit none
     
-        real :: tempin(201), saltin(201)
         integer :: ii, jj, kk, kmax, l, ll, nt
-        integer :: dimz(4), nlon, nlat
-        real :: saltout, tempout
+        integer :: dimz(4)
         real, allocatable :: tmp2(:,:)
         integer :: id_restart
+        real :: tempin(kclim), saltin(kclim)
+        real :: saltout, tempout
         character (len=32) :: grid_file='INPUT/grid_spec.nc'
         character (len=32) :: temp_clim_file='INPUT/temp_clim.nc'
         character (len=32) :: salt_clim_file='INPUT/salt_clim.nc'
         character (len=32) :: restart_file='odtm_restart.nc'
-  
-        taum = 1
-        taun = 2
-        taup = 3
-        taus = 4
 
+  
         if (.not.field_exist(grid_file, "geolon_t"))  &
             call mpp_error(FATAL,'geolon_t not present in '//trim(grid_file))
 
         if (.not.field_exist(grid_file, "geolat_t"))  &
             call mpp_error(FATAL,'geolat_t not present in '//trim(grid_file))
 
+        if (.not.field_exist(grid_file, "geolon_vert_t"))  &
+            call mpp_error(FATAL,'geolon_vert_t not present in '//trim(grid_file))
+
+        if (.not.field_exist(grid_file, "geolat_vert_t"))  &
+            call mpp_error(FATAL,'geolat_vert_t not present in '//trim(grid_file))
+
         if (.not.field_exist(grid_file, "rkmt"))  &
             call mpp_error(FATAL,'rkmt not present in '//trim(grid_file))
-
        
         call field_size(grid_file, "geolon_t", dimz)
         
-        nlon = dimz(1); nlat = dimz(2)
+        imt = dimz(1); jmt = dimz(2)
+       
+        if (sum(layout)<=0) then 
+            call mpp_define_layout((/1,imt,1,jmt/),mpp_npes(),domain_layout)
+        else
+            domain_layout = layout
+        endif
+
+        call mpp_define_domains((/1,imt,1,jmt/), domain_layout, domain, xhalo=halo, yhalo=halo )
+
+        call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
+
+        call mpp_get_data_domain(domain, isd, ied, jsd, jed)
+
+        print *, '-----------------------Domain Decomposition-----------------------------'
+        print *, 'Compute Domain: PE, isc, iec, jsc, jec = ', mpp_pe(), isc, iec, jsc, jec
+        print *, 'Data Domain:    PE, isd, ied, jsd, jed = ', mpp_pe(), isd, ied, jsd, jed
+        print *, '------------------------------------------------------------------------'
+
+        call init_size()
+
+        allocate(tmp2(imt+1,jmt+1))
         
-        allocate(tmp2(nlon,nlat))
-        
-        call read_data(grid_file, 'geolon_t', tmp2, no_domain=.true.)
+        call read_data(grid_file, 'geolon_t', tmp2(1:imt,1:jmt), no_domain=.true.)
    
-        gdx = 0. ; gdy = 0.
-        gdx(1:nlon) = tmp2(:,1)
+        gdx = 0.
+        gdx(1:imt) = tmp2(1:imt,1)
 
-        call read_data(grid_file, 'geolat_t', tmp2, no_domain=.true.)
+        call read_data(grid_file, 'geolat_t', tmp2(1:imt,1:jmt), no_domain=.true.)
     
-        gdy(1:nlat) = tmp2(1,:)
+        gdy = 0.
+        gdy(1:jmt) = tmp2(1,1:jmt)
 
-        do ii=1,imt-1
-           rdx(ii) = (gdx(ii+1) - gdx(ii))*deg2rad
+        call read_data(grid_file, 'geolon_vert_t', tmp2, no_domain=.true.)
+   
+        gdxb = 0.
+        gdxb(1:imt+1) = tmp2(1:imt+1,1)
+
+        call read_data(grid_file, 'geolat_vert_t', tmp2, no_domain=.true.)
+    
+        gdyb = 0.
+        gdyb(1:jmt+1) = tmp2(1,1:jmt+1)
+
+        do ii=1,imt
+           rdx(ii) = (gdxb(ii+1) - gdxb(ii))*deg2rad
         enddo
 
-        rdx(0) = gdx(1)*deg2rad
-        rdx(imt) = rdx(imt-1)*deg2rad
-        rdx(imt+1) = rdx(imt)*deg2rad
-    
-        do ii=1,jmt-1
-         rdy(ii) = (gdy(ii+1) - gdy(ii))*deg2rad
+        do ii=1,jmt
+           rdy(ii) = (gdyb(ii+1) - gdyb(ii))*deg2rad
         enddo
-
-        rdy(0) = gdy(1)*deg2rad
-        rdy(jmt) = gdy(jmt-1)*deg2rad
-        rdy(jmt+1) = gdy(jmt)*deg2rad
-
-        call read_data(grid_file, 'rkmt', rkmt, no_domain=.true.)
-
 
         deallocate(tmp2)
 
+        call read_data(grid_file, 'rkmt', rkmt(1:imt,1:jmt), no_domain=.true.)
 
         ! since a C grid is being used, u,v, h are defined at 3 different points, hence
         ! each has a dfferent mask.    u--------h
@@ -712,41 +685,70 @@ program main
         !                                       |
         !                                       v
 
-        rkmu(:,:) = 1.0
-        rkmv(:,:) = 1.0
-        rkmh(:,:) = 1.0
+        omask(:,:) = .false.
+        where(rkmt(1:imt,1:jmt) > 0.5) omask(1:imt,1:jmt) = .true.
+        
+        rkmu(:,:) = 0.
+        rkmv(:,:) = 0.
+        rkmh(:,:) = 0.
+        mask(:,:) = 1.
+         
+        where(omask(isd:ied,jsd:jed)) rkmh(isd:ied,jsd:jed) = 1.
+
+        do ii=isd, ied
+            if (ii<1) cycle
+            do jj=jsd, jed
+                if (omask(ii,jj) .and. omask(ii-1,jj)) rkmu(ii,jj) = 1.0
+            enddo
+        enddo
+    
+        do ii=isd, ied
+            do jj=jsd, jed
+                if (jj<1) cycle
+                if (omask(ii,jj) .and. omask(ii,jj-1)) rkmv(ii,jj) = 1.0
+            enddo
+        enddo
+    
+        call polar_coord
+
+        id_restart = register_restart_field(restart_odtm, restart_file, 'u', u(:,:,:,1), u(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'v', v(:,:,:,1), v(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'temp', t(:,:,:,1,1), t(:,:,:,1,2), &
+                     mandatory=.true.,domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'salt', t(:,:,:,2,1), t(:,:,:,2,2), &
+                     mandatory=.true.,domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'h', h(:,:,:,1), h(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'temp_mld', temp(:,:,:,1), temp(:,:,:,2), &
+                     mandatory=.true.,domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'salt_mld', salt(:,:,:,1), salt(:,:,:,2), &
+                     mandatory=.true.,domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'uvel', uvel(:,:,:,1), uvel(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'vvel', vvel(:,:,:,1), vvel(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'pme_corr', pme_corr(:,:),domain=domain)
+
+        we_upwel(:,:,:) = 0.0
+        
+        do kk=1,km
+            h(:,:,kk,taum)=dz(kk)
+            h(:,:,kk,taun)=dz(kk)
+            h(:,:,kk,taup)=dz(kk)
+        enddo
+
+        u(:,:,:,:) = 0.0
+        v(:,:,:,:) = 0.0
+
+        we(:,:,:) = 0.0
+        wd(:,:,:) = 0.0
+        eta(:,:,:,:) = 0.0
+
+        t(:,:,:,:,:) = 0.0
+        t(:,:,:,:,:) = 0.0
+       
+        uvel(:,:,:,:) = 0.0
+        vvel(:,:,:,:) = 0.0
+        temp(:,:,:,:) = 0.0
+        salt(:,:,:,:) = 0.0
  
-        do ii=1,imt
-            do jj=1,jmt-1 !Prajeesh 
-                if (rkmt(ii,jj) .eq. 0.0 .and. rkmt(ii,jj+1) .eq. 0.0) &
-                        rkmu(ii,jj) = 0.0
-            enddo
-        enddo
-    
-        do ii=1,imt-1
-            do jj=1,jmt-1 !Prajeesh 
-                if (rkmt(ii,jj) .eq. 0.0 .and. rkmt(ii+1,jj) .eq. 0.0) &
-                        rkmv(ii,jj) = 0.0
-            enddo
-        enddo
-    
-        do ii=1,imt-1
-            do jj=1,jmt-1
-                if (rkmu(ii,jj) .eq. 0.0 .and. rkmu(ii+1,jj) .eq. 0.0 .and. &
-                    rkmv(ii,jj) .eq. 0.0 .and. rkmv(ii,jj+1) .eq. 0.0) &
-                         rkmh(ii,jj) = 0.0
-            enddo
-        enddo
-
-        do ii=1,imt
-            do jj=1,jmt
-                if (rkmt(ii,jj) .eq. 0.0) mask (ii,jj) = 1.0
-                if (rkmt(ii,jj) .eq. 1.0) mask (ii,jj) = 0.0
-            enddo
-        enddo
-
-        rrkmt(:,:) = rkmt(:,:)
-
         if (.not. field_exist(temp_clim_file, 'temp')) &
             call mpp_error(FATAL, 'field temp not found in '//trim(temp_clim_file))
 
@@ -755,64 +757,32 @@ program main
 
         call field_size(temp_clim_file, 'temp', dimz)
 
-        call init_size()
-
-        id_restart = register_restart_field(restart_odtm, restart_file, 'u', u(:,:,:,1), u(:,:,:,2))
-        id_restart = register_restart_field(restart_odtm, restart_file, 'v', v(:,:,:,1), v(:,:,:,2))
-        id_restart = register_restart_field(restart_odtm, restart_file, 't', t(:,:,:,1,1), t(:,:,:,1,2), mandatory=.true.)
-        id_restart = register_restart_field(restart_odtm, restart_file, 's', t(:,:,:,2,1), t(:,:,:,2,2), mandatory=.true.)
-        id_restart = register_restart_field(restart_odtm, restart_file, 'h', h(:,:,:,1), h(:,:,:,2))
-        id_restart = register_restart_field(restart_odtm, restart_file, 'temp', temp(:,:,:,1), temp(:,:,:,2), mandatory=.true.)
-        id_restart = register_restart_field(restart_odtm, restart_file, 'salt', salt(:,:,:,1), salt(:,:,:,2), mandatory=.true.)
-        id_restart = register_restart_field(restart_odtm, restart_file, 'uvel', uvel(:,:,:,1), uvel(:,:,:,2))
-        id_restart = register_restart_field(restart_odtm, restart_file, 'vvel', vvel(:,:,:,1), vvel(:,:,:,2))
-
-        we_upwel(:,:,:) = 0.0
-        
-        do kk=1,km
-            h(:,:,kk,taum)=dz(kk)
-            h(:,:,kk,taun)=h(:,:,kk,taum) 
-            h(:,:,kk,taup)=h(:,:,kk,taum) 
-        enddo
-
-        we(:,:,:) = 0.0
-        wd(:,:,:) = 0.0
-        u(:,:,:,:) = 0.0
-        v(:,:,:,:) = 0.0
-        eta(:,:,:,:) = 0.0
-
-        t(:,:,:,:,taum) = 10.0
-        t(:,:,:,:,taun) = 10.0
-       
- 
         do nt = 1, lm-1
-            call read_data(temp_clim_file, 'temp', temp_read(:,:,:,nt), timelevel=nt)
-            call read_data(salt_clim_file, 'salt', salt_read(:,:,:,nt), timelevel=nt)
+            call read_data(temp_clim_file, 'temp', temp_read(:,:,:,nt), timelevel=nt, domain=domain)
+            call read_data(salt_clim_file, 'salt', salt_read(:,:,:,nt), timelevel=nt, domain=domain)
         enddo
+
         temp_read(:,:,:,lm) = temp_read(:,:,:,1)
         salt_read(:,:,:,lm) = salt_read(:,:,:,1)
-
-        uvel(:,:,:,:) = 0.0
-        vvel(:,:,:,:) = 0.0
 
         if (file_exist('INPUT/'//trim(restart_file))) then
             call restore_state(restart_odtm)
         else
             call mpp_error(NOTE,'Model starting from initial state')
-            do i=1,imt
-                do j=1,jmt
-                    do k=1,201
+            do i=isc,iec
+                do j=jsc,jec
+                    if (rkmh(i,j)/=1.) cycle 
+                    do k=1,kclim
                         tempin(k) = temp_read(i,j,k,1)  
                         saltin(k) = salt_read(i,j,k,1) 
                     enddo
-                    do k=1,51
+                    do k=1,kmaxMYM
                         temp(i,j,k,1) = temp_read(i,j,k,1)
                         salt(i,j,k,1) = salt_read(i,j,k,1)
                         temp(i,j,k,2) = temp_read(i,j,k,1)
                         salt(i,j,k,2) = salt_read(i,j,k,1)
                     enddo
-
-                    kmax = 201
+                    kmax = kclim
                     do k=1,km-1   
                         call interp_extrap_initial (i,j,k,kmax,tempin, &
                             saltin,tempout,saltout)
@@ -821,14 +791,47 @@ program main
                         t(i,j,k,1,taum) = tempout
                         t(i,j,k,2,taum) = saltout
                     enddo
+
                     t(i,j,km,1,taun) = 8.0
                     t(i,j,km,2,taun) = 35
                     t(i,j,km,1,taum) = 8.0
                     t(i,j,km,2,taum) = 35.0
+
                 enddo
             enddo
-        endif
-  
+        endif 
+
+        call save_restart(restart_odtm,'initial') 
+
     end subroutine init_grid
+
+
+    subroutine balance_pme()
+
+        implicit none
+
+        integer :: ievap, iprecip
+        real :: revap
+
+        revap = mpp_global_sum(domain,rmld_misc(:,:,3),BITWISE_EXACT_SUM)
+
+        ievap = count(rmld_misc(isc:iec,jsc:jec,3)>0.)
+        call mpp_sum(ievap)
+
+        iprecip = count(rmld_misc(isc:iec,jsc:jec,3)<0.)
+        call mpp_sum(iprecip)
+
+        do i=isc, iec
+            do j=jsc, jec
+                if (revap .gt. 0.0) then
+                    if (rmld_misc(i,j,3) .gt. 0.0) pme_corr(i,j) =  1.0*revap/ievap
+                endif
+                if (revap .lt. 0.0) then
+                    if (rmld_misc(i,j,3) .lt. 0.0) pme_corr(i,j) =  1.0*revap/iprecip
+                endif
+            enddo
+        enddo
+
+    end subroutine balance_pme
 
 end program main

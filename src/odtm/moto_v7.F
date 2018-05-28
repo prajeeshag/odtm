@@ -328,7 +328,6 @@
         call implicit_vmix (SM, DZ, DT, NAZ1, VN, VN)
         call implicit_vmix (SH, DZ, DT, NAZ1, TEN, TEN)
         call implicit_vmix (SH, DZ, DT, NAZ1, SAN, SAN)
-
 ! REPLACE THE OLD VALUES WITH THE NEW VALUES
    43 DO 52 M=1,NAZ 
       U1(M)=UN(M) 
