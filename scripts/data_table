@@ -12,7 +12,3 @@
 "OCN",  "taux_snap", "U", "./INPUT/tau_model_grid.nc", .true., 1.0
 "OCN",  "tauy_snap", "V", "./INPUT/tau_model_grid.nc", .true., 1.0
 
-#"ATM",  "cice"          , "SIC"         , "./INPUT/sst_ice_clim.nc"     , .false.  , 0.01
-#"ATM",  "fice"          , "SIC"         , "./INPUT/sst_ice_clim.nc"     , .false.  , 0.01
-#"ATM",  "hice"          , "SIT"         , "./INPUT/sst_ice_clim.nc"     , .false.  , 1.0
-#"ATM" , "gust"          , ""            , ""                            , .false.  ,  0.0

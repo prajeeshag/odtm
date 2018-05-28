@@ -4,83 +4,90 @@
 #output files
 
 #"output", 6, "hours", 1,"hours", "time"
-"output%4yr%2mo%2dy%2hr%2mi%2sc", 1,  "hours", 1, "hours", "time", 1, "hours",
+
+#"output%4yr%2mo%2dy%2hr%2mi%2sc", 30,  "minutes", 1, "minutes", "time", 30, "minutes", 
+
+"snapshots%4yr%2mo%2dy", 10,  "days", 1, "days", "time", 10, "days"
+
+"snaps_mld%4yr%2mo%2dy", 10,  "days", 1, "days", "time", 10, "days"
+
+"snaps_mld_ext%4yr%2mo%2dy", 10,  "days", 1, "days", "time", 10, "days"
 
 #=======================================================================
 
-# 2d ocean shallow_washallow_water_mod
-#"odtm","sst","sst", "output","all",.true.,"none",2
-#
-"odtm","dxu","dxu", "output%4yr%2mo%2dy%2hr%2mi%2sc","all","none","none",2
+# Variables
 
-"odtm","dyv","dyv", "output%4yr%2mo%2dy%2hr%2mi%2sc","all","none","none",2
+"odtm", "h", "h", "snapshots%4yr%2mo%2dy", "all", .true., "none", 2
 
-"odtm","mask","mask", "output%4yr%2mo%2dy%2hr%2mi%2sc","all","none","none",2
+"odtm", "eta", "eta", "snapshots%4yr%2mo%2dy", "all", .true., "none", 2
+
+"odtm", "u", "u", "snapshots%4yr%2mo%2dy", "all", .true., "none", 2
+
+"odtm", "v", "v", "snapshots%4yr%2mo%2dy", "all", .true., "none", 2
+
+"odtm", "temp", "tr01", "snapshots%4yr%2mo%2dy", "all", .true., "none", 2
+
+"odtm", "salt", "tr02", "snapshots%4yr%2mo%2dy", "all", .true., "none", 2
+
+"odtm", "we", "we", "snapshots%4yr%2mo%2dy", "all", .true., "none", 2
+
+"odtm", "dens", "dens", "snapshots%4yr%2mo%2dy", "all", .true., "none", 2
+
+"odtm", "pvort", "pvort", "snapshots%4yr%2mo%2dy", "all", .true., "none", 2
+
+"odtm", "dxu", "dxu", "snapshots%4yr%2mo%2dy", "all", "none", "none", 2
+
+"odtm", "dyv", "dyv", "snapshots%4yr%2mo%2dy", "all", "none", "none", 2
+
+"odtm", "mask", "mask", "snapshots%4yr%2mo%2dy", "all", "none", "none", 2
 
 
-"odtm","sst","sst", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+#===========================================================================
 
-"odtm","airt","airt", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "airt", "airt", "snaps_mld%4yr%2mo%2dy", "all", .true., "none", 2
 
-"odtm","sphm","sphm", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "sphm", "sphm", "snaps_mld%4yr%2mo%2dy", "all", .true., "none", 2
 
-"odtm","uwnd","uwnd", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "uwnd", "uwnd", "snaps_mld%4yr%2mo%2dy", "all", .true., "none", 2
 
-"odtm","vwnd","vwnd", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "vwnd", "vwnd", "snaps_mld%4yr%2mo%2dy", "all", .true., "none", 2
 
-"odtm","ssw","ssw", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "ssw", "ssw", "snaps_mld%4yr%2mo%2dy", "all", .true., "none", 2
 
-"odtm","cld","cld", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "cld", "cld", "snaps_mld%4yr%2mo%2dy", "all", .true., "none", 2
 
-"odtm","chl","chl", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "chl", "chl", "snaps_mld%4yr%2mo%2dy", "all", .true., "none",2
 
-"odtm","pme","pme", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "pme", "pme", "snaps_mld%4yr%2mo%2dy", "all", .true., "none",2
 
-"odtm","rvr","rvr", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "rvr", "rvr", "snaps_mld%4yr%2mo%2dy", "all", .true., "none",2
 
-"odtm","sss","sss", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "temp_mld", "temp", "snaps_mld%4yr%2mo%2dy", "all", .true., "none",2
 
-"odtm","temp","temp", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm", "salt_mld", "salt", "snaps_mld%4yr%2mo%2dy", "all", .true.,"none",2
 
-"odtm","temp_mld","temp_mld", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","u_mld","uvel", "snaps_mld%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","salt_mld","salt_mld", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","v_mld","vvel", "snaps_mld%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","u_mld","u_mld", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","diag","diag", "snaps_mld%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","v_mld","v_mld", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","sh","sh", "snaps_mld%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","diag","diag", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","sm","sm", "snaps_mld%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","sh","sh", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+#=================================================================================
 
-"odtm","sm","sm", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","tke","tke", "snaps_mld_ext%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","tke","tke", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","rif","rif", "snaps_mld_ext%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","rif","rif", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","mlen","mlen", "snaps_mld_ext%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","mlen","mlen", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","st_h","st_h", "snaps_mld_ext%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","st_h","st_h", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
+"odtm","st_m","st_m", "snaps_mld_ext%4yr%2mo%2dy","all",.true.,"none",2
 
-"odtm","st_m","st_m", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
-
-"odtm","u","u", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
-
-"odtm","v","v", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
-
-"odtm","we","we", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
-
-"odtm","dens","dens", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
-
-"odtm","pvort","pvort", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
-
-"odtm","eta","eta", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
-
-"odtm","salt","salt", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
-
-"odtm","h","h", "output%4yr%2mo%2dy%2hr%2mi%2sc","all",.true.,"none",2
 
 #===============================================================================
 #

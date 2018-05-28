@@ -1,9 +1,11 @@
 &main_nml
-	restart_interval=0,1,0,0,0,0
-	days = 1
-	layout = 8,1
+	restart_interval=0,1,0,0,0,0 !yy,mm,dd,hh,mi,sc
+	days = 10
+	!layout = 8,1  !x,y
 	start_date = 1995,1,1,0,0,0
 /
+
+
 
 &diag_manager_nml
   max_axes = 100,

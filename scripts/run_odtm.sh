@@ -1,11 +1,31 @@
 #!/bin/bash
-#########################################
-# USER DEFINED PARAMETER SECTION STARTS #
 set -ea
 
-NPROCS=16
+#########################################
+# USER DEFINED PARAMETER SECTION STARTS #
+
+
+
+NPROCS=128
+
 curr_date=19950101000000
-clock_lim=24
+
+clock_lim=240
+
+
+
+
+
+
+##############################################################
+#
+#
+#
+#
+
+
+./kill_odtm.sh
+
 
 exp_name=$(basename $(dirname $(dirname $(pwd))))_$(basename $(pwd))
 
@@ -15,6 +35,8 @@ function nkjobid { output=$($@); echo $output | head -n1 | cut -d'<' -f2 | cut -
 
 export f77_dump_flag=TRUE
 export MALLOC_CHECK_=2
+
+rm -f stdlog.* mppnccombine.out
 
 jobid=$(nkjobid bsub -q "cccr-res" -n $NPROCS -J $exp_name -W ${clock_lim}:00 -o stdlog.out -e stdlog.err < odtm_submit.sh)
 
