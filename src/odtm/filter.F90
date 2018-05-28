@@ -1,14 +1,15 @@
 module filter_mod
     use size_mod, only : eta, h, i, j, rkmh, rkmu, rkmv, t, u, v, k
     use size_mod, only : loop, taum, taun, taup, km, nn
-    use size_mod, only : isc, iec, jsc, jec
-    use param_mod, only : alpha, dt
-    
+    use size_mod, only : isc, iec, jsc, jec, dau, dav
+    use size_mod, only : isd, ied, jsd, jed
+    use param_mod, only : alpha, dt, day2sec
+    use mpp_domains_mod, only : domain2d, mpp_update_domains
     implicit none
     
     contains
             
-    subroutine filter
+    subroutine filter(domain)
     !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
     !c
     !c
@@ -16,10 +17,14 @@ module filter_mod
     !c	
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         implicit none
+        type(domain2d) :: domain
         integer :: nt, idim5, idim4, idim3, idim2, idim1, ii, jj, kk, iii
         integer :: imte, imts, jjj, jmte, jmts, linear_switch
-        real :: t_switch
-    
+        real :: t_switch, vel_lim(km)
+        logical :: lmask(isd:ied,jsd:jed,km-1)
+
+        vel_lim(1:km) = 1.   
+ 
         do i=isc, iec
             do j=jsc, jec
                 do k=1,km-1
@@ -97,35 +102,71 @@ module filter_mod
     
     
 #ifdef apply_spatial_filter
-    
-       ! call smooth_hanning(u(:,:,1:km-1,taum),rkmu)
-       ! call smooth_hanning(u(:,:,1:km-1,taun),rkmu)
-       ! call smooth_hanning(v(:,:,1:km-1,taum),rkmv)
-       ! call smooth_hanning(v(:,:,1:km-1,taun),rkmv)
-       ! call smooth_hanning(h(:,:,1:km-1,taum),rkmh)
-       ! call smooth_hanning(h(:,:,1:km-1,taun),rkmh)
+        
+        linear_switch = mod(loop,int(day2sec/dt)*10)
+
+!        lmask = .true.
+!        if (linear_switch==0) then
+!            lmask = .false.
+!            do kk = 1, km-1 
+!                lmask(isc:iec,jsc:jec,kk) = abs(u(isc:iec,jsc:jec,kk,taum)) > vel_lim(kk) &
+!                                        .or.abs(v(isc:iec,jsc:jec,kk,taum)) > vel_lim(kk)
+!            enddo
+!        endif
+!
+!        if (linear_switch==1 .or. count(lmask) > 0) then
+!            call mpp_update_domains(u(:,:,1:km-1,taum),domain)
+!            call mpp_update_domains(v(:,:,1:km-1,taum),domain)
+!            call smooth_hanning(u(:,:,1:km-1,taum),dmask=rkmu,mask=lmask,area=dau)
+!            call smooth_hanning(v(:,:,1:km-1,taum),dmask=rkmv,mask=lmask,area=dav)
+!        endif
+!
+!        lmask = .true.
+!        if (linear_switch==0) then
+!            lmask = .false.
+!            do kk = 1, km-1 
+!                lmask(isc:iec,jsc:jec,kk) = abs(u(isc:iec,jsc:jec,kk,taun)) > vel_lim(kk) &
+!                                        .or.abs(v(isc:iec,jsc:jec,kk,taun)) > vel_lim(kk)
+!            enddo
+!        endif
+!
+!        if (linear_switch==1 .or. count(lmask) > 0) then
+!            call mpp_update_domains(u(:,:,1:km-1,taun),domain)
+!            call mpp_update_domains(v(:,:,1:km-1,taun),domain)
+!            call smooth_hanning(u(:,:,1:km-1,taun),dmask=rkmu,mask=lmask,area=dau)
+!            call smooth_hanning(v(:,:,1:km-1,taun),dmask=rkmv,mask=lmask,area=dav)
+!        endif
+
+        !call smooth_hanning(h(:,:,1:km-1,taum),dmask=rkmh,mask=lmask)
+        !call smooth_hanning(h(:,:,1:km-1,taun),dmask=rkmh,mask=lmask)
     
 #endif
     
         return
     end subroutine filter
 
-    subroutine smooth_hanning(fld,mask,area)
+    subroutine smooth_hanning(fld, dmask, mask, area)
 
         real, intent(inout) :: fld(:,:,:)
-        real, intent(in) :: mask(:,:)
+        real, intent(in) :: dmask(:,:)
+        logical, intent(in), optional :: mask(:,:,:)
         real, intent(in), optional :: area(:,:)
     
         real :: fld1(size(fld,1),size(fld,2),size(fld,3)), rdiv1, rdiv2
+        logical :: lmask(size(fld,1),size(fld,2),size(fld,3))
         integer :: is, ie, js, je, ks, ke
         integer :: i, j, k, im, jm, ip, jp
 
+       
         is = 2; ie = size(fld,1) - 1
         js = 2; je = size(fld,2) - 1
         ks = 1; ke = size(fld,3)
 
+        lmask = .true.
+        if (present(mask)) lmask = mask
+
         do k = ks, ke
-            fld1(:,:,k) = fld(:,:,k) * mask(:,:)
+            fld1(:,:,k) = fld(:,:,k) * dmask(:,:)
         enddo
 
         if (present(area)) then
@@ -136,25 +177,29 @@ module filter_mod
  
         do i = is, ie
             im = i - 1; ip = i + 1
+
             do j = js, je
                 jm = j - 1; jp = j + 1
-                rdiv1 = mask(im,j)+mask(ip,j)+mask(i,jm)+mask(i,jp)
-                rdiv2 = mask(im,jm)+mask(ip,jm)+mask(im,jp)+mask(ip,jp)
+
+                rdiv1 = dmask(im,j)+dmask(ip,j)+dmask(i,jm)+dmask(i,jp)
+                rdiv2 = dmask(im,jm)+dmask(ip,jm)+dmask(im,jp)+dmask(ip,jp)
+
                 do k = ks, ke   
-                   fld(i,j,k) = 0.25 * fld1(i,j,k) &
+                    if (.not.lmask(i,j,k)) cycle
+                    if (dmask(i,j)==0.) cycle
+                    fld(i,j,k) = 0.25 * fld1(i,j,k) &
                                  + 0.5 * ( fld1(im,j,k) + fld1(ip,j,k) &
                                  + fld1(i,jm,k) + fld1(i,jp,k))/max(1.0,rdiv1) &
                                  + 0.25 * (fld1(im,jm,k) + fld1(ip,jm,k) &
                                  + fld1(im,jp,k) + fld1(ip,jp,k))/max(1.0,rdiv2)
+
+                    if (present(area)) then
+                        fld(i,j,k) = fld(i,j,k)/area(i,j)
+                    endif
+
                 enddo
             enddo
         enddo
-
-        if (present(area)) then
-            do k = ks, ke
-                fld(is:ie,js:je,k) = fld(is:ie,js:je,k)/area(is:ie,js:je)
-            end do
-        endif
 
     end subroutine smooth_hanning
 

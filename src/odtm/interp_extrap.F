@@ -112,7 +112,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 #include "cparam.h"  ! <== This file overrides above parameter setup
 
-        we_mld(ii,jj,0) = (eta(ii,jj,1,taun)-eta(ii,jj,1,taum))/dt  ! surface boundary condition
+        !we_mld(ii,jj,0) = (eta(ii,jj,1,taun)-eta(ii,jj,1,taum))/dt  ! surface boundary condition
         we_prof(:) = 0.0
 
         do kk=1,km-1

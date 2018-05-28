@@ -65,6 +65,8 @@ module size_mod
   real, pointer, dimension(:,:) :: dxv => null(), dyv => null()
   real, pointer, dimension(:,:) :: dxh => null(), dyh => null()
   real, pointer, dimension(:,:) :: dah => null()
+  real, pointer, dimension(:,:) :: dau => null()
+  real, pointer, dimension(:,:) :: dav => null()
   real, pointer, dimension(:,:) :: rdxu => null(), rdyu => null()
   real, pointer, dimension(:,:) :: rdxv => null(), rdyv => null()
   real, pointer, dimension(:,:) :: rdxh => null(), rdyh => null()
@@ -171,6 +173,8 @@ module size_mod
         allocate ( dxv(imt,jmt), dyv(imt,jmt) )
         allocate ( dxh(imt,jmt), dyh(imt,jmt) )
         allocate ( dah(imt,jmt) )
+        allocate ( dau(imt,jmt) )
+        allocate ( dav(imt,jmt) )
 
         allocate ( rdxu(isg:ieg,jsg:jeg), rdyu(isg:ieg,jsg:jeg) )
         allocate ( rdxv(isg:ieg,jsg:jeg), rdyv(isg:ieg,jsg:jeg) )

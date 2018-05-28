@@ -22,7 +22,7 @@ program main
     use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
     use size_mod, only : sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr
     use size_mod, only : taux_force, tauy_force, init_size, denss, rmld_misc
-    use size_mod, only : rdx, rdy, rkmt, we_upwel, wd
+    use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, pme_corr
     use size_mod, only : temp_read, salt_read, mask
 
     use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_total
@@ -44,7 +44,7 @@ program main
 
     use mpp_domains_mod, only : domain2d, domain1d, mpp_define_layout, mpp_define_domains
     use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_domain_components, mpp_update_domains
-    use mpp_domains_mod, only : mpp_get_data_domain, CGRID_SW
+    use mpp_domains_mod, only : mpp_get_data_domain, CGRID_SW, BITWISE_EXACT_SUM, mpp_global_sum
     use diag_manager_mod, only : diag_manager_init, register_diag_field, register_static_field
     use diag_manager_mod, only : diag_axis_init, send_data, diag_manager_end
     use diag_data_mod, only : FILL_VALUE
@@ -256,37 +256,24 @@ program main
 
 
         call mpp_clock_begin(mld_clk)
-        !call mixed_layer_physics
-        !call mpp_update_domains(temp(:,:,:,2),domain)
-        !call mpp_update_domains(salt(:,:,:,2),domain)
-        !call mpp_update_domains(uvel(:,:,:,2),domain)
-        !call mpp_update_domains(vvel(:,:,:,2),domain)
-        !call mpp_update_domains(uvel(:,:,:,1),domain)
-        !call mpp_update_domains(vvel(:,:,:,1),domain)
-        !call mpp_update_domains(u(:,:,:,2),domain)
-        !call mpp_update_domains(v(:,:,:,2),domain)
-        !call mpp_update_domains(u(:,:,:,1),domain)
-        !call mpp_update_domains(v(:,:,:,1),domain)
-        !call mpp_update_domains(h(:,:,:,taun),domain)
+        call mixed_layer_physics
+        call mpp_update_domains(uvel(:,:,:,2),domain)
+        call mpp_update_domains(vvel(:,:,:,2),domain)
         call mpp_clock_end(mld_clk)
 
-        call balance_pme
+        call balance_pme()
 
         call mpp_clock_begin(couple_clk)
-
-        if ( mod(loop,1) .eq. 0) then
-        !    call couple_rgmld
-        endif
-
+        call couple_rgmld
         call mpp_clock_end(couple_clk)
 
         call mpp_clock_begin(filter_clk) 
-        call filter
+        call filter(domain)
         call mpp_clock_end(filter_clk) 
     
         if (isc<=imt/2.and.iec>=imt/2.and.jsc<=jmt/2.and.jec>=jmt/2) then
-        write(*,*) temp(imt/2, jmt/2 , 1, 1), h(imt/2, jmt/2 , 1, taun), &
-                   loop, SHCoeff(imt/2, jmt/2 , 5)
+            write(*,*) temp(imt/2, jmt/2 , 1, 1), h(imt/2, jmt/2 , 1, taun), &
+                            loop, SHCoeff(imt/2, jmt/2 , 5)
         endif
 
         call print_date(time)
@@ -307,12 +294,16 @@ program main
 
         sumall = sum(u(isc:iec,jsc:jec,:,taun) + &
                          t(isc:iec,jsc:jec,:,1,taun))
+
         call mpp_sum(sumall)
+
         umax = maxval(abs(u(isc:iec,jsc:jec,:,taun)))
         call mpp_max(umax)
+
         if ( umax > 10. .or. sumall/=sumall ) then
             call save_restart(restart_odtm, 'crash')
             call diag_manager_end(time)
+            print *, 'blow-up :', umax, sumall
             call mpp_error(WARNING, 'stop=>blow-up')
             call mpp_sync()
             call mpp_error(FATAL, 'stop=>blow-up')
@@ -722,17 +713,18 @@ program main
 
         id_restart = register_restart_field(restart_odtm, restart_file, 'u', u(:,:,:,1), u(:,:,:,2),domain=domain)
         id_restart = register_restart_field(restart_odtm, restart_file, 'v', v(:,:,:,1), v(:,:,:,2),domain=domain)
-        id_restart = register_restart_field(restart_odtm, restart_file, 't', t(:,:,:,1,1), t(:,:,:,1,2), &
+        id_restart = register_restart_field(restart_odtm, restart_file, 'temp', t(:,:,:,1,1), t(:,:,:,1,2), &
                      mandatory=.true.,domain=domain)
-        id_restart = register_restart_field(restart_odtm, restart_file, 's', t(:,:,:,2,1), t(:,:,:,2,2), &
+        id_restart = register_restart_field(restart_odtm, restart_file, 'salt', t(:,:,:,2,1), t(:,:,:,2,2), &
                      mandatory=.true.,domain=domain)
         id_restart = register_restart_field(restart_odtm, restart_file, 'h', h(:,:,:,1), h(:,:,:,2),domain=domain)
-        id_restart = register_restart_field(restart_odtm, restart_file, 'temp', temp(:,:,:,1), temp(:,:,:,2), &
+        id_restart = register_restart_field(restart_odtm, restart_file, 'temp_mld', temp(:,:,:,1), temp(:,:,:,2), &
                      mandatory=.true.,domain=domain)
-        id_restart = register_restart_field(restart_odtm, restart_file, 'salt', salt(:,:,:,1), salt(:,:,:,2), &
+        id_restart = register_restart_field(restart_odtm, restart_file, 'salt_mld', salt(:,:,:,1), salt(:,:,:,2), &
                      mandatory=.true.,domain=domain)
         id_restart = register_restart_field(restart_odtm, restart_file, 'uvel', uvel(:,:,:,1), uvel(:,:,:,2),domain=domain)
         id_restart = register_restart_field(restart_odtm, restart_file, 'vvel', vvel(:,:,:,1), vvel(:,:,:,2),domain=domain)
+        id_restart = register_restart_field(restart_odtm, restart_file, 'pme_corr', pme_corr(:,:),domain=domain)
 
         we_upwel(:,:,:) = 0.0
         
@@ -809,8 +801,37 @@ program main
             enddo
         endif 
 
-        !call save_restart(restart_odtm,'initial') 
+        call save_restart(restart_odtm,'initial') 
 
     end subroutine init_grid
+
+
+    subroutine balance_pme()
+
+        implicit none
+
+        integer :: ievap, iprecip
+        real :: revap
+
+        revap = mpp_global_sum(domain,rmld_misc(:,:,3),BITWISE_EXACT_SUM)
+
+        ievap = count(rmld_misc(isc:iec,jsc:jec,3)>0.)
+        call mpp_sum(ievap)
+
+        iprecip = count(rmld_misc(isc:iec,jsc:jec,3)<0.)
+        call mpp_sum(iprecip)
+
+        do i=isc, iec
+            do j=jsc, jec
+                if (revap .gt. 0.0) then
+                    if (rmld_misc(i,j,3) .gt. 0.0) pme_corr(i,j) =  1.0*revap/ievap
+                endif
+                if (revap .lt. 0.0) then
+                    if (rmld_misc(i,j,3) .lt. 0.0) pme_corr(i,j) =  1.0*revap/iprecip
+                endif
+            enddo
+        enddo
+
+    end subroutine balance_pme
 
 end program main

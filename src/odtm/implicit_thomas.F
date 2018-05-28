@@ -8,7 +8,8 @@
     
         integer :: i, k, km
 
-        real t1(km), t2(km), KH(km)
+        real, intent(inout) :: t1(km), t2(km)
+        real, intent(inout) :: KH(km)
 	real t(0:km+1), dz(0:km+1)
 	real dtts, tmask(km)
 	real rD1(km),  rD2(km)

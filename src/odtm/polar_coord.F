@@ -10,7 +10,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use size_mod, only : dxu, dyu, dxv, dyv, dxh, dyh, dah
         use size_mod, only : rdxu,rdyu, rdxv, rdyv, rdxh, rdyh
         use size_mod, only : phi, theta, tan_theta, fcoru, fcorv
-        use size_mod, only : isc, iec, jsc, jec
+        use size_mod, only : isc, iec, jsc, jec, dau, dav
         use param_mod, only : deg2rad, omega, pi, re, deg2meter
         implicit none
 
@@ -77,6 +77,8 @@ c
             if (dyh(i,j)>0.) rdyh(i,j) = 1./dyh(i,j) 
 
 	        dah(i,j) = (dxh(i,j)*dyh(i,j))
+	        dau(i,j) = (dxu(i,j)*dyu(i,j))
+	        dav(i,j) = (dxv(i,j)*dyv(i,j))
 	    enddo
 	enddo
 
