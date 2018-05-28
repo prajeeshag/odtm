@@ -208,6 +208,10 @@
         enddo
         enddo
 
+        temp(isc:iec,jsc:jec,1:kmaxMYM,1) = temp(isc:iec,jsc:jec,1:kmaxMYM,2)
+        salt(isc:iec,jsc:jec,1:kmaxMYM,1) = salt(isc:iec,jsc:jec,1:kmaxMYM,2)
+        uvel(isc:iec,jsc:jec,1:kmaxMYM,1) = uvel(isc:iec,jsc:jec,1:kmaxMYM,2)
+        vvel(isc:iec,jsc:jec,1:kmaxMYM,1) = vvel(isc:iec,jsc:jec,1:kmaxMYM,2)
 
         return
         end subroutine couple_rgmld 
