@@ -43,7 +43,6 @@ module filter_mod
         endif
 
         if (linear_switch .or. ncount > 0) then
-            call mpp_error(NOTE,'Doing spatial filtering for u and v.')
             call mpp_update_domains(u(:,:,1:km-1,taup),domain)
             call mpp_update_domains(v(:,:,1:km-1,taup),domain)
             call smooth_hanning(u(:,:,1:km-1,taup),dmask=rkmu,mask=lmask,area=dau)

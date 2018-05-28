@@ -39,7 +39,6 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         do kk=2,km
         if ( rho_local(kk)*rkmh(i,j) .lt. rho_local(kk-1)*rkmh(i,j)) then
-            print *, 'stablity_check.F  ON:', i,j,k        
         t(i,j,kk,1,taun) = (
      &   (t(i,j,kk,1,taun)*h(i,j,kk,taun) + 
      &    t(i,j,kk-1,1,taun)*h(i,j,kk-1,taun))/
@@ -70,7 +69,6 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         do kk=2,km
         if ( rho_local(kk)*rkmh(i,j) .lt. rho_local(kk-1)*rkmh(i,j)) then
-            print *, 'stablity_check.F  ON:', i,j,k        
         
         t(i,j,kk,2,taun) = (
      &   (t(i,j,kk,2,taun)*h(i,j,kk,taun) + 
