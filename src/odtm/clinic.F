@@ -58,12 +58,6 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
 	
-!#ifdef restrt
-!        if ( loop .eq. 1) dtts = dtts
-!#else
-!        if ( loop .eq. 1) dtts = dt
-!#endif
-
 	rmask_right = 1.0
 	rmask_left = 1.0
 	rmask_top = 1.0
@@ -101,8 +95,6 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	 y0 = 45.0
 	 A0 = 25.0e0
 	 rexp = ((i-x0)/5.0)**2 + ((j-y0)/5.0)**2
-	 rsig = 2.0*pi*loop/((day2sec*365/dt))
-	 rsig1 = sin(rsig)
 	 dtts_back = dtts
         
         we_mld(i,j,k) = (tropdubdx + tropdvbdy) + we(i,j,k) 
