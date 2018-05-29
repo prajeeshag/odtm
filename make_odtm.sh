@@ -3,9 +3,7 @@
 
 set -e
 
-export srcdir=$(pwd)
-
-thisdir=$(pwd)
+odtmroot=$(pwd)
 
 debug=""
 npes=1
@@ -22,12 +20,12 @@ opts=$@
 
 EXE="odtm.exe"
 
-execdir="$thisdir/exec"
-mkmf="$thisdir/bin/mkmf"
+execdir="$odtmroot/exec"
+mkmf="$odtmroot/bin/mkmf"
 
-mkmftemplate="$thisdir/bin/mkmf.template$debug"
+mkmftemplate="$odtmroot/bin/mkmf.template$debug"
 
-FMS_UTILS=$thisdir/src/fms_shared
+FMS_UTILS=$odtmroot/src/fms_shared
 
 FMS_UTILITIES="$FMS_UTILS/include \
 			   $FMS_UTILS/platform \
@@ -45,16 +43,39 @@ FMS_UTILITIES="$FMS_UTILS/include \
 				$FMS_UTILS/axis_utils \
 				$FMS_UTILS/mosaic"
 
-paths="$thisdir/src/odtm"
+paths="$odtmroot/src/odtm"
+
+
+
+echo '...............Compiling mppnccombine.....................'
+
+cd $odtmroot/src/postproc/mppnccombine
+make
+
+echo '...............Done Compiling mppnccombine.....................'
+
+
+
+echo '...............Compiling datefunc.....................'
+
+cd $odtmroot/src/postproc/datefunc
+make
+
+echo '...............Done Compiling datefunc.....................'
+
 
 mkdir -p $execdir/lib_fms
 
-
+echo '...............Compiling lib_fms.....................'
 cd $execdir/lib_fms
 
 $mkmf -f -p lib_fms.a -t $mkmftemplate $FMS_UTILITIES
 
 make -j 16
+echo '...............Done compiling lib_fms.....................'
+
+
+echo '...............Compiling ODTM.....................'
 
 mkdir -p $execdir/odtm
 
@@ -63,4 +84,7 @@ cd $execdir/odtm
 $mkmf -f -p $EXE -t $mkmftemplate -o "-I$execdir/lib_fms" -l "$execdir/lib_fms/lib_fms.a" $paths
 
 make -j $npes $opts
+
+echo '...............Done Compiling ODTM.....................'
+
 
