@@ -50,7 +50,8 @@ paths="$odtmroot/src/odtm"
 echo '...............Compiling mppnccombine.....................'
 
 cd $odtmroot/src/postproc/mppnccombine
-make
+# Uncomment the follwoing line to run in Aaditya
+#make  
 
 echo '...............Done Compiling mppnccombine.....................'
 
@@ -59,7 +60,8 @@ echo '...............Done Compiling mppnccombine.....................'
 echo '...............Compiling datefunc.....................'
 
 cd $odtmroot/src/postproc/datefunc
-make
+# Uncomment the following line to run in Aaditya
+#make
 
 echo '...............Done Compiling datefunc.....................'
 
@@ -87,4 +89,19 @@ make -j $npes $opts
 
 echo '...............Done Compiling ODTM.....................'
 
+echo "#-------------------------MAKE RUN_NCCOMBINEP2R--------------------------------------"
+cppDef="-Dlib_mppnccp2r -Duse_libMPI"
+exe=run_mppnccp2r
+paths="$odtmroot/src/postproc/mppnccombinep2r"
+export LD=$FC
+mkdir -p $execdir/$exe
+cd $execdir/$exe
+
+OPTS="-I$execdir/lib_fms"
+
+LIBS="$execdir/lib_fms/lib_fms.a"
+
+$mkmf -c "$cppDef" -f -p ${exe} -t $mkmftemplate -o "$OPTS" -l "$LIBS"  $paths
+make -j $numproc
+echo "#--------------------------------------------------------------------------------"
 

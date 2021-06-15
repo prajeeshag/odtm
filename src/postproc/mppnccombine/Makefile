@@ -8,7 +8,8 @@
 NETCDF = /gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.2.1
 SOURCES = mppnccombine.c
 OBJECTS = mppnccombine.o
-CC = icc
+#CC = icc
+CC = cc
 ##CFLAGS = -O2 -I$(NETCDF)/include
 CFLAGS = -O2 -I$(NETCDF)/include -Duse_netCDF4
 LFLAGS = -L$(NETCDF)/lib
