@@ -1,0 +1,28 @@
+sp cp grid_spec.nc grid_spec.nc.bak
+use grid_spec.nc
+
+set wind/size=2.0
+go subplot 1 1 1
+shade/nokey/nolabel rkmt[d=1,l=1]
+go land
+
+go polydef   ! Click to define a set of points. Or otherwise define vx and vy
+let x0 = x[gx=rkmt,d=1]
+let y0 = y[gy=rkmt,d=1]
+go InsidePolygon
+!shade/over/palette=gray inside
+
+let topo3 = if (inside eq 1 and rkmt[d=1] eq 0) then inside else rkmt[d=1]
+shade topo3
+go land
+
+cancel reg
+
+sp rm grid_spec_modified.nc
+save/file=grid_spec_modified.nc topo3
+cancel data/all
+cancel var/all
+use grid_spec_modified.nc
+let rkmt = topo3
+sp rm grid_spec.nc
+save/file=grid_spec.nc rkmt

@@ -1,0 +1,42 @@
+sp cp grid_spec.nc grid_spec.nc.bak
+use grid_spec.nc
+
+set wind/size=2.0
+go subplot 1 1 1
+!set reg/x=97:100/y=4:8
+shade/nokey/nolabel rkmt[d=1,l=1]
+go land
+
+go polydef   ! Click to define a set of points. Or otherwise define vx and vy
+let x0 = x[gx=rkmt,d=1]
+let y0 = y[gy=rkmt,d=1]
+go InsidePolygon
+!shade/over/palette=gray inside
+
+let topo2 = if (inside eq 1 and rkmt[d=1] eq 1) then inside-1 else rkmt[d=1]
+
+let topo_border = topo2
+let border_left = if i le 2 then 0 else topo_border
+let ipts= `rkmt[d=1],return=isize`
+let jpts= `rkmt[d=1],return=jsize`
+let border_right = if i ge `ipts-1` then 0 else topo_border
+let border_top = if j le 2 then 0 else topo_border
+let border_bottom = if j ge `jpts-1` then 0 else topo_border
+
+let border = topo2*border_left*border_right*border_top*border_bottom
+
+let topo3 = border
+
+cancel reg
+
+shade topo3
+go land
+
+sp rm grid_spec_modified.nc.nc
+save/file=grid_spec_modified.nc.nc topo3
+cancel data/all
+cancel var/all
+use grid_spec_modified.nc.nc
+let rkmt = topo3
+sp rm grid_spec.nc
+save/file=grid_spec.nc rkmt

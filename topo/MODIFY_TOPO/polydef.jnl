@@ -1,0 +1,22 @@
+! polydef : use mouse click to define polygon vertices
+
+can mode verify
+let done=0 ; sp rm -f vertices.xy
+
+say "****************************************************"
+say "*                                                  *"
+say "* Add polygon vertices by mouse clicks.  Terminate *"
+say "*     by clicking to the left of the plot area.    *"
+say "*                                                  *"
+say "****************************************************"
+
+! add new vertices to the file vertices.xy
+repeat/range=1:1000 go add_vertex
+
+sp sleep 5
+
+! then read in the resulting file 
+sp get_vertices ; go get_vertices
+
+set mode verify
+

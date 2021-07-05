@@ -1,0 +1,2 @@
+def axis/z=1:500:1/mod zpoly ; def grid/z=zpoly gpoly
+file/form=free/g=gpoly/var=vx,vy vertices.xy

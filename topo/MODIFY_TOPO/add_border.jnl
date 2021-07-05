@@ -1,0 +1,17 @@
+sp cp grid_spec.nc grid_spec.nc.bak
+use grid_spec.nc
+
+let topo = if i le 2 then 0.0 else rkmt
+let topo1 = if i ge 798 then 0.0 else topo
+let topo2 = if j le 2 then 0.0 else topo1
+let topo3 = if j ge 342 then 0.0 else topo2
+
+
+sp rm grid_spec_modified.nc.nc
+save/file=grid_spec_modified.nc.nc topo3
+cancel data/all
+cancel var/all
+use grid_spec_modified.nc.nc
+let rkmt = topo3
+sp rm grid_spec.nc
+save/file=grid_spec.nc rkmt

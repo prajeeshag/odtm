@@ -1,0 +1,7 @@
+cp ../grid_spec.nc n1n.nc
+cp grid_spec.nc n2n.nc
+cdo chname,RKMT,rkmt n2n.nc n3n.nc
+cdo replace n1n.nc n3n.nc out.nc
+
+rm n2n.nc n3n.nc n1n.nc 
+mv out.nc grid_spec.nc

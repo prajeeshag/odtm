@@ -1,0 +1,56 @@
+! InsidePolygon : Tests if a point (X0,Y0) is inside a closed polygon defined
+!                 by a set of vertices (VX,VY),K=1,NV whose last point duplicates
+!                 its first. It is based on the number of intersections
+!                 between the NV-1 edges of the polygon and a line from (X0,Y0)
+!                 to (X0,YTOP) where YTOP is the upper limit of the domain (90
+!                 when X,Y are lon/lat coords).
+!                 The point is INSIDE if the #intersections is ODD.
+!
+!		  VX and VY are lists of values each defined on a Z axis
+!
+!		  Define X0 and Y0 as the coordinates of the grid to test:
+!                 let x0 = x[gx=var]
+!                 let y0 = y[gy=var]
+!
+!
+! Examples:
+!1) Using polydef to define the vertices vx and vy
+! yes? use etopo60
+! yes? shade rose
+!
+! yes? go polydef   ! Click to define a set of points. Or otherwise define vx and vy
+! yes? let x0 = x[gx=rose,d=1]
+! yes? let y0 = y[gy=rose,d=1]
+! yes? go InsidePolygon
+! yes? shade/over/palette=gray inside
+! 
+!  
+!2) Read vertices vx and vy from an existing file
+!   say this file contains xloc, yloc defining some boundary.
+!
+! yes? use etopo60
+! yes? shade rose
+! yes? let x0 = x[gx=rose,d=1]
+! yes? let y0 = y[gy=rose,d=1]
+! 
+! yes? use my_vertices.nc
+! yes? let vx = zsequence(xloc)
+! yes? let vy = zsequence(yloc)
+!
+! yes? go InsidePolygon
+! yes? shade/over/palette=gray inside
+! 
+
+
+
+! Written 26-May-2009 by Mick.Spillane@noaa.gov
+
+let YTOP=90 ; let NEDGE=VX[k=@ngd]-1
+
+! An edge is a candidate if X0 lies between VX and VX[k=@shf] ...
+let XWORKS=if((X0-VX)*(X0-VX[k=@shf]) lt 0)then 1
+
+! ... but the Y-value of the edge, at X=X0, must also be between Y0 and YTOP
+let YPRIME=VY+XWORKS*(VY[k=@shf]-VY)*(X0-VX)/(VX[k=@shf]-VX)
+let ITCUTS=if((YPRIME-Y0)*(YPRIME-YTOP) lt 0)then 1
+let INSIDE=if(mod(ITCUTS[K=1:`NEDGE`@ngd],2) eq 1)then 1

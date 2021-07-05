@@ -1,0 +1,18 @@
+! add a new vertex to the vertex file while done=0
+! Duplicate the first point at the end to close the polygon.
+
+if `done eq 0` then 
+  where
+  if `($XMOUSE) gt ($XAXIS_MIN)` then
+    list/nohead/app/form=(2f12.6)/file=vertices.xy ($XMOUSE),($YMOUSE)
+! if visible marks at the vertices are not desired drop the next line
+    plot/o/nolab/vs/sym=1/color=7 ($XMOUSE),($YMOUSE)
+  else
+    let done=1
+    file/var=vvx,vvy vertices.xy
+    let x1 =`vvx[i=1]`; let y1 = `vvy[i=1]`
+    can data vertices.xy
+    list/nohead/app/form=(2f12.6)/file=vertices.xy x1,y1
+  endif
+endif
+
