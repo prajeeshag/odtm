@@ -1,0 +1,13 @@
+#!/bin/sh
+
+#PBS -q cccr
+#PBS -N fms_tut
+#PBS -l select=1:ncpus=16:vntype=cray_compute
+#PBS -l walltime=1:00:00
+#PBS -l place=scatter
+#PBS -V
+
+cd $PBS_O_WORKDIR 
+source ../../bin/env.pratyush_intel
+ln -sf ../../exec/heateqn/heateqn.exe .
+aprun -n 1 -N 1 ./heateqn.exe >  output.log

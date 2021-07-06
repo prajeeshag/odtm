@@ -1,0 +1,24 @@
+
+&diag_manager_nml
+  max_axes = 100,
+  max_num_axis_sets = 100,
+  max_input_fields = 699
+  max_output_fields = 699
+  mix_snapshot_average_fields=.false.
+  issue_oor_warnings = .FALSE.
+/
+
+&fms_io_nml
+  threading_read='multi'
+  threading_write='single'
+  fileset_write='single' 
+  max_files_r = 200
+  max_files_w = 200
+/
+
+&fms_nml
+  clock_grain='LOOP' ! 'COMPONENT' ! 'ROUTINE' !
+  domains_stack_size = 8000000
+  stack_size =0
+/
+
