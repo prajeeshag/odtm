@@ -309,7 +309,7 @@
      &    (temp(iip,jj,kk,1) - temp(ii,jj,kk,1) )*rdxu(iip,jj)
         rtemp2 = rkmh(iim,jj)*
      &    (temp(ii,jj,kk,1) - temp(iim,jj,kk,1) )*rdxu(ii,jj)
-        rtemp3 = (rtemp1 - rtemp1)*rdxh(ii,jj)
+        rtemp3 = (rtemp1 - rtemp2)*rdxh(ii,jj)
 
         rtemp4 = rkmh(ii,jjp)* (temp(ii,jjp,kk,1) - temp(ii,jj,kk,1))*rdyv(ii,jjp)
         rtemp5 = rkmh(ii,jjm)* (temp(ii,jj,kk,1) - temp(ii,jjm,kk,1))*rdyv(ii,jj)

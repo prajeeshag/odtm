@@ -41,18 +41,18 @@ module param_mod
     real :: dphi=dxd*deg2rad
     real :: dthe=dyd*deg2rad
 
-    real, parameter :: dt= 1800 
+    real, parameter :: dt= 1800
     real, parameter :: dtts=2.0*dt
     real, parameter :: day2sec=86400.0
     real, parameter :: sec2day = 1/day2sec
     real, parameter :: alpha = 0.1
-    real :: diffuse_MY = 1.0e3
+    real :: diffuse_MY = 7.5e2
     
     real, parameter :: diffuse = 1000
     real, parameter :: diffuse_th = 0.0e3
-    real :: diffuse_tr = 1.0e3
+    real :: diffuse_tr = 7.5e2
 
-    real, parameter :: te = day2sec*1
+    real, parameter :: te = day2sec*0.20
     real, parameter :: td = day2sec*30
 
 	real :: polar_u, polar_v

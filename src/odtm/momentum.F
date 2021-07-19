@@ -23,7 +23,16 @@
 
         use diffuse_two_mod, only: laplacian
 
+!| added by Vinu on 27-06-2018 for entrainment momentum account
+!v
+        use size_mod, only : we, wd, km
+        use mpp_domains_mod, only : domain2d, mpp_update_domains
+        use mpp_mod, only : mpp_error, NOTE, WARNING, FATAL, mpp_sum
+!^
+!| added by Vinu on 27-06-2018 for entrainment momentum account
+
         implicit none
+        type(domain2d) :: domain
         real tx,ty, Lv
         integer :: ip, im, jp, jm
         real :: diffuse_additional, rtemp1, cldin, uwndin, vwndin, speed, airt_in
@@ -37,6 +46,13 @@
 	im = i - 1
 	jp = j + 1
 	jm = j - 1
+
+!| added by Vinu on 27-06-2018 for entrainment momentum account
+!v
+        call mpp_update_domains(we(:,:,1:km-1),domain)
+        call mpp_update_domains(wd(:,:,1:km-1),domain)
+!^
+!| added by Vinu on 27-06-2018 for entrainment momentum account
 
 #ifdef thermodynamic_forcing
 	do kkk=1,km
@@ -99,14 +115,14 @@ c	 endif
          sst_in = temp(i,j,1,1) ! temperature of first layer
          call heat_flux(sphm_in,airt_in,sst_in,uwndin,vwndin,cldin,qnet_in,
      &   qs, ql, qb, tx, ty, Lv)
-	taux_1 = (tx / rho(1)  ) * (1 - mod(loop,2))
+	taux_1 = (tx / rho(1)  ) * (1 - mod(loop,2)) 
 	tauy_1 = (ty / rho(1)  ) * (1 - mod(loop,2)) 
 #endif
 
 
 c        goto 183
 	
-	 h_ekman = 20.0
+	 h_ekman = 05.0
 
 	 if (k .eq. 1) then
 	 if (h(i,j,1,taun) .lt. h_ekman) then
@@ -187,6 +203,10 @@ c	 endif
      &    - advec_vu
      &    + polar_u
 #endif
+#ifdef entrain
+     &    - 0.5*(wd(i,j,k)+wd(im,j,k))*u(i,j,k,taun)
+     &    - 0.5*(we(i,j,k)+we(im,j,k))*u(i,j,k,taun)
+#endif
 #ifdef constant_laplacian
      &    + diffuse_uu
 #endif
@@ -237,6 +257,10 @@ c	 endif
      &    - advec_uv
      &    - advec_vv
      &    - polar_v
+#endif
+#ifdef entrain
+     &    - 0.5*(wd(i,j,k)+wd(i,jm,k))*v(i,j,k,taun)
+     &    - 0.5*(we(i,j,k)+we(i,jm,k))*v(i,j,k,taun)
 #endif
 #ifdef constant_laplacian
      &    + diffuse_vv

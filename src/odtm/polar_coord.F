@@ -55,30 +55,32 @@ c
       dah(:,:) = 0.
       dau(:,:) = 0.
       dav(:,:) = 0.
-    
+   
+        deg2meter_x = 0. 
 	do i=isd,ied
 	    do j=jsd, jed
 	        ip = i + 1
 	        im = i - 1 
 	        jp = j + 1
 	        jm = j - 1
-            deg2meter_x = deg2meter * cos(theta(j))
-            if(i>1) dxu(i,j) = deg2meter_x * (gdx(i) - gdx(im))
+
+            if (j>0.and.j<=jmt) deg2meter_x = deg2meter * cos(theta(j))
+            if(i>1.and.i<=imt) dxu(i,j) = deg2meter_x * (gdx(i) - gdx(im))
             if (dxu(i,j)>0.) rdxu(i,j) = 1./dxu(i,j) 
 
-            dyu(i,j) = deg2meter * (gdyb(jp) - gdyb(j))
+            if (j>0.and.j<=jmt) dyu(i,j) = deg2meter * (gdyb(jp) - gdyb(j))
             if (dyu(i,j)>0.) rdyu(i,j) = 1./dyu(i,j) 
 
-            dxv(i,j) = deg2meter_x * (gdxb(ip) - gdxb(i))
+            if (i>0.and.i<=imt) dxv(i,j) = deg2meter_x * (gdxb(ip) - gdxb(i))
             if (dxv(i,j)>0.) rdxv(i,j) = 1./dxv(i,j) 
 
-            if(j>1) dyv(i,j) = deg2meter * (gdy(j) - gdy(jm))
+            if(j>1.and.j<=jmt) dyv(i,j) = deg2meter * (gdy(j) - gdy(jm))
             if (dyv(i,j)>0.) rdyv(i,j) = 1./dyv(i,j) 
 
-            dxh(i,j) = deg2meter_x * (gdxb(ip) - gdxb(i))
+            if (i>0.and.i<=imt) dxh(i,j) = deg2meter_x * (gdxb(ip) - gdxb(i))
             if (dxh(i,j)>0.) rdxh(i,j) = 1./dxh(i,j) 
 
-            dyh(i,j) = deg2meter * (gdyb(jp) - gdyb(j))
+            if (j>0.and.j<=jmt) dyh(i,j) = deg2meter * (gdyb(jp) - gdyb(j))
             if (dyh(i,j)>0.) rdyh(i,j) = 1./dyh(i,j) 
 
 	        dah(i,j) = (dxh(i,j)*dyh(i,j))

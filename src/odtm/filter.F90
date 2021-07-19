@@ -1,8 +1,8 @@
 module filter_mod
     use size_mod, only : eta, h, i, j, rkmh, rkmu, rkmv, t, u, v, k
     use size_mod, only : loop, taum, taun, taup, km, nn
-    use size_mod, only : isc, iec, jsc, jec, dau, dav
-    use size_mod, only : isd, ied, jsd, jed
+    use size_mod, only : isc, iec, jsc, jec, dau, dav, dah
+    use size_mod, only : isd, ied, jsd, jed, temp, salt, kmaxMYM
     use param_mod, only : alpha, dt, day2sec
     use mpp_domains_mod, only : domain2d, mpp_update_domains
     use mpp_mod, only : mpp_error, NOTE, WARNING, FATAL, mpp_sum
@@ -48,6 +48,22 @@ module filter_mod
             call smooth_hanning(u(:,:,1:km-1,taup),dmask=rkmu,mask=lmask,area=dau)
             call smooth_hanning(v(:,:,1:km-1,taup),dmask=rkmv,mask=lmask,area=dav)
         endif
+        ! Added by Vinu 28-05-2018
+        if (linear_switch .or. ncount > 0) then
+            call mpp_update_domains(u(:,:,1:km-1,taun),domain)
+            call mpp_update_domains(v(:,:,1:km-1,taun),domain)
+            call smooth_hanning(u(:,:,1:km-1,taun),dmask=rkmu,mask=lmask,area=dau)
+            call smooth_hanning(v(:,:,1:km-1,taun),dmask=rkmv,mask=lmask,area=dav)
+        endif
+        ! Added by Vinu 28-05-2018
+        ! Added by Vinu 29-05-2018
+        if (linear_switch ) then
+            call mpp_update_domains(temp(:,:,1:kmaxMYM,1),domain)
+            call mpp_update_domains(salt(:,:,1:kmaxMYM,1),domain)
+            call smooth_hanning(temp(:,:,1:kmaxMYM,1),dmask=rkmh,area=dah)
+            call smooth_hanning(salt(:,:,1:kmaxMYM,1),dmask=rkmh,area=dah)
+        endif
+        ! Added by Vinu 29-05-2018
 #endif
     
         do i=isc, iec

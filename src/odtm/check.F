@@ -51,7 +51,7 @@ c	 rtemp2 = 0.40*1.0e4
 	 write (*,*)
 	 write (*,19) 'C.F.L limit = ',rtemp3, ' , dt = ',dt
 	 if ( rtemp3 .lt. dt ) then
-	 write (*,*)  'C.F.L limit vialation. Time step (dt) is higher than required minimum value'
+	 write (*,*)  'C.F.L limit violation. Time step (dt) is higher than required minimum value'
 c	 stop '=>check.F'
 	 endif
 	
