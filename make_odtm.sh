@@ -1,6 +1,11 @@
 
 #!/bin/bash
 
+echo '...............Setting up environment.....................'
+
+source /home/cccr/shikha/odtm/bin/env.pratyush_intel
+
+
 set -e
 
 odtmroot=$(pwd)

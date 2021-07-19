@@ -2,7 +2,7 @@
 	restart_interval=0,0,5,0,0,0 !yy,mm,dd,hh,mi,sc
 	!layout = 8,1  !x,y
 	start_date = 1995,1,1,0,0,0
-	end_date = 1995,1,10,0,0,0
+	days = 90
 /
 
 
