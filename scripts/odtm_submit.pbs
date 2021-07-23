@@ -7,12 +7,11 @@
 #PBS -l place=scatter
 #PBS -V
 
-cd /home/cccr/shikha/models/ODTM/WORK
-source /home/cccr/shikha/models/ODTM/env.pratyush_intel
+cd $PBS_O_WORKDIR
+source ../bin/env.pratyush_intel
 module switch PrgEnv-cray/6.0.4 PrgEnv-intel 
 echo "Copying the executable"
 cp ../exec/odtm/odtm.exe .
 echo "Running the job"
 echo $(pwd)
-#aprun -n 16 -N 16 ./odtm.exe > output.log
 aprun -n 16 -N 16 ./odtm.exe >  $PBS_JOBID.output.log
