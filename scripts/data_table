@@ -1,14 +1,14 @@
 "OCN",  "airt", "T10", "./INPUT/t10_model_grid.nc", .true., 1.0
-"OCN",  "sphm", "Q10", "./INPUT/q10_model_grid.nc", .true., 1.0
-"OCN",  "uwnd", "UWND", "./INPUT/u10_model_grid.nc", .true., 1.0
-"OCN",  "vwnd", "VWND", "./INPUT/v10_model_grid.nc", .true., 1.0
+"OCN",  "sphm", "Q", "./INPUT/q10_model_grid.nc", .true., 1.0
+"OCN",  "uwnd", "U10", "./INPUT/u10_model_grid.nc", .true., 1.0
+"OCN",  "vwnd", "V10", "./INPUT/v10_model_grid.nc", .true., 1.0
 "OCN",  "ssw", "SSW", "./INPUT/ssw_model_grid.nc", .true., 1.0
 "OCN",  "cld", "", "", .true., 0.0
 "OCN",  "chl", "CHLOROPHYLL_A_CLIM_MODELGRID", "./INPUT/chl_model_grid.nc", .true., 1.0
 "OCN",  "rvr", "RIVER", "./INPUT/river_model_grid.nc", .true., 1.0
 "OCN",  "pme", "PRECIP", "./INPUT/precip_model_grid.nc", .true., 1.0
-"OCN",  "taux_force", "U", "./INPUT/tau_model_grid.nc", .true., 1.0
-"OCN",  "tauy_force", "V", "./INPUT/tau_model_grid.nc", .true., 1.0
-"OCN",  "taux_snap", "U", "./INPUT/tau_model_grid.nc", .true., 1.0
-"OCN",  "tauy_snap", "V", "./INPUT/tau_model_grid.nc", .true., 1.0
+#"OCN",  "taux_force", "U", "./INPUT/tau_model_grid.nc", .true., 1.0
+#"OCN",  "tauy_force", "V", "./INPUT/tau_model_grid.nc", .true., 1.0
+#"OCN",  "taux_snap", "U", "./INPUT/tau_model_grid.nc", .true., 1.0
+#"OCN",  "tauy_snap", "V", "./INPUT/tau_model_grid.nc", .true., 1.0
 

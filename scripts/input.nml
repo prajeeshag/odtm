@@ -1,7 +1,7 @@
 &main_nml
 	restart_interval=0,0,5,0,0,0 !yy,mm,dd,hh,mi,sc
 	!layout = 8,1  !x,y
-	start_date = 1995,1,1,0,0,0
+	start_date = 2012,1,1,0,0,0
 	days = 90
 /
 
