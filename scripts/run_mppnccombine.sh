@@ -30,8 +30,7 @@ combine_child_run=0
 
 
 
-EXE=/home/cccr/shikha/models/spec2d/exec/spec2d/spec2d.exe
-RUNNCCP2R=/home/cccr/shikha/models/spec2d/exec/run_mppnccp2r/run_mppnccp2r
+RUNNCCP2R=../exec/run_mppnccp2r/run_mppnccp2r
 
 
 
@@ -49,8 +48,7 @@ RUNNCCP2R=/home/cccr/shikha/models/spec2d/exec/run_mppnccp2r/run_mppnccp2r
 #--------------------------------------------------------------------------------   
 #-------------------------------------------------------------------------------- 
 
-machine=$(cat /home/cccr/shikha/models/spec2d/bin/._machine_)
-source /home/cccr/shikha/models/spec2d/bin/env.$machine
+source ../bin/env.pratyush_intel
 
 STDOUT="stdout"_$JOBNAME
 
@@ -131,8 +129,7 @@ cat <<EOF > $tfile
 ####PBS -o $STDOUT 
 
 
-machine=$(cat /home/cccr/shikha/models/spec2d/bin/._machine_)
-source /home/cccr/shikha/models/spec2d/bin/env.$machine
+source ../bin/env.pratyush_intel
 ulimit -c unlimited
 set -xu
 cd \$PBS_O_WORKDIR
@@ -198,8 +195,7 @@ cat <<EOF > $tfile
 ####PBS -o $STDOUT 
 #$COND
 
-machine=$(cat /home/cccr/shikha/models/spec2d/bin/._machine_)
-source /home/cccr/shikha/models/spec2d/bin/env.$machine
+source ../bin/env.pratyush_intel
 ulimit -c unlimited
 set -xu
 cd \$PBS_O_WORKDIR
