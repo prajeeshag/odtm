@@ -129,10 +129,10 @@ cat <<EOF > $tfile
 ####PBS -o $STDOUT 
 
 
-source ../bin/env.pratyush_intel
 ulimit -c unlimited
 set -xu
 cd \$PBS_O_WORKDIR
+source ../bin/env.pratyush_intel
 export OMP_NUM_THREADS=1
 
 aprun -n $npes $EXE &> $STDOUT
@@ -195,10 +195,10 @@ cat <<EOF > $tfile
 ####PBS -o $STDOUT 
 #$COND
 
-source ../bin/env.pratyush_intel
 ulimit -c unlimited
 set -xu
 cd \$PBS_O_WORKDIR
+source ../bin/env.pratyush_intel
 
 aprun -n $nproc_combine $RUNNCCP2R \
 <<< "&opts_nml removein=1, atmpes=$npes, child_run=$combine_child_run, startdate=$startdate, calendar_type=$calendar_type, enddate=$enddate /" &> ${STDOUT}_combine
