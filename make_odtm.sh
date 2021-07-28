@@ -3,20 +3,26 @@
 
 echo '...............Setting up environment.....................'
 
-source /home/cccr/shikha/odtm/bin/env.pratyush_intel
 
+if [ ! -f .env ]; then
+	echo ".env file does not exist. Run init.sh first."
+	exit
+fi
 
+. .env
+
+. $rootdir/bin/env.$MACH
 
 set -e
 
-odtmroot=$(pwd)
-
 debug=""
 npes=1
-while getopts 'dj:' flag; do
+workdir='none'
+while getopts 'dj:w:' flag; do
     case "${flag}" in
     d) debug=".debug" ;;
     j) npes=$OPTARG ;;
+    w) workdir=$OPTARG ;;
     esac
 done
 
@@ -26,12 +32,12 @@ opts=$@
 
 EXE="odtm.exe"
 
-execdir="$odtmroot/exec"
-mkmf="$odtmroot/bin/mkmf"
+execdir="$rootdir/exec"
+mkmf="$rootdir/bin/mkmf"
 
-mkmftemplate="$odtmroot/bin/mkmf.template$debug"
+mkmftemplate="$rootdir/bin/mkmf.template$debug"
 
-FMS_UTILS=$odtmroot/src/fms_shared
+FMS_UTILS=$rootdir/src/fms_shared
 
 FMS_UTILITIES="$FMS_UTILS/include \
 			   $FMS_UTILS/platform \
@@ -49,28 +55,7 @@ FMS_UTILITIES="$FMS_UTILS/include \
 				$FMS_UTILS/axis_utils \
 				$FMS_UTILS/mosaic"
 
-paths="$odtmroot/src/odtm"
-
-
-
-echo '...............Compiling mppnccombine.....................'
-
-cd $odtmroot/src/postproc/mppnccombine
-# Uncomment the follwoing line to run in Aaditya
-#make  
-
-echo '...............Done Compiling mppnccombine.....................'
-
-
-
-echo '...............Compiling datefunc.....................'
-
-cd $odtmroot/src/postproc/datefunc
-# Uncomment the following line to run in Aaditya
-#make
-
-echo '...............Done Compiling datefunc.....................'
-
+paths="$rootdir/src/odtm"
 
 mkdir -p $execdir/lib_fms
 
@@ -95,10 +80,11 @@ make -j $npes $opts
 
 echo '...............Done Compiling ODTM.....................'
 
+
 echo "#-------------------------MAKE RUN_NCCOMBINEP2R--------------------------------------"
 cppDef="-Dlib_mppnccp2r -Duse_libMPI"
 exe=run_mppnccp2r
-paths="$odtmroot/src/postproc/mppnccombinep2r"
+paths="$rootdir/src/postproc/mppnccombinep2r"
 export LD=$FC
 mkdir -p $execdir/$exe
 cd $execdir/$exe
@@ -108,6 +94,28 @@ OPTS="-I$execdir/lib_fms"
 LIBS="$execdir/lib_fms/lib_fms.a"
 
 $mkmf -c "$cppDef" -f -p ${exe} -t $mkmftemplate -o "$OPTS" -l "$LIBS"  $paths
-make -j $numproc
+make -j $npes
 echo "#--------------------------------------------------------------------------------"
 
+filestocopy="data_table diag_table input.nml run_mppnccombine.sh odtm_submit.pbs"
+
+if [ "$workdir" != "none" ]; then
+	wrkdir="$rootdir/work/$workdir"
+	if [ -d "$wrkdir" ]; then
+		echo "Work directory $wrkdir already exist!!"
+		exit
+	fi
+	mkdir -p $wrkdir
+  mkdir -p $wrkdir/INPUT 
+  mkdir -p $wrkdir/RESTART
+  mkdir -p $wrkdir/OUTPUT
+
+	for f in $filestocopy; do
+		cp $rootdir/scripts/$f $wrkdir/
+		sed -i "s|_ROOTDIR_|$rootdir|g" $wrkdir/$f
+		sed -i "s|_EXPNAME_|$workdir|g" $wrkdir/$f
+  done
+	echo 
+	echo "Experiment directory is created: $wrkdir"
+	echo
+fi
