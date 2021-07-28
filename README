@@ -1,0 +1,13 @@
+
+INSTALL
+
+	1. Run init.sh specifying the machine.
+	   eg. ./init.sh -m pratyush_intel
+	
+	2. Run ./make_odtm.sh to compile the model and all neccesary executables
+	
+	3. Run ./make_odtm.sh specifying the experiment_name with option -w
+	   eg. ./make_odtm.sh -w experiment_name
+			
+	   this is will setup an experiment directory with all neccesary files for running 
+		 the model in the path <rootdir>/work/<experiment_name> 
