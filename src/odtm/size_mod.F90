@@ -134,7 +134,7 @@ module size_mod
         allocate ( temp_read(isc:iec,jsc:jec,kclim,lm) )
         allocate ( salt_read(isc:iec,jsc:jec,kclim,lm) )
 
-        allocate ( we(isc:iec,jsc:jec,km), wd(isc:iec,jsc:jec,km), we_mld(isc:iec,jsc:jec,0:km) )
+        allocate ( we(isd:ied,jsd:jed,km), wd(isd:ied,jsd:jed,km), we_mld(isc:iec,jsc:jec,0:km) )
         allocate ( eta(isc:iec,jsc:jec,km,4), pvort(isc:iec,jsc:jec,km), rEnergy(isc:iec,jsc:jec,km) )
         allocate ( SMCoeff(isc:iec,jsc:jec,kmaxMYM), SHCoeff(isc:iec,jsc:jec,kmaxMYM) )
         allocate ( rmld_misc(isc:iec,jsc:jec,kmaxMYM), denss(isc:iec,jsc:jec,km) )

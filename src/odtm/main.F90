@@ -17,12 +17,12 @@ program main
     use size_mod, only : taum, taun, taup, taus, time_switch, tracer_switch 
     use size_mod, only : iday_wind, rkmh, rkmu, rkmv, rkmt, kclim
     use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn, lm, gdxb, gdyb
-    use size_mod, only : t, eta, u, v, temp, h, we, pvort, salt, dxu, dyv, omask
+    use size_mod, only : t, eta, u, v, temp, h, pvort, salt, dxu, dyv, omask
     use size_mod, only : uvel, vvel, smcoeff, SHCoeff, diag_ext1, diag_ext2
     use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
     use size_mod, only : sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr
     use size_mod, only : taux_force, tauy_force, init_size, denss, rmld_misc
-    use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, pme_corr
+    use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, we, pme_corr
     use size_mod, only : temp_read, salt_read, mask
 
     use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_total
@@ -192,6 +192,8 @@ program main
 
 #ifdef entrain
         call entrain_detrain
+        call mpp_update_domains(wd,domain)
+        call mpp_update_domains(we,domain)
 #endif
 
         call mpp_update_domains(u(:,:,:,taun),domain)
@@ -215,20 +217,8 @@ program main
         call mpp_update_domains(vvel(:,:,:,2),domain)
 
         call mpp_clock_begin(clinic_clk)
-
-!        do i=isc,iec
-!            do j=jsc,jec
-!                do k=1,km-1
-!                    if (rkmh(i,j) .ne. 0.0) then
-!                        nmid = (jmt/2)+1
-                        call clinic(domain)
-!                    endif
-!                enddo
-!            enddo
-!        enddo
-
+        call clinic(domain)
         call mpp_update_domains(h(:,:,:,taup),domain)
-    
         call mpp_clock_end(clinic_clk)
 
         day_night = cos(loop*(2*3.14/(day2sec/dt))) + 1.0

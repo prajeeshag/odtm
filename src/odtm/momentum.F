@@ -47,10 +47,11 @@
 	jp = j + 1
 	jm = j - 1
 
+!!  moved to main by prajeesh on 9 Sep 2021, as wd we is used in clinic also
 !| added by Vinu on 27-06-2018 for entrainment momentum account
 !v
-        call mpp_update_domains(we(:,:,1:km-1),domain)
-        call mpp_update_domains(wd(:,:,1:km-1),domain)
+!        call mpp_update_domains(we(:,:,:),domain)
+!        call mpp_update_domains(wd(:,:,:),domain)
 !^
 !| added by Vinu on 27-06-2018 for entrainment momentum account
 

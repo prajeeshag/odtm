@@ -43,25 +43,25 @@ module filter_mod
         endif
 
         if (linear_switch .or. ncount > 0) then
-            call mpp_update_domains(u(:,:,1:km-1,taup),domain)
-            call mpp_update_domains(v(:,:,1:km-1,taup),domain)
-            call smooth_hanning(u(:,:,1:km-1,taup),dmask=rkmu,mask=lmask,area=dau)
-            call smooth_hanning(v(:,:,1:km-1,taup),dmask=rkmv,mask=lmask,area=dav)
+            call mpp_update_domains(u(:,:,:,taup),domain)
+            call mpp_update_domains(v(:,:,:,taup),domain)
+            call smooth_hanning(u(:,:,:,taup),dmask=rkmu,mask=lmask,area=dau)
+            call smooth_hanning(v(:,:,:,taup),dmask=rkmv,mask=lmask,area=dav)
         endif
         ! Added by Vinu 28-05-2018
         if (linear_switch .or. ncount > 0) then
-            call mpp_update_domains(u(:,:,1:km-1,taun),domain)
-            call mpp_update_domains(v(:,:,1:km-1,taun),domain)
-            call smooth_hanning(u(:,:,1:km-1,taun),dmask=rkmu,mask=lmask,area=dau)
-            call smooth_hanning(v(:,:,1:km-1,taun),dmask=rkmv,mask=lmask,area=dav)
+            call mpp_update_domains(u(:,:,:,taun),domain)
+            call mpp_update_domains(v(:,:,:,taun),domain)
+            call smooth_hanning(u(:,:,:,taun),dmask=rkmu,mask=lmask,area=dau)
+            call smooth_hanning(v(:,:,:,taun),dmask=rkmv,mask=lmask,area=dav)
         endif
         ! Added by Vinu 28-05-2018
         ! Added by Vinu 29-05-2018
         if (linear_switch ) then
-            call mpp_update_domains(temp(:,:,1:kmaxMYM,1),domain)
-            call mpp_update_domains(salt(:,:,1:kmaxMYM,1),domain)
-            call smooth_hanning(temp(:,:,1:kmaxMYM,1),dmask=rkmh,area=dah)
-            call smooth_hanning(salt(:,:,1:kmaxMYM,1),dmask=rkmh,area=dah)
+            call mpp_update_domains(temp(:,:,:,1),domain)
+            call mpp_update_domains(salt(:,:,:,1),domain)
+            call smooth_hanning(temp(:,:,:,1),dmask=rkmh,area=dah)
+            call smooth_hanning(salt(:,:,:,1),dmask=rkmh,area=dah)
         endif
         ! Added by Vinu 29-05-2018
 #endif

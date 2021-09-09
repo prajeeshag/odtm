@@ -63,7 +63,7 @@ CFLAGS = -D__IFC
 
 LDFLAGS= -L$(NETCDF)/lib -lnetcdff -lnetcdf
 
-FC = ftn -mkl -align commons 
+FC = ftn -mkl -align commons -save-temps
 CC   = mpiicc
 LD   = ftn
 

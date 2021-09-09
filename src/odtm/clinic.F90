@@ -19,7 +19,7 @@ subroutine clinic(domain)
     use mpp_domains_mod, only : mpp_update_domains, domain2d
 
     implicit none
-    type(domain2d) :: domain
+    type(domain2d), intent(inout) :: domain
     real tx,ty, Lv
     integer :: ip, im, jp, jm,ii, jj
     real :: rtemp1, rtemp2, rtheta_vu, rtheta_vd, rtemp3, rtemp4, rmask_right
@@ -106,7 +106,7 @@ subroutine clinic(domain)
         enddo
     enddo
 
-    call mpp_update_domains(h(:,:,1:k-1,taup),domain)
+    call mpp_update_domains(h(:,:,:,taup),domain)
 
     do i = isd, ied
         do j = jsd, jed
@@ -142,7 +142,7 @@ subroutine clinic(domain)
         enddo
     enddo
 
-    call mpp_update_domains(h(:,:,1:k-1,taup),domain)
+    call mpp_update_domains(h(:,:,:,taup),domain)
 
     return
 end subroutine clinic
