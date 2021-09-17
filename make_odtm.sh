@@ -110,6 +110,13 @@ if [ "$workdir" != "none" ]; then
   mkdir -p $wrkdir/RESTART
   mkdir -p $wrkdir/OUTPUT
 
+	cd $wrkdir/INPUT 
+	wget https://www.dropbox.com/s/zwg6839nq0d5sxb/input.tar.gz
+	tar -zxvf input.tar.gz
+	cp -f input.nml $wrkdir/
+	cp -f data_table $wrkdir/
+	cp -f diag_table $wrkdir/
+
 	for f in $filestocopy; do
 		cp $rootdir/scripts/$f $wrkdir/
 		sed -i "s|_ROOTDIR_|$rootdir|g" $wrkdir/$f
