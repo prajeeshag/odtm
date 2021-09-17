@@ -4,3 +4,4 @@ WORK/
 work/
 exec/
 .env
+.vscode

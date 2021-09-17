@@ -41,8 +41,9 @@ module param_mod
     real :: dphi=dxd*deg2rad
     real :: dthe=dyd*deg2rad
 
-    real, parameter :: dt= 1800
-    real, parameter :: dtts=2.0*dt
+    real :: dt= 1800 ! timestep in seconds, controlled from main_nml
+    real :: dtts ! =2.0*dt
+
     real, parameter :: day2sec=86400.0
     real, parameter :: sec2day = 1/day2sec
     real, parameter :: alpha = 0.1

@@ -9,24 +9,15 @@ program main
     !c
     !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-    use size_mod, only : isc, iec, jsc, jec
-    use size_mod, only : isd, ied, jsd, jed, halo
-    use size_mod, only : days, i, iday_start, itimer2
-    use size_mod, only : itimermax, itimerrate, j, k, loop, loop_start, lpd
-    use size_mod, only : lpm, month, month_start, month_wind
-    use size_mod, only : taum, taun, taup, taus, time_switch, tracer_switch 
-    use size_mod, only : iday_wind, rkmh, rkmu, rkmv, rkmt, kclim
-    use size_mod, only : imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn, lm, gdxb, gdyb
-    use size_mod, only : t, eta, u, v, temp, h, pvort, salt, dxu, dyv, omask
-    use size_mod, only : uvel, vvel, smcoeff, SHCoeff, diag_ext1, diag_ext2
-    use size_mod, only : diag_ext3, diag_ext4, diag_ext5, diag_ext6
-    use size_mod, only : sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr
-    use size_mod, only : taux_force, tauy_force, init_size, denss, rmld_misc
-    use size_mod, only : rdx, rdy, rkmt, we_upwel, wd, we, pme_corr
-    use size_mod, only : temp_read, salt_read, mask
+    use size_mod, only : isc, iec, jsc, jec, isd, ied, jsd, jed, halo, days, i, iday_start, itimer2, &
+        itimermax, itimerrate, j, k, loop, loop_start, lpd, lpm, month, month_start, month_wind, & 
+        taum, taun, taup, taus, time_switch, tracer_switch, iday_wind, rkmh, rkmu, rkmv, rkmt, kclim, &
+        imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn, lm, gdxb, gdyb, t, eta, u, v, temp, h, pvort, salt, &
+        dxu, dyv, omask, uvel, vvel, smcoeff, SHCoeff, diag_ext1, diag_ext2, diag_ext3, diag_ext4, &
+        diag_ext5, diag_ext6, sphm, uwnd, vwnd, airt, ssw, cld, pme, chl, rvr, taux_force, tauy_force, &
+        init_size, denss, rmld_misc, rdx, rdy, rkmt, we_upwel, wd, we, pme_corr, temp_read, salt_read, mask
 
-    use param_mod, only : day2sec, dpm, dt, dyd, loop_day, loop_total
-    use param_mod, only : nmid, rnmid, sum_adv, deg2rad
+    use param_mod, only : day2sec, dpm, dt, dtts, dyd, loop_day, loop_total, nmid, rnmid, sum_adv, deg2rad
     
     use momentum_mod, only : momentum
     use tracer_mod, only : tracer, rgm_zero_tracer_adv
@@ -35,29 +26,35 @@ program main
     use interp_extrap_initial_mod, only : interp_extrap_initial
     use filter_mod, only : filter
     
-    use mpp_mod, only : mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init
-    use mpp_mod, only : mpp_exit, mpp_max, mpp_sum, mpp_sync, mpp_root_pe
-    use mpp_mod, only: mpp_clock_id, mpp_clock_begin, mpp_clock_end
-    use fms_mod,  only : field_exist, field_size, read_data, fms_init, fms_end
-    use fms_io_mod, only : register_restart_field, restart_file_type, save_restart, restore_state
-    use fms_io_mod, only : open_namelist_file, open_file, close_file, file_exist
+    use mpp_mod, only : mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init, &
+        mpp_exit, mpp_max, mpp_sum, mpp_sync, mpp_root_pe, mpp_clock_id, mpp_clock_begin, mpp_clock_end
 
-    use mpp_domains_mod, only : domain2d, domain1d, mpp_define_layout, mpp_define_domains
-    use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_domain_components, mpp_update_domains
-    use mpp_domains_mod, only : mpp_get_data_domain, CGRID_SW, BITWISE_EXACT_SUM, mpp_global_sum
-    use diag_manager_mod, only : diag_manager_init, register_diag_field, register_static_field
-    use diag_manager_mod, only : diag_axis_init, send_data, diag_manager_end
+    use fms_mod,  only : field_exist, field_size, read_data, fms_init, fms_end
+
+    use fms_io_mod, only : register_restart_field, restart_file_type, save_restart, restore_state, &
+        open_namelist_file, open_file, close_file, file_exist
+
+    use mpp_domains_mod, only : domain2d, domain1d, mpp_define_layout, mpp_define_domains, &
+        mpp_get_compute_domain, mpp_get_domain_components, mpp_update_domains, mpp_get_data_domain, &
+        CGRID_SW, BITWISE_EXACT_SUM, mpp_global_sum
+
+    use diag_manager_mod, only : diag_manager_init, register_diag_field, register_static_field, &
+        diag_axis_init, send_data, diag_manager_end
+
     use diag_data_mod, only : FILL_VALUE
+
     use data_override_mod, only : data_override_init, data_override
-    use time_manager_mod, only : set_calendar_type, NO_CALENDAR, JULIAN, NOLEAP, date_to_string
-    use time_manager_mod, only : time_type, set_time, set_date, operator(+), assignment(=)
-    use time_manager_mod, only : print_date, print_time, set_ticks_per_second, increment_date, operator(>=)
+
+    use time_manager_mod, only : set_calendar_type, NO_CALENDAR, JULIAN, NOLEAP, GREGORIAN, &
+        THIRTY_DAY_MONTHS, date_to_string, get_calendar_type, time_type, set_time, set_date, &
+        operator(+), assignment(=), print_date, print_time, set_ticks_per_second, increment_date, &
+        operator(>=), operator(==), get_date
 
     implicit none
 
     integer :: iday_month, ii
     real :: age_time, day_night, rlct, depth_mld
-    type(time_type) :: time, time_step, time_restart
+    type(time_type) :: time, time_step, time_restart, start_time
 
     integer :: domain_layout(2), used
 
@@ -79,12 +76,11 @@ program main
     real :: sumall, umax
     logical, allocatable :: lmask(:,:), lmask3(:,:,:), lmask3m(:,:,:)
     logical :: override
-    character (len=32) :: timestamp
     integer :: restart_interval(6) = 0, layout(2)
-    integer :: start_date(6) = 0
+    character (len=32) :: timestamp
     
-    namelist /main_nml/ restart_interval, layout, days, start_date, &
-                        rgm_zero_tracer_adv
+    namelist /main_nml/ restart_interval, layout, days, &
+                        rgm_zero_tracer_adv, dt
 
     call mpp_init()
     call fms_init()
@@ -261,25 +257,17 @@ program main
         call filter(domain)
         call mpp_clock_end(filter_clk) 
     
-!        if (isc<=imt/2.and.iec>=imt/2.and.jsc<=jmt/2.and.jec>=jmt/2) then
-!            write(*,*) temp(imt/2, jmt/2 , 1, 1), h(imt/2, jmt/2 , 1, taun), &
-!                            loop, SHCoeff(imt/2, jmt/2 , 5)
-!        endif
-
         call print_date(time)
         call send_data_diag(time)
 
         time = time + time_step
-    
+   
+        ! save intermediate restarts
         if ( time >= time_restart ) then
-            
-           timestamp = date_to_string(time)
-
-           time_restart = increment_date(time, restart_interval(1), restart_interval(2), &
+            timestamp = date_to_string(time)
+            call write_restart(timestamp)
+            time_restart = increment_date(time, restart_interval(1), restart_interval(2), &
                 restart_interval(3), restart_interval(4), restart_interval(5), restart_interval(6) )
-
-           call save_restart(restart_odtm,timestamp) 
-
         endif
 
         sumall = sum(u(isc:iec,jsc:jec,:,taun) + &
@@ -305,7 +293,7 @@ program main
     
     call mpp_error(NOTE,'Integration finished')
 
-    call save_restart(restart_odtm) 
+    call write_restart() 
     
     call diag_manager_end(time)
     call fms_end()
@@ -316,23 +304,52 @@ program main
     subroutine init_odtm()
 
         integer :: ii, used, unit
+        character(len=32) :: calendar
+        integer :: start_date(6) = 0
+        integer :: current_date(6) = 0
 
         unit = open_namelist_file()
         rewind(unit)
-        read(unit,nml=main_nml) 
+        read(unit,nml=main_nml)
+        dtts = 2.0 * dt
+
+        ! Read calendar type and start time 
+        unit = open_file(file='INPUT/odtm.res',action='read')
+        rewind(unit)
+        read(unit,*) calendar
+        read(unit,*) start_date
+        read(unit,*) current_date
+        call close_file(unit)
+
+        select case (calendar)
+        case('Gregorian','gregorian','GREGORIAN')
+            call set_calendar_type(GREGORIAN)
+        case('noleap','NOLEAP')
+            call set_calendar_type(NOLEAP)
+        case('JULIAN','julian','Julian')
+            call set_calendar_type(JULIAN)
+        case('THIRTY_DAY_MONTHS','thirty_day_months')
+            call set_calendar_type(THIRTY_DAY_MONTHS)
+        case('NO_CALENDAR','no_calendar')
+            call set_calendar_type(NO_CALENDAR)
+        case default
+            call mpp_error(fatal, &
+            'Wrong calendar type! Available calendar types are: GREGORIAN, NOLEAP, JULIAN, THIRTY_DAY_MONTHS, NO_CALENDAR')
+        end select
          
         unit = open_file(file='RESTART/._tmp_',action='write')
         call close_file(unit,'delete')
-
-        call set_calendar_type(NOLEAP)
 
         time_step = set_time(seconds=int(dt))
 
         if (sum(start_date)<=0) &
           call mpp_error(FATAL, 'start_date not given or not proper in input.nml')
 
-        time = set_date(start_date(1), start_date(2), start_date(3), &
+        start_time = set_date(start_date(1), start_date(2), start_date(3), &
                         start_date(4), start_date(5), start_date(6))
+
+        time = set_date(current_date(1), current_date(2), current_date(3), &
+                        current_date(4), current_date(5), current_date(6))
       
         if (all(restart_interval==0)) restart_interval(1) = 10
  
@@ -345,7 +362,6 @@ program main
 
         call data_override_init(Ocean_domain_in=domain)
 
-    
         allocate ( lmask(isc:iec,jsc:jec) ) 
         allocate ( lmask3(isc:iec,jsc:jec,km) )
         allocate ( lmask3m(isc:iec,jsc:jec,kmaxMYM) )
@@ -755,9 +771,7 @@ program main
         temp_read(:,:,:,lm) = temp_read(:,:,:,1)
         salt_read(:,:,:,lm) = salt_read(:,:,:,1)
 
-        if (file_exist('INPUT/'//trim(restart_file))) then
-            call restore_state(restart_odtm)
-        else
+        if (start_time == time) then
             call mpp_error(NOTE,'Model starting from initial state')
             do i=isc,iec
                 do j=jsc,jec
@@ -789,6 +803,8 @@ program main
 
                 enddo
             enddo
+        else 
+            call restore_state(restart_odtm)
         endif 
 
         call save_restart(restart_odtm,'initial') 
@@ -823,5 +839,55 @@ program main
         enddo
 
     end subroutine balance_pme
+
+
+    subroutine write_restart(timestmp)
+        character (len=32), intent(in), optional :: timestmp
+        integer :: unit, calendar_type_int
+        character(len=32) :: odtm_res_file, calendar_type_str
+        integer :: c_date(6), s_date(6)
+
+        calendar_type_int = get_calendar_type()
+        select case (calendar_type_int)
+        case(NOLEAP)
+            calendar_type_str = 'NOLEAP'
+        case(GREGORIAN)
+            calendar_type_str = 'GREGORIAN'
+        case(THIRTY_DAY_MONTHS)
+            calendar_type_str = 'THIRTY_DAY_MONTHS'
+        case(JULIAN)
+            calendar_type_str = 'JULIAN'
+        case(NO_CALENDAR)
+            calendar_type_str = 'NO_CALENDAR'
+        case default
+            calendar_type_str = 'INVALID CALENDAR'
+        end select
+
+        call get_date(time,c_date(1),c_date(2),c_date(3),&
+                           c_date(4),c_date(5),c_date(6))
+        call get_date(start_time,s_date(1),s_date(2),s_date(3),&
+                           s_date(4),s_date(5),s_date(6))
+
+        odtm_res_file = 'odtm.res'
+
+        if (present(timestmp)) then
+            call save_restart(restart_odtm,timestmp)
+            odtm_res_file = trim(timestmp)//'.'//trim(odtm_res_file)
+        else
+            call save_restart(restart_odtm)
+        endif
+
+        if (mpp_pe() == mpp_root_pe()) then
+            unit = open_file(file='RESTART/'//trim(odtm_res_file),action='write')
+            rewind(unit)
+            write(unit,*)calendar_type_str
+            write(unit,*)s_date
+            write(unit,*)c_date
+            call close_file(unit)
+        endif 
+
+    end subroutine write_restart
+
+
 
 end program main
