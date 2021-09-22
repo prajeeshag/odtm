@@ -144,7 +144,7 @@ end if
 
 allocate(filenms(num_files))
 
-if (mpp_pe()==mpp_root_pe()) print*,'num_files=', num_files
+if (mpp_pe()==mpp_root_pe()) print *,'num_files=', num_files
 
 do n = 1, num_files
     if (mpp_pe()==mpp_root_pe()) print *, trim(files(n)%name)
@@ -214,7 +214,7 @@ if (mpp_pe()==mpp_root_pe()) then
     
     
                 if (.not.all_files_exist(trim(fnm_next),0,1)) then
-                  call mpp_error(NOTE,trim(fnm_next)//' not yet there!')
+                  if(verbose>0) call mpp_error(NOTE,trim(fnm_next)//' not yet there!')
                   cycle
                 endif
     
@@ -231,7 +231,7 @@ if (mpp_pe()==mpp_root_pe()) then
         
             if (end_check) then
                 if (.not.next_file_found) then
-                    call mpp_error(NOTE,"No next file found after waiting time, exiting...")
+                    call mpp_error(WARNING,"No next file found after waiting time, exiting...")
                     exit
                 else
                     end_check=.false.
@@ -239,7 +239,7 @@ if (mpp_pe()==mpp_root_pe()) then
             endif
                      
             if (endwaittime>0.and..not.next_file_found) then
-                call mpp_error(NOTE,"Found no next file for all files, waiting for sometime")
+                call mpp_error(WARNING,"Found no next file for all files, waiting for sometime")
                 call wait_seconds(endwaittime)
                 end_check=.true.
             endif
@@ -298,7 +298,7 @@ integer function submit_processing(nf,n,waitime)
     fnm = trim(filenms(nf)%nm(n))//char(0)
     if (ov/=0) then
         if (rm_file(fnm)==0) then
-            print *, "Deleted old file "//trim(filenms(nf)%nm(n))
+            if (verbose>0) print *, "Deleted old file "//trim(filenms(nf)%nm(n))
         endif
     endif
     call wait_seconds(real(waitime))
@@ -354,7 +354,7 @@ integer function send_jobs(nf,n,waitime)
         fnm = trim(filenms(nf)%nm(n))//char(0)
         if (ov/=0) then
             if (rm_file(fnm)==0) then
-                print *, "Deleted old file "//trim(filenms(nf)%nm(n))
+                if(verbose>0) print *, "Deleted old file "//trim(filenms(nf)%nm(n))
             endif
         endif
     endif
