@@ -9,7 +9,7 @@ program main
     !c
     !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-    use size_mod, only : isc, iec, jsc, jec, isd, ied, jsd, jed, halo, days, i, iday_start, itimer2, &
+    use size_mod, only : isc, iec, jsc, jec, isd, ied, jsd, jed, halo, i, iday_start, itimer2, &
         itimermax, itimerrate, j, k, loop, loop_start, lpd, lpm, month, month_start, month_wind, & 
         taum, taun, taup, taus, time_switch, tracer_switch, iday_wind, rkmh, rkmu, rkmv, rkmt, kclim, &
         imt, jmt, km, gdx, gdy, kmaxMYM, dz, nn, lm, gdxb, gdyb, t, eta, u, v, temp, h, pvort, salt, &
@@ -27,7 +27,8 @@ program main
     use filter_mod, only : filter
     
     use mpp_mod, only : mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init, &
-        mpp_exit, mpp_max, mpp_sum, mpp_sync, mpp_root_pe, mpp_clock_id, mpp_clock_begin, mpp_clock_end
+        mpp_exit, mpp_max, mpp_sum, mpp_sync, mpp_root_pe, mpp_clock_id, mpp_clock_begin, mpp_clock_end, &
+        lowercase
 
     use fms_mod,  only : field_exist, field_size, read_data, fms_init, fms_end
 
@@ -48,13 +49,14 @@ program main
     use time_manager_mod, only : set_calendar_type, NO_CALENDAR, JULIAN, NOLEAP, GREGORIAN, &
         THIRTY_DAY_MONTHS, date_to_string, get_calendar_type, time_type, set_time, set_date, &
         operator(+), assignment(=), print_date, print_time, set_ticks_per_second, increment_date, &
-        operator(>=), operator(==), get_date
+        operator(>=), operator(==), get_date, days_in_month, operator(-), operator(/)
 
     implicit none
 
     integer :: iday_month, ii
     real :: age_time, day_night, rlct, depth_mld
     type(time_type) :: time, time_step, time_restart, start_time
+    integer :: months=0, days=0, hours=0, minutes=0, seconds=0
 
     integer :: domain_layout(2), used
 
@@ -79,8 +81,8 @@ program main
     integer :: restart_interval(6) = 0, layout(2)
     character (len=32) :: timestamp
     
-    namelist /main_nml/ restart_interval, layout, days, &
-                        rgm_zero_tracer_adv, dt
+    namelist /main_nml/ restart_interval, layout, rgm_zero_tracer_adv, dt, & 
+        months, days, hours, minutes, seconds
 
     call mpp_init()
     call fms_init()
@@ -91,8 +93,6 @@ program main
     mld_clk = mpp_clock_id('MLD')
     filter_clk = mpp_clock_id('Filter')
     couple_clk = mpp_clock_id('Couple')
-
-    days = 1
 
     call mpp_clock_begin(init_clk)
     call init_odtm()
@@ -119,8 +119,6 @@ program main
     tracer_switch = 0
 #endif
 
-    loop_total = int(days*day2sec/dt)
-    
     call mpp_clock_begin(main_clk)
  
     do loop = loop_start, loop_total
@@ -305,8 +303,9 @@ program main
 
         integer :: ii, used, unit
         character(len=32) :: calendar
-        integer :: start_date(6) = 0
-        integer :: current_date(6) = 0
+        integer :: start_date(6) = 0, m
+        integer :: current_date(6) = 0, date(6) = 0
+        type(time_type):: Time_end, Run_length
 
         unit = open_namelist_file()
         rewind(unit)
@@ -321,16 +320,16 @@ program main
         read(unit,*) current_date
         call close_file(unit)
 
-        select case (calendar)
-        case('Gregorian','gregorian','GREGORIAN')
+        select case (lowercase(calendar))
+        case('gregorian')
             call set_calendar_type(GREGORIAN)
-        case('noleap','NOLEAP')
+        case('noleap')
             call set_calendar_type(NOLEAP)
-        case('JULIAN','julian','Julian')
+        case('julian')
             call set_calendar_type(JULIAN)
-        case('THIRTY_DAY_MONTHS','thirty_day_months')
+        case('thirty_day_months')
             call set_calendar_type(THIRTY_DAY_MONTHS)
-        case('NO_CALENDAR','no_calendar')
+        case('no_calendar')
             call set_calendar_type(NO_CALENDAR)
         case default
             call mpp_error(fatal, &
@@ -342,14 +341,28 @@ program main
 
         time_step = set_time(seconds=int(dt))
 
-        if (sum(start_date)<=0) &
-          call mpp_error(FATAL, 'start_date not given or not proper in input.nml')
-
         start_time = set_date(start_date(1), start_date(2), start_date(3), &
                         start_date(4), start_date(5), start_date(6))
 
         time = set_date(current_date(1), current_date(2), current_date(3), &
                         current_date(4), current_date(5), current_date(6))
+
+        Time_end = Time
+        do m=1,months
+           Time_end = Time_end + set_time(0,days_in_month(Time_end))
+        end do
+        Time_end   = Time_end + set_time(hours*3600+minutes*60+seconds, days)
+        Run_length = Time_end - Time
+        loop_total = Run_length / time_step
+
+!--------------write time stamps-----------------------------------------------
+        unit = open_file(file='time_stamp.out',action='write')
+        call get_date (Time_end, date(1), date(2), date(3), date(4), date(5), date(6))
+        write(unit,*) lowercase(trim(calendar))
+        write(unit,*) start_date
+        write(unit,*) date
+        write(unit,*) dt
+        call close_file(unit)
       
         if (all(restart_interval==0)) restart_interval(1) = 10
  

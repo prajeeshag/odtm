@@ -1,22 +1,11 @@
 #!/bin/bash
 #USER DEFINED PARAMETERS
 
-startdate=2004,01,01,00,00,00
-calendar_type=4
-enddate=2013,12,31,00,00,00
-
 # queue - Queue name
 queue="cccr"
 
 # WCLOCK - Wall clock limit (in hours)
 WCLOCK="240"
-
-# nproc_combine - number of processors for postproc
-nproc_combine=36
-
-
-
-
 
 # END OF USER DEFINED PARAMETERS
 
@@ -26,6 +15,24 @@ nproc_combine=36
 #--------------------------------------------------------------------------------   
 #--------------------------------------------------------------------------------   
 #-------------------------------------------------------------------------------- 
+
+
+
+# nproc_combine - number of processors for postproc
+nproc=36
+while getopts 'p:n:' flag; do
+    case "${flag}" in
+    p) jobid=$OPTARG ;;
+    n) nproc=$OPTARG ;;
+    esac
+done
+
+
+#!/bin/bash
+while IFS= read -r line; do
+	calendar_type=
+done < "INPUT/odtm.res"
+
 
 JOBNAME=_EXPNAME_
 RUNNCCP2R=_ROOTDIR_/exec/run_mppnccp2r/run_mppnccp2r
@@ -38,6 +45,20 @@ if [ "$rem" -gt "0" ]; then
 fi
 
 tfile=$(mktemp)
+
+child_run=0
+if [ ! -z "$jobid"]; then
+	child_run=1
+	COND="PBS -W depend=after:$jobid"
+fi
+
+cat <<EOF > 'mppncc.nml'
+&opts_nml 
+ removein=1, 
+ child_run=$child_run 
+/
+EOF 
+
 
 cat <<EOF > $tfile
 #!/bin/bash
@@ -52,8 +73,8 @@ set -xu
 cd \$PBS_O_WORKDIR
 source _ROOTDIR_/bin/env.pratyush_intel
 
-aprun -n $nproc_combine $RUNNCCP2R \
-<<< "&opts_nml removein=1, atmpes=$npes, child_run=$combine_child_run, startdate=$startdate, calendar_type=$calendar_type, enddate=$enddate /" &> ${JOBNAME}.post.out
+aprun -n $nproc_combine $RUNNCCP2R &> ${JOBNAME}.mppncc.out
+
 EOF
 
 qsub < $tfile

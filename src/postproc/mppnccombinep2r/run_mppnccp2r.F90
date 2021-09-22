@@ -8,7 +8,8 @@ use diag_data_mod, only : files, num_files, mix_snapshot_average_fields, &
 use diag_util_mod, only : sync_file_times, diag_time_inc, get_time_string
 use time_manager_mod
 use mpp_mod, only : mpp_init, mpp_exit, mpp_error, FATAL, WARNING, NOTE, &
-        mpp_pe, mpp_root_pe, mpp_npes
+        mpp_pe, mpp_root_pe, mpp_npes, lowercase
+use fms_mod, only : open_file, close_file
 
 implicit none
 
@@ -42,7 +43,8 @@ integer :: maxrunlength=100 !years
 type(C_PTR) :: args(maxarg)
 
 integer :: nargs=1, i, ierr, unit=15, n, position, nf, stat
-integer :: calendar_type=-11, startdate(6)=0, enddate(6)=0
+integer :: startdate(6)=0, enddate(6)=0
+character(len=32):: calendar
 logical :: fexist
 character(len=1024) :: msg, fnm, fnm_next, fnm_curr
 type(filenm_type), allocatable :: filenms(:)
@@ -56,10 +58,10 @@ character(len=8) :: arg_n4="-n4"//char(0)
 character(len=8) :: arg_u="-u"//char(0)
 character(len=8) :: arg_ov="-ov"//char(0)
 
-integer :: removein=0
-integer :: startpe=0, nc4=0, atmpes=1, ocnpes=1, tfile=0
+integer :: removein=1
+integer :: nc4=0, tfile=0
 character(len=32) :: prgrm="nccp2r"//char(0)
-character(len=1024) :: xgrid="INPUT/p_xgrd.nc", run_time_stamp='INPUT/atm.res'
+character(len=1024) :: time_stamp='time_stamp.out'
 character(len=64) :: cnc4, cstartpe
 type(time_type) :: lowestfreq
 integer :: lownf=0
@@ -72,8 +74,6 @@ logical :: no_files_found=.true.
 call cpu_time(time1)
 call mpp_init()
 call read_options()
-
-xgrid = trim(xgrid)//char(0)
 
 nargs=1
 
@@ -89,47 +89,45 @@ endif
 args(nargs) = c_loc(arg_v)
 nargs=nargs+1
 
-
-if (all(startdate<=0).or.calendar_type==-11) then
-    call mpp_error(NOTE,"startdate or calendar_type is not provided correctly "// &
-                    "via STDIN, trying to read from run_time_stamp")
-    fexist=file_exist(run_time_stamp)
-    if (.not.fexist) call mpp_error(FATAL,"run_mppnccp2r: run_time_stamp file ("// &
-                trim(run_time_stamp)//") do not exist")
-
-    open(unit,file=trim(run_time_stamp),status='old')
-    read(unit,*) calendar_type
-    read(unit,*)
-    read(unit,*) startdate
-    close(unit)
-endif
-
-if (all(enddate<=0)) then
 do i = 1, 5
-  if (.not.file_exist('time_stamp.out')) then
+  if (.not.file_exist(time_stamp)) then
     call wait_seconds(60.)
     cycle
   else
-    open(unit,file='time_stamp.out',status='old')
-    read(unit,*)
-    read(unit,*)enddate
-    close(unit)
+    unit = open_file(file=time_stamp,action='read')
+    read(unit,*) calendar
+    read(unit,*) startdate
+    read(unit,*) enddate
+    read(unit,*) deltim
+    call close_file(unit)
     exit
   endif
 end do
-endif
 
-if (all(enddate==0)) call mpp_error(FATAL,"Could not read enddate from time_stamp.out")
+if (all(enddate==0).or.all(startdate==0)) call mpp_error(FATAL,"Wrong enddate or startdate in "//trim(time_stamp))
 
-call set_calendar_type(calendar_type)
+select case (lowercase(trim(calendar)))
+case('gregorian')
+    call set_calendar_type(GREGORIAN)
+case('noleap')
+    call set_calendar_type(NOLEAP)
+case('julian')
+    call set_calendar_type(JULIAN)
+case('thirty_day_months')
+    call set_calendar_type(THIRTY_DAY_MONTHS)
+case('no_calendar')
+    call set_calendar_type(NO_CALENDAR)
+case default
+    call mpp_error(fatal, &
+    'Wrong calendar type! Available calendar types are: GREGORIAN, NOLEAP, JULIAN, THIRTY_DAY_MONTHS, NO_CALENDAR')
+end select
+
 
 starttime=set_date(startdate(1),startdate(2),startdate(3), &
                   startdate(4),startdate(5),startdate(6))
 
 endtime=set_date(enddate(1),enddate(2),enddate(3), &
                   enddate(4),enddate(5),enddate(6))
-
-!endtime=increment_date(starttime, years = maxrunlength)
 
 lowestfreq = set_time(0,days=VERY_LARGE_FILE_FREQ) !lowest frequency of output
 
@@ -215,7 +213,6 @@ if (mpp_pe()==mpp_root_pe()) then
                 endif
     
     
-                !if (.not.all_files_exist(trim(fnm_next),0,atmpes)) then
                 if (.not.all_files_exist(trim(fnm_next),0,1)) then
                   call mpp_error(NOTE,trim(fnm_next)//' not yet there!')
                   cycle
@@ -282,28 +279,15 @@ call mpp_exit()
 contains
 
 subroutine read_options()
-    integer :: ierr, stat
+    integer :: ierr, stat, iunit
 
-    namelist/opts_nml/removein, atmpes, ocnpes, nc4, startpe, &
-                      minendwaittime, startdate, calendar_type, child_run, &
-                      ov, verbose, deltim, enddate
-    if (mpp_pe()==mpp_root_pe()) then
-        read(*,nml=opts_nml,iostat=stat)
-        if (stat/=0) call mpp_error(FATAL,"run_mppnccp2r: error while reading of options")
-    end if
-    
-    call mpi_bcast(removein, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-    call mpi_bcast(atmpes, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-    call mpi_bcast(nc4, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-    call mpi_bcast(ov, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-    call mpi_bcast(verbose, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-    call mpi_bcast(child_run, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-    call mpi_bcast(deltim, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-    call mpi_bcast(calendar_type, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-    call mpi_bcast(startdate, size(startdate), MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-    call mpi_bcast(enddate, size(enddate), MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-
-return
+    namelist/opts_nml/removein, nc4, minendwaittime, child_run, ov, verbose
+    iunit = open_file('mppncc.nml')
+    rewind(iunit) 
+    read(iunit,nml=opts_nml,iostat=stat)
+    if (stat/=0) call mpp_error(FATAL,"run_mppnccp2r: error while reading of options")
+    call close_file(iunit)
+    return
 end subroutine read_options
 
 

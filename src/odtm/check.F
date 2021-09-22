@@ -7,7 +7,7 @@ c
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-        use size_mod, only : k, dz, rho, he, days, imt, jmt, km, theta
+        use size_mod, only : k, dz, rho, he, imt, jmt, km, theta
         use param_mod, only : deg2rad, diffuse, diffuse_th, dt, dx, dx2, dxd
         use param_mod, only : dy, dy2, g, re
         implicit none
@@ -71,7 +71,6 @@ c	 stop '=>check.F'
 	write (*,21)' time step dt = ', dt,' sec'
 	write (*,26)' grid dimension (lon x lat) = ', imt,' x ',jmt
 	write (*,21)' grid spacing (lon x lat) = ', dx,' x ',dy
-	write (*,22)' total rundays = ', days,' = ', days/365.0,' years '
 	write (*,24)'Running==='
 	write (*,*)'Time ellapsed after each snapshot (minutes)'
 	 

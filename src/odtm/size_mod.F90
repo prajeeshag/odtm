@@ -19,7 +19,6 @@ module size_mod
   integer :: month_wind, month_start_snap
   integer :: taum1,taun1,taup1
   real :: Q_atmos
-  real :: days
   real :: fcoruh, fcorvh
   real :: time_switch
   real :: tracer_switch
