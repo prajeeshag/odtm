@@ -18,7 +18,7 @@ WCLOCK="240"
 
 
 
-# nproc_combine - number of processors for postproc
+# nproc - number of processors for postproc
 nproc=36
 while getopts 'p:n:' flag; do
     case "${flag}" in
@@ -38,8 +38,8 @@ JOBNAME=_EXPNAME_
 RUNNCCP2R=_ROOTDIR_/exec/run_mppnccp2r/run_mppnccp2r
 WCLOCK=$((WCLOCK*2))
 ppn=36
-nnodes=$((nproc_combine/ppn))
-rem=$((nproc_combine%ppn))
+nnodes=$((nproc/ppn))
+rem=$((nproc%ppn))
 if [ "$rem" -gt "0" ]; then
 	nnodes=$((nnodes+1))
 fi
@@ -47,20 +47,20 @@ fi
 tfile=$(mktemp)
 
 child_run=0
-if [ ! -z "$jobid"]; then
+if [[ ! -z "$jobid" ]]; then
 	child_run=1
 	COND="PBS -W depend=after:$jobid"
 fi
 
-cat <<EOF > 'mppncc.nml'
+cat <<EOFx > 'mppncc.nml'
 &opts_nml 
  removein=1, 
  child_run=$child_run 
 /
-EOF 
+EOFx
 
 
-cat <<EOF > $tfile
+cat <<EOFy > $tfile
 #!/bin/bash
 #PBS -q $queue
 #PBS -l nodes=$nnodes:ppn=$ppn
@@ -73,8 +73,8 @@ set -xu
 cd \$PBS_O_WORKDIR
 source _ROOTDIR_/bin/env.pratyush_intel
 
-aprun -n $nproc_combine $RUNNCCP2R &> ${JOBNAME}.mppncc.out
+aprun -n $nproc $RUNNCCP2R &> ${JOBNAME}.mppncc.out
 
-EOF
+EOFy
 
 qsub < $tfile

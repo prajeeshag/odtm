@@ -1,34 +1,50 @@
 
 #!/bin/bash
 
-echo '...............Setting up environment.....................'
+usage (){
+	echo
+	echo $0 -c -j npes -w exp_name 
+	echo
+	echo options:
+	echo -c : compile only 
+	echo -j npes : parallel gmake with npes	
+	echo -w exp_name : "compile [if not compiled] and create experiment directory named 'exp_name' with all neccesary scripts"
+	echo -i : "with -w, download the test input data as well"
+	exit 1;
+}
 
-
-if [ ! -f .env ]; then
-	echo ".env file does not exist. Run init.sh first."
-	exit
-fi
-
-. .env
-
-. $rootdir/bin/env.$MACH
-
-set -e
 
 debug=""
 npes=1
 workdir='none'
-while getopts 'dj:w:' flag; do
+
+if [[ -z "$@" ]]; then
+	usage
+fi
+
+while getopts 'cdij:w:' flag; do
     case "${flag}" in
+	c) echo 'compile only' ;;
     d) debug=".debug" ;;
     j) npes=$OPTARG ;;
     w) workdir=$OPTARG ;;
+	i) testinp=true ;;
+	*) usage ;;
     esac
 done
 
 shift $(($OPTIND - 1))
 
 opts=$@
+
+echo '...............Setting up environment.....................'
+if [ ! -f .env ]; then
+	echo ".env file does not exist. Run init.sh first."
+	exit
+fi
+source .env
+
+source $rootdir/bin/env.$MACH
 
 EXE="odtm.exe"
 
@@ -110,18 +126,22 @@ if [ "$workdir" != "none" ]; then
   mkdir -p $wrkdir/RESTART
   mkdir -p $wrkdir/OUTPUT
 
-	cd $wrkdir/INPUT 
-	wget https://www.dropbox.com/s/zwg6839nq0d5sxb/input.tar.gz
-	tar -zxvf input.tar.gz
-	cp -f input.nml $wrkdir/
-	cp -f data_table $wrkdir/
-	cp -f diag_table $wrkdir/
-
 	for f in $filestocopy; do
 		cp $rootdir/scripts/$f $wrkdir/
 		sed -i "s|_ROOTDIR_|$rootdir|g" $wrkdir/$f
 		sed -i "s|_EXPNAME_|$workdir|g" $wrkdir/$f
-  done
+		echo "Copying $f ..."
+  	done
+
+	if [[ ! -z "$testinp" ]]; then
+		cd $wrkdir/INPUT 
+		wget https://www.dropbox.com/s/zwg6839nq0d5sxb/input.tar.gz
+		tar -zxvf input.tar.gz
+		cp -f input.nml $wrkdir/
+		cp -f data_table $wrkdir/
+		cp -f diag_table $wrkdir/
+	fi
+
 	echo 
 	echo "Experiment directory is created: $wrkdir"
 	echo

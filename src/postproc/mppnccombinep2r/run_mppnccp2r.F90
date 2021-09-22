@@ -282,7 +282,7 @@ subroutine read_options()
     integer :: ierr, stat, iunit
 
     namelist/opts_nml/removein, nc4, minendwaittime, child_run, ov, verbose
-    iunit = open_file('mppncc.nml')
+    iunit = open_file('mppncc.nml',action='read')
     rewind(iunit) 
     read(iunit,nml=opts_nml,iostat=stat)
     if (stat/=0) call mpp_error(FATAL,"run_mppnccp2r: error while reading of options")
