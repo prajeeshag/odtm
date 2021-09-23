@@ -359,7 +359,7 @@ program main
         unit = open_file(file='time_stamp.out',action='write')
         call get_date (Time_end, date(1), date(2), date(3), date(4), date(5), date(6))
         write(unit,*) lowercase(trim(calendar))
-        write(unit,*) start_date
+        write(unit,*) current_date
         write(unit,*) date
         write(unit,*) dt
         call close_file(unit)
